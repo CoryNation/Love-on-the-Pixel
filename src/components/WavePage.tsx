@@ -224,11 +224,11 @@ export default function WavePage() {
         <Alert severity="error" sx={{ maxWidth: 400 }}>
           {error}
         </Alert>
-        <Button 
-          onClick={loadAffirmations} 
-          variant="contained" 
-          sx={{ marginTop: 2 }}
-        >
+                 <Button 
+           onClick={loadInitialAffirmation} 
+           variant="contained" 
+           sx={{ marginTop: 2 }}
+         >
           Try Again
         </Button>
       </Box>

@@ -30,8 +30,7 @@ import {
   Help, 
   Logout,
   Person,
-  PhotoCamera,
-  CloudUpload
+  PhotoCamera
 } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 import { userProfileService, type UserProfile } from '@/lib/userProfile';
