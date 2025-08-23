@@ -75,27 +75,56 @@ export const shareInvitationService = {
 
   // Store invitation in database for tracking
   async storeInvitation(invitation: ShareInvitationData): Promise<void> {
+    console.log('storeInvitation called with:', invitation);
+    
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
+    if (!user) {
+      console.error('No authenticated user found');
+      throw new Error('User not authenticated');
+    }
+    
+    console.log('Authenticated user:', user.id);
 
     const invitationLink = this.generateInvitationLink(user.id);
+    console.log('Generated invitation link:', invitationLink);
 
-    const { error } = await supabase
+    // First, let's test if we can connect to the database
+    console.log('Testing database connection...');
+    const { data: testData, error: testError } = await supabase
       .from('invitations')
-      .insert([{
-        inviter_id: user.id,
-        inviter_name: invitation.inviterName,
-        inviter_email: invitation.inviterEmail,
-        invitee_name: invitation.inviteeName,
-        status: 'shared',
-        created_at: new Date().toISOString(),
-        invitation_link: invitationLink,
-        custom_message: invitation.customMessage
-      }]);
+      .select('count')
+      .limit(1);
+    
+    if (testError) {
+      console.error('Database connection test failed:', testError);
+      throw new Error(`Database connection failed: ${testError.message}`);
+    }
+    
+    console.log('Database connection test successful');
+
+    const invitationData = {
+      inviter_id: user.id,
+      inviter_name: invitation.inviterName,
+      inviter_email: invitation.inviterEmail,
+      invitee_name: invitation.inviteeName,
+      status: 'shared',
+      created_at: new Date().toISOString(),
+      invitation_link: invitationLink,
+      custom_message: invitation.customMessage
+    };
+    
+    console.log('Inserting invitation data:', invitationData);
+
+    const { data, error } = await supabase
+      .from('invitations')
+      .insert([invitationData])
+      .select();
 
     if (error) {
-      console.error('Error storing invitation:', error);
-      throw new Error('Failed to store invitation');
+      console.error('Supabase error storing invitation:', error);
+      throw new Error(`Failed to store invitation: ${error.message}`);
     }
+    
+    console.log('Invitation stored successfully:', data);
   }
 };

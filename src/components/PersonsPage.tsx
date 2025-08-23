@@ -72,7 +72,9 @@ export default function PersonsPage() {
         };
 
         // Store invitation in database
+        console.log('Storing invitation in database...');
         await shareInvitationService.storeInvitation(invitationData);
+        console.log('Invitation stored successfully');
         
         // Share invitation
         console.log('About to share invitation...');
@@ -89,7 +91,11 @@ export default function PersonsPage() {
         alert('Person added and invitation shared successfully!');
       } catch (error) {
         console.error('Error adding person and sharing invitation:', error);
-        alert('Failed to add person or share invitation. Please try again.');
+        console.error('Error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : 'No stack trace'
+        });
+        alert(`Failed to add person or share invitation: ${error instanceof Error ? error.message : 'Unknown error'}`);
       } finally {
         setLoading(false);
       }
