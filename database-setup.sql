@@ -33,6 +33,16 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Row Level Security Policies
 
+-- Drop existing policies to avoid conflicts
+DROP POLICY IF EXISTS "Users can view their own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Users can update their own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Users can insert their own profile" ON user_profiles;
+
+DROP POLICY IF EXISTS "Users can view all affirmations" ON affirmations;
+DROP POLICY IF EXISTS "Users can update their own affirmations" ON affirmations;
+DROP POLICY IF EXISTS "Users can insert affirmations" ON affirmations;
+DROP POLICY IF EXISTS "Users can delete their own affirmations" ON affirmations;
+
 -- User profiles policies
 CREATE POLICY "Users can view their own profile" ON user_profiles
   FOR SELECT USING (auth.uid() = id);
@@ -57,10 +67,14 @@ CREATE POLICY "Users can delete their own affirmations" ON affirmations
   FOR DELETE USING (auth.uid()::text = created_by);
 
 -- Storage policies for avatars
+DROP POLICY IF EXISTS "Users can upload their own avatar" ON storage.objects;
+DROP POLICY IF EXISTS "Users can view all avatars" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update their own avatar" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete their own avatar" ON storage.objects;
+
 CREATE POLICY "Users can upload their own avatar" ON storage.objects
   FOR INSERT WITH CHECK (
-    bucket_id = 'avatars' AND 
-    auth.uid()::text = (storage.foldername(name))[1]
+    bucket_id = 'avatars'
   );
 
 CREATE POLICY "Users can view all avatars" ON storage.objects
@@ -68,14 +82,12 @@ CREATE POLICY "Users can view all avatars" ON storage.objects
 
 CREATE POLICY "Users can update their own avatar" ON storage.objects
   FOR UPDATE USING (
-    bucket_id = 'avatars' AND 
-    auth.uid()::text = (storage.foldername(name))[1]
+    bucket_id = 'avatars'
   );
 
 CREATE POLICY "Users can delete their own avatar" ON storage.objects
   FOR DELETE USING (
-    bucket_id = 'avatars' AND 
-    auth.uid()::text = (storage.foldername(name))[1]
+    bucket_id = 'avatars'
   );
 
 -- Function to handle user creation
