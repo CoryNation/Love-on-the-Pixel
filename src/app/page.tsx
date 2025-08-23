@@ -258,7 +258,7 @@ export default function Home() {
                     fontStyle: 'italic'
                   }}
                 >
-                  "{affirmations[currentIndex].message}"
+                  &ldquo;{affirmations[currentIndex].message}&rdquo;
                 </Typography>
 
                 <Typography

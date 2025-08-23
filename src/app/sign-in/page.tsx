@@ -29,8 +29,9 @@ export default function SignIn() {
     try {
       await authService.signIn(email, password);
       router.push('/');
-    } catch (err: any) {
-      setError(err.message || 'Failed to sign in');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to sign in';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -106,7 +107,7 @@ export default function SignIn() {
 
           <Box sx={{ textAlign: 'center', marginTop: 2 }}>
             <Link href="/sign-up" sx={{ color: '#667eea' }}>
-              Don't have an account? Sign up
+              Don&apos;t have an account? Sign up
             </Link>
           </Box>
         </CardContent>
