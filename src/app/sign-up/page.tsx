@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { 
   Box, 
   Card, 
@@ -16,7 +16,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { invitationService } from '@/lib/invitationService';
 
-export default function SignUp() {
+function SignUpForm() {
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -202,8 +203,29 @@ export default function SignUp() {
               </Link>
             </Typography>
           </Box>
-        </CardContent>
-      </Card>
-    </Box>
+                 </CardContent>
+       </Card>
+     </Box>
+   );
+ }
+
+export default function SignUp() {
+  return (
+    <Suspense fallback={
+      <Box
+        sx={{
+          minHeight: '100vh',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 2
+        }}
+      >
+        <CircularProgress sx={{ color: 'white' }} />
+      </Box>
+    }>
+      <SignUpForm />
+    </Suspense>
   );
-}
+ }
