@@ -59,7 +59,7 @@ export default function AdminPage() {
         message: message.trim(),
         category,
         sender_name: userProfile?.full_name || 'Anonymous',
-        sender_photo_url: userProfile?.photo_url || null
+        sender_photo_url: userProfile?.photo_url || undefined
       };
       
       await affirmationsService.create(affirmationData);
