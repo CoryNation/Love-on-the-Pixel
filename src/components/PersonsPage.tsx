@@ -268,9 +268,9 @@ export default function PersonsPage() {
       <Dialog open={openInviteDialog} onClose={() => setOpenInviteDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Invite Someone to Love on the Pixel</DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ marginBottom: 2, color: 'text.secondary' }}>
-            Send an invitation email to someone you'd like to connect with. They'll receive a link to download the app.
-          </Typography>
+                     <Typography variant="body2" sx={{ marginBottom: 2, color: 'text.secondary' }}>
+             Send an invitation email to someone you&apos;d like to connect with. They&apos;ll receive a link to download the app.
+           </Typography>
           <TextField
             fullWidth
             label="Name (Optional)"
