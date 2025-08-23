@@ -5,7 +5,6 @@ import {
   Box,
   Typography,
   Card,
-  CardContent,
   List,
   ListItem,
   ListItemIcon,
@@ -27,8 +26,7 @@ import {
   Language, 
   Help, 
   Logout,
-  Person,
-  Email
+  Person
 } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -88,7 +86,7 @@ export default function SettingsPage() {
         }}
       >
         <List>
-          <ListItem button onClick={() => setOpenProfileDialog(true)}>
+          <ListItem onClick={() => setOpenProfileDialog(true)} sx={{ cursor: 'pointer' }}>
             <ListItemIcon>
               <Person />
             </ListItemIcon>
@@ -159,7 +157,7 @@ export default function SettingsPage() {
 
           <Divider />
 
-          <ListItem button onClick={handleSignOut}>
+          <ListItem onClick={handleSignOut} sx={{ cursor: 'pointer' }}>
             <ListItemIcon>
               <Logout />
             </ListItemIcon>

@@ -5,7 +5,6 @@ import {
   Box,
   Typography,
   Card,
-  CardContent,
   Avatar,
   IconButton,
   Button,
@@ -22,10 +21,8 @@ import {
   Chip
 } from '@mui/material';
 import { 
-  Add, 
   Send, 
   MoreVert, 
-  Favorite,
   PersonAdd 
 } from '@mui/icons-material';
 
