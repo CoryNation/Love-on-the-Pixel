@@ -41,15 +41,19 @@ export default function SignUp() {
       setLoading(true);
       setError(null);
       
+      console.log('Attempting to sign up user:', email);
       await signUp(email, password);
+      console.log('Sign up successful, redirecting to dashboard');
+      
       // After successful sign-up, redirect to dashboard
       // Note: In Supabase, users might need to confirm their email first
       router.push('/dashboard');
     } catch (err: unknown) {
+      console.error('Sign up error:', err);
       if (err instanceof Error) {
-        setError(err.message);
+        setError(`Sign up failed: ${err.message}`);
       } else {
-        setError('An unexpected error occurred');
+        setError('An unexpected error occurred during sign up');
       }
     } finally {
       setLoading(false);

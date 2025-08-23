@@ -11,6 +11,18 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Create persons table for user connections
+CREATE TABLE IF NOT EXISTS persons (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  email TEXT,
+  relationship TEXT,
+  avatar TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Add missing columns to affirmations table
 ALTER TABLE affirmations ADD COLUMN IF NOT EXISTS viewed BOOLEAN DEFAULT FALSE;
 ALTER TABLE affirmations ADD COLUMN IF NOT EXISTS sender_name TEXT;
@@ -37,6 +49,7 @@ CREATE INDEX IF NOT EXISTS idx_affirmations_created_by ON affirmations(created_b
 CREATE INDEX IF NOT EXISTS idx_affirmations_viewed ON affirmations(viewed);
 CREATE INDEX IF NOT EXISTS idx_invitations_inviter_id ON invitations(inviter_id);
 CREATE INDEX IF NOT EXISTS idx_invitations_status ON invitations(status);
+CREATE INDEX IF NOT EXISTS idx_persons_user_id ON persons(user_id);
 
 -- Create avatars storage bucket
 INSERT INTO storage.buckets (id, name, public) 
@@ -47,6 +60,11 @@ ON CONFLICT (id) DO NOTHING;
 DROP POLICY IF EXISTS "Users can view their own profile" ON user_profiles;
 DROP POLICY IF EXISTS "Users can update their own profile" ON user_profiles;
 DROP POLICY IF EXISTS "Users can insert their own profile" ON user_profiles;
+
+DROP POLICY IF EXISTS "Users can view their own persons" ON persons;
+DROP POLICY IF EXISTS "Users can create persons" ON persons;
+DROP POLICY IF EXISTS "Users can update their own persons" ON persons;
+DROP POLICY IF EXISTS "Users can delete their own persons" ON persons;
 
 DROP POLICY IF EXISTS "Users can view affirmations" ON affirmations;
 DROP POLICY IF EXISTS "Users can create affirmations" ON affirmations;
@@ -70,6 +88,19 @@ CREATE POLICY "Users can update their own profile" ON user_profiles
 
 CREATE POLICY "Users can insert their own profile" ON user_profiles
   FOR INSERT WITH CHECK (auth.uid() = id);
+
+-- Persons policies
+CREATE POLICY "Users can view their own persons" ON persons
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create persons" ON persons
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own persons" ON persons
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own persons" ON persons
+  FOR DELETE USING (auth.uid() = user_id);
 
 -- Affirmations policies
 CREATE POLICY "Users can view affirmations" ON affirmations
@@ -108,8 +139,16 @@ CREATE POLICY "Users can view avatars" ON storage.objects
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO user_profiles (id, full_name)
-  VALUES (NEW.id, NEW.raw_user_meta_data->>'full_name');
+  -- Insert user profile with error handling
+  BEGIN
+    INSERT INTO user_profiles (id, full_name)
+    VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'full_name', ''));
+  EXCEPTION
+    WHEN OTHERS THEN
+      -- Log the error but don't fail the user creation
+      RAISE WARNING 'Failed to create user profile for user %: %', NEW.id, SQLERRM;
+  END;
+  
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

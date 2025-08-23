@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -27,27 +27,14 @@ import {
 } from '@mui/icons-material';
 import { shareInvitationService, type ShareInvitationData } from '@/lib/shareInvitationService';
 import { userProfileService } from '@/lib/userProfile';
+import { personsService, type Person } from '@/lib/personsService';
 import { useAuth } from '@/contexts/AuthContext';
 
-interface Person {
-  id: string;
-  name: string;
-  email: string;
-  relationship: string;
-  avatar?: string;
-}
+
 
 export default function PersonsPage() {
   const { user } = useAuth();
-  const [persons, setPersons] = useState<Person[]>([
-    {
-      id: '1',
-      name: 'Your Wife',
-      email: 'wife@example.com',
-      relationship: 'Spouse',
-      avatar: '👰'
-    }
-  ]);
+  const [persons, setPersons] = useState<Person[]>([]);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openSendDialog, setOpenSendDialog] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
@@ -55,6 +42,20 @@ export default function PersonsPage() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [customMessage, setCustomMessage] = useState('');
+
+  // Load persons on component mount
+  useEffect(() => {
+    loadPersons();
+  }, []);
+
+  const loadPersons = async () => {
+    try {
+      const data = await personsService.getAll();
+      setPersons(data);
+    } catch (error) {
+      console.error('Error loading persons:', error);
+    }
+  };
 
   const handleAddPerson = async () => {
     if (newPerson.name) {
@@ -81,8 +82,16 @@ export default function PersonsPage() {
         await shareInvitationService.shareInvitation(invitationData);
         console.log('Share invitation completed');
         
-        // Add person to local state
-        setPersons(prev => [...prev, { ...newPerson, id: Date.now().toString() }]);
+        // Add person to database
+        await personsService.create({
+          name: newPerson.name.trim(),
+          email: newPerson.email.trim() || undefined,
+          relationship: newPerson.relationship.trim() || undefined
+        });
+        
+        // Reload persons list
+        await loadPersons();
+        
         setNewPerson({ name: '', email: '', relationship: '' });
         setCustomMessage('');
         setOpenAddDialog(false);
