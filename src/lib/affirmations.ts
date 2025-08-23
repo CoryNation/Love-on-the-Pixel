@@ -1,5 +1,8 @@
 import { supabase, type Affirmation, type NewAffirmation } from './supabase';
 
+// Re-export the types so they can be imported from this file
+export type { Affirmation, NewAffirmation };
+
 export const affirmationsService = {
   // Get all affirmations
   async getAll(): Promise<Affirmation[]> {
