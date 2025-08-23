@@ -67,9 +67,15 @@ export default function Dashboard() {
           onChange={(event, newValue) => setCurrentTab(newValue)}
           sx={{
             '& .MuiBottomNavigationAction-root': {
-              color: '#95a5a6',
+              color: '#95a5a6 !important',
               '&.Mui-selected': {
-                color: '#667eea'
+                color: '#667eea !important'
+              },
+              '& .MuiBottomNavigationAction-label': {
+                color: '#95a5a6 !important',
+                '&.Mui-selected': {
+                  color: '#667eea !important'
+                }
               }
             }
           }}

@@ -343,7 +343,7 @@ export default function WavePage() {
                  exit={{ 
                    opacity: 0, 
                    scale: 0.8, 
-                   x: swipeOffset > 0 ? 300 : -300 
+                   x: swipeOffset > 0 ? -300 : 300 
                  }}
                  transition={{ duration: 0.3, ease: "easeInOut" }}
                >
@@ -475,35 +475,118 @@ export default function WavePage() {
              </AnimatePresence>
            </Box>
 
-           {/* Swipe Instructions */}
-           <Box sx={{ display: 'flex', gap: 2, marginTop: 3, justifyContent: 'center' }}>
-             <Typography
-               variant="caption"
-               sx={{
-                 color: 'rgba(255,255,255,0.8)',
-                 fontSize: '0.75rem',
-                 display: 'flex',
-                 alignItems: 'center',
-                 gap: 0.5
-               }}
-             >
-               <ArrowBack sx={{ fontSize: 16 }} />
-               Swipe right for viewed
-             </Typography>
-             <Typography
-               variant="caption"
-               sx={{
-                 color: 'rgba(255,255,255,0.8)',
-                 fontSize: '0.75rem',
-                 display: 'flex',
-                 alignItems: 'center',
-                 gap: 0.5
-               }}
-             >
-               Swipe left for new
-               <ArrowForward sx={{ fontSize: 16 }} />
-             </Typography>
-           </Box>
+                       {/* Swipe Instructions */}
+            <Box sx={{ display: 'flex', gap: 4, marginTop: 3, justifyContent: 'center', alignItems: 'center' }}>
+              {/* Left Arrow */}
+              <Box
+                sx={{
+                  position: 'relative',
+                  width: 120,
+                  height: 60,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    left: 0,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: 0,
+                    height: 0,
+                    borderTop: '15px solid transparent',
+                    borderBottom: '15px solid transparent',
+                    borderRight: '20px solid rgba(255,255,255,0.3)',
+                    zIndex: 1
+                  }}
+                />
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    width: '100%',
+                    height: '100%',
+                    background: 'linear-gradient(90deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%)',
+                    borderRadius: '30px 0 0 30px',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: 'rgba(255,255,255,0.9)',
+                      fontSize: '0.7rem',
+                      fontWeight: 500,
+                      textAlign: 'center',
+                      lineHeight: 1.2
+                    }}
+                  >
+                    Swipe right<br />for viewed
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Right Arrow */}
+              <Box
+                sx={{
+                  position: 'relative',
+                  width: 120,
+                  height: 60,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    right: 0,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: 0,
+                    height: 0,
+                    borderTop: '15px solid transparent',
+                    borderBottom: '15px solid transparent',
+                    borderLeft: '20px solid rgba(255,255,255,0.3)',
+                    zIndex: 1
+                  }}
+                />
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    right: 0,
+                    top: 0,
+                    width: '100%',
+                    height: '100%',
+                    background: 'linear-gradient(270deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%)',
+                    borderRadius: '0 30px 30px 0',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: 'rgba(255,255,255,0.9)',
+                      fontSize: '0.7rem',
+                      fontWeight: 500,
+                      textAlign: 'center',
+                      lineHeight: 1.2
+                    }}
+                  >
+                    Swipe left<br />for new
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
          </>
       ) : (
         /* Sent Affirmations List View */
