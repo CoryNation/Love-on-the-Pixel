@@ -23,8 +23,7 @@ import {
 import { 
   Send, 
   MoreVert, 
-  PersonAdd,
-  Email
+  PersonAdd
 } from '@mui/icons-material';
 import { emailService, type InvitationData } from '@/lib/emailService';
 import { userProfileService } from '@/lib/userProfile';
@@ -51,18 +50,45 @@ export default function PersonsPage() {
   ]);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openSendDialog, setOpenSendDialog] = useState(false);
-  const [openInviteDialog, setOpenInviteDialog] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [newPerson, setNewPerson] = useState({ name: '', email: '', relationship: '' });
-  const [inviteData, setInviteData] = useState({ name: '', email: '' });
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleAddPerson = () => {
+  const handleAddPerson = async () => {
     if (newPerson.name && newPerson.email) {
-      setPersons(prev => [...prev, { ...newPerson, id: Date.now().toString() }]);
-      setNewPerson({ name: '', email: '', relationship: '' });
-      setOpenAddDialog(false);
+      try {
+        setLoading(true);
+        
+        // Get current user's profile for the invitation
+        const userProfile = await userProfileService.getCurrentProfile();
+        
+        const invitationData: InvitationData = {
+          inviterName: userProfile?.full_name || user?.email || 'Someone',
+          inviterEmail: user?.email || '',
+          inviteeEmail: newPerson.email.trim(),
+          inviteeName: newPerson.name.trim()
+        };
+
+        // Send invitation email
+        await emailService.sendInvitation(invitationData);
+        
+        // Store invitation in database
+        await emailService.storeInvitation(invitationData);
+        
+        // Add person to local state
+        setPersons(prev => [...prev, { ...newPerson, id: Date.now().toString() }]);
+        setNewPerson({ name: '', email: '', relationship: '' });
+        setOpenAddDialog(false);
+        
+        // Show success message
+        alert('Person added and invitation sent successfully!');
+      } catch (error) {
+        console.error('Error adding person and sending invitation:', error);
+        alert('Failed to add person or send invitation. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -76,40 +102,7 @@ export default function PersonsPage() {
     }
   };
 
-  const handleSendInvitation = async () => {
-    if (!inviteData.email.trim()) return;
 
-    try {
-      setLoading(true);
-      
-      // Get current user's profile for the invitation
-      const userProfile = await userProfileService.getCurrentProfile();
-      
-      const invitationData: InvitationData = {
-        inviterName: userProfile?.full_name || user?.email || 'Someone',
-        inviterEmail: user?.email || '',
-        inviteeEmail: inviteData.email.trim(),
-        inviteeName: inviteData.name.trim() || undefined
-      };
-
-      // Send invitation email
-      await emailService.sendInvitation(invitationData);
-      
-      // Store invitation in database
-      await emailService.storeInvitation(invitationData);
-      
-      setInviteData({ name: '', email: '' });
-      setOpenInviteDialog(false);
-      
-      // Show success message (you could add a snackbar here)
-      alert('Invitation sent successfully!');
-    } catch (error) {
-      console.error('Error sending invitation:', error);
-      alert('Failed to send invitation. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <Box
@@ -133,28 +126,16 @@ export default function PersonsPage() {
         >
           Persons
         </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconButton 
-            onClick={() => setOpenInviteDialog(true)}
-            sx={{ 
-              color: 'white',
-              backgroundColor: 'rgba(255,255,255,0.2)',
-              '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' }
-            }}
-          >
-            <Email />
-          </IconButton>
-          <IconButton 
-            onClick={() => setOpenAddDialog(true)}
-            sx={{ 
-              color: 'white',
-              backgroundColor: 'rgba(255,255,255,0.2)',
-              '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' }
-            }}
-          >
-            <PersonAdd />
-          </IconButton>
-        </Box>
+        <IconButton 
+          onClick={() => setOpenAddDialog(true)}
+          sx={{ 
+            color: 'white',
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' }
+          }}
+        >
+          <PersonAdd />
+        </IconButton>
       </Box>
 
       {/* Persons List */}
@@ -213,8 +194,11 @@ export default function PersonsPage() {
 
       {/* Add Person Dialog */}
       <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Add New Person</DialogTitle>
+        <DialogTitle>Add Person & Send Invitation</DialogTitle>
         <DialogContent>
+          <Typography variant="body2" sx={{ marginBottom: 2, color: 'text.secondary' }}>
+            Add a new person to your connections. An invitation email will be sent to them automatically.
+          </Typography>
           <TextField
             fullWidth
             label="Name"
@@ -238,8 +222,14 @@ export default function PersonsPage() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenAddDialog(false)}>Cancel</Button>
-          <Button onClick={handleAddPerson} variant="contained">Add Person</Button>
+          <Button onClick={() => setOpenAddDialog(false)} disabled={loading}>Cancel</Button>
+          <Button 
+            onClick={handleAddPerson} 
+            variant="contained"
+            disabled={loading || !newPerson.name.trim() || !newPerson.email.trim()}
+          >
+            {loading ? 'Adding...' : 'Add Person & Send Invitation'}
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -264,43 +254,7 @@ export default function PersonsPage() {
         </DialogActions>
       </Dialog>
 
-      {/* Invite Person Dialog */}
-      <Dialog open={openInviteDialog} onClose={() => setOpenInviteDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Invite Someone to Love on the Pixel</DialogTitle>
-        <DialogContent>
-                     <Typography variant="body2" sx={{ marginBottom: 2, color: 'text.secondary' }}>
-             Send an invitation email to someone you&apos;d like to connect with. They&apos;ll receive a link to download the app.
-           </Typography>
-          <TextField
-            fullWidth
-            label="Name (Optional)"
-            value={inviteData.name}
-            onChange={(e) => setInviteData(prev => ({ ...prev, name: e.target.value }))}
-            sx={{ marginBottom: 2, marginTop: 1 }}
-            placeholder="Enter their name"
-          />
-          <TextField
-            fullWidth
-            label="Email Address"
-            type="email"
-            value={inviteData.email}
-            onChange={(e) => setInviteData(prev => ({ ...prev, email: e.target.value }))}
-            sx={{ marginBottom: 2 }}
-            placeholder="Enter their email address"
-            required
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenInviteDialog(false)}>Cancel</Button>
-          <Button 
-            onClick={handleSendInvitation} 
-            variant="contained"
-            disabled={loading || !inviteData.email.trim()}
-          >
-            {loading ? 'Sending...' : 'Send Invitation'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+
     </Box>
   );
 }
