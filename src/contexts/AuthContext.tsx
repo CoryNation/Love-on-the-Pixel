@@ -27,10 +27,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  const handleSignIn = async (email: string, password: string) => {
+    await authService.signIn(email, password);
+  };
+
   const value = {
     user,
     loading,
-    signIn: authService.signIn,
+    signIn: handleSignIn,
     signOut: authService.signOut,
   };
 
