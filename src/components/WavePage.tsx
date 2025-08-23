@@ -325,28 +325,33 @@ export default function WavePage() {
        {activeTab === 'received' ? (
          <>
            {/* Main Card */}
-           <Box 
-             ref={elementRef}
-             sx={{ 
-               width: '100%', 
-               maxWidth: 400, 
-               position: 'relative',
-               transform: isDragging ? `translateX(${swipeOffset}px)` : 'translateX(0)',
-               transition: isDragging ? 'none' : 'transform 0.3s ease'
-             }}
-           >
-             <AnimatePresence mode="wait">
-               <motion.div
-                 key={currentAffirmation.id}
-                 initial={{ opacity: 0, scale: 0.8, x: 0 }}
-                 animate={{ opacity: 1, scale: 1, x: 0 }}
-                 exit={{ 
-                   opacity: 0, 
-                   scale: 0.8, 
-                   x: swipeOffset > 0 ? -300 : 300 
-                 }}
-                 transition={{ duration: 0.3, ease: "easeInOut" }}
-               >
+                       <Box 
+              ref={elementRef}
+              sx={{ 
+                width: '100%', 
+                maxWidth: 400, 
+                position: 'relative'
+              }}
+            >
+                           <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentAffirmation.id}
+                  initial={{ opacity: 0, scale: 0.8, x: 0 }}
+                  animate={{ 
+                    opacity: isDragging ? 0.5 : 1, 
+                    scale: isDragging ? 0.95 : 1, 
+                    x: isDragging ? swipeOffset : 0 
+                  }}
+                  exit={{ 
+                    opacity: 0, 
+                    scale: 0.8, 
+                    x: swipeOffset > 0 ? -300 : 300 
+                  }}
+                  transition={{ 
+                    duration: isDragging ? 0.1 : 0.3, 
+                    ease: "easeInOut" 
+                  }}
+                >
                  <Card
                    sx={{
                      background: 'rgba(255, 255, 255, 0.95)',
