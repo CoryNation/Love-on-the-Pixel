@@ -1,21 +1,17 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Box, CircularProgress, Typography } from '@mui/material';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
-export default function Home() {
+export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading) {
-      if (user) {
-        router.push('/dashboard');
-      } else {
-        router.push('/sign-in');
-      }
+    if (!loading && !user) {
+      router.push('/sign-in');
     }
   }, [user, loading, router]);
 
@@ -40,5 +36,9 @@ export default function Home() {
     );
   }
 
-  return null;
+  if (!user) {
+    return null; // Will redirect to sign-in
+  }
+
+  return <>{children}</>;
 }
