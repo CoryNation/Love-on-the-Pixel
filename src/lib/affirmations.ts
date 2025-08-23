@@ -37,9 +37,15 @@ export const affirmationsService = {
 
   // Add new affirmation
   async create(affirmation: NewAffirmation): Promise<Affirmation> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
     const { data, error } = await supabase
       .from('affirmations')
-      .insert([affirmation])
+      .insert([{
+        ...affirmation,
+        created_by: user.id
+      }])
       .select()
       .single();
 

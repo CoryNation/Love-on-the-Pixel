@@ -26,6 +26,8 @@ export interface Affirmation {
 export interface NewAffirmation {
   message: string;
   category: string;
+  sender_name?: string;
+  sender_photo_url?: string;
 }
 
 export interface UserProfile {

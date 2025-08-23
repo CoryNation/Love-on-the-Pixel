@@ -21,6 +21,10 @@ ADD COLUMN IF NOT EXISTS viewed BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS sender_name TEXT,
 ADD COLUMN IF NOT EXISTS sender_photo_url TEXT;
 
+-- Ensure created_by column exists and is the right type
+ALTER TABLE affirmations 
+ADD COLUMN IF NOT EXISTS created_by UUID;
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_affirmations_viewed ON affirmations(viewed);
 CREATE INDEX IF NOT EXISTS idx_affirmations_created_by ON affirmations(created_by);
@@ -58,13 +62,13 @@ CREATE POLICY "Users can view all affirmations" ON affirmations
   FOR SELECT USING (true);
 
 CREATE POLICY "Users can update their own affirmations" ON affirmations
-  FOR UPDATE USING (auth.uid()::text = created_by);
+  FOR UPDATE USING (auth.uid() = created_by::uuid);
 
 CREATE POLICY "Users can insert affirmations" ON affirmations
-  FOR INSERT WITH CHECK (auth.uid()::text = created_by);
+  FOR INSERT WITH CHECK (auth.uid() = created_by::uuid);
 
 CREATE POLICY "Users can delete their own affirmations" ON affirmations
-  FOR DELETE USING (auth.uid()::text = created_by);
+  FOR DELETE USING (auth.uid() = created_by::uuid);
 
 -- Storage policies for avatars
 DROP POLICY IF EXISTS "Users can upload their own avatar" ON storage.objects;
