@@ -9,13 +9,15 @@ import {
   Fade
 } from '@mui/material';
 import { 
-  Favorite, 
+  Water, 
   People, 
-  Settings 
+  Settings,
+  Favorite
 } from '@mui/icons-material';
 import WavePage from '@/components/WavePage';
 import PersonsPage from '@/components/PersonsPage';
 import SettingsPage from '@/components/SettingsPage';
+import FavoritesPage from '@/components/FavoritesPage';
 
 export default function Dashboard() {
   const [currentTab, setCurrentTab] = useState(0);
@@ -27,6 +29,8 @@ export default function Dashboard() {
       case 1:
         return <PersonsPage />;
       case 2:
+        return <FavoritesPage />;
+      case 3:
         return <SettingsPage />;
       default:
         return <WavePage />;
@@ -63,7 +67,7 @@ export default function Dashboard() {
           onChange={(event, newValue) => setCurrentTab(newValue)}
           sx={{
             '& .MuiBottomNavigationAction-root': {
-              color: '#7f8c8d',
+              color: '#95a5a6',
               '&.Mui-selected': {
                 color: '#667eea'
               }
@@ -72,11 +76,15 @@ export default function Dashboard() {
         >
           <BottomNavigationAction 
             label="Wave" 
-            icon={<Favorite />} 
+            icon={<Water />} 
           />
           <BottomNavigationAction 
             label="Persons" 
             icon={<People />} 
+          />
+          <BottomNavigationAction 
+            label="Favorites" 
+            icon={<Favorite />} 
           />
           <BottomNavigationAction 
             label="Settings" 
