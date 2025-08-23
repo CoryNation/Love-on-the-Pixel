@@ -21,11 +21,13 @@ CREATE TABLE IF NOT EXISTS invitations (
   inviter_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   inviter_name TEXT NOT NULL,
   inviter_email TEXT NOT NULL,
-  invitee_email TEXT NOT NULL,
+  invitee_email TEXT,
   invitee_name TEXT,
-  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined')),
+  status TEXT DEFAULT 'shared' CHECK (status IN ('shared', 'pending', 'accepted', 'declined')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  invitation_link TEXT,
+  custom_message TEXT
 );
 
 -- Add new columns to affirmations table if they don't exist

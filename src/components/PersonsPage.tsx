@@ -25,7 +25,7 @@ import {
   MoreVert, 
   PersonAdd
 } from '@mui/icons-material';
-import { emailService, type InvitationData } from '@/lib/emailService';
+import { shareInvitationService, type ShareInvitationData } from '@/lib/shareInvitationService';
 import { userProfileService } from '@/lib/userProfile';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -54,38 +54,40 @@ export default function PersonsPage() {
   const [newPerson, setNewPerson] = useState({ name: '', email: '', relationship: '' });
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [customMessage, setCustomMessage] = useState('');
 
   const handleAddPerson = async () => {
-    if (newPerson.name && newPerson.email) {
+    if (newPerson.name) {
       try {
         setLoading(true);
         
         // Get current user's profile for the invitation
         const userProfile = await userProfileService.getCurrentProfile();
         
-        const invitationData: InvitationData = {
+        const invitationData: ShareInvitationData = {
           inviterName: userProfile?.full_name || user?.email || 'Someone',
           inviterEmail: user?.email || '',
-          inviteeEmail: newPerson.email.trim(),
-          inviteeName: newPerson.name.trim()
+          inviteeName: newPerson.name.trim(),
+          customMessage: customMessage.trim() || undefined
         };
 
-        // Send invitation email
-        await emailService.sendInvitation(invitationData);
-        
         // Store invitation in database
-        await emailService.storeInvitation(invitationData);
+        await shareInvitationService.storeInvitation(invitationData);
+        
+        // Share invitation
+        await shareInvitationService.shareInvitation(invitationData);
         
         // Add person to local state
         setPersons(prev => [...prev, { ...newPerson, id: Date.now().toString() }]);
         setNewPerson({ name: '', email: '', relationship: '' });
+        setCustomMessage('');
         setOpenAddDialog(false);
         
         // Show success message
-        alert('Person added and invitation sent successfully!');
+        alert('Person added and invitation shared successfully!');
       } catch (error) {
-        console.error('Error adding person and sending invitation:', error);
-        alert('Failed to add person or send invitation. Please try again.');
+        console.error('Error adding person and sharing invitation:', error);
+        alert('Failed to add person or share invitation. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -192,46 +194,49 @@ export default function PersonsPage() {
         ))}
       </List>
 
-      {/* Add Person Dialog */}
-      <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Add Person & Send Invitation</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" sx={{ marginBottom: 2, color: 'text.secondary' }}>
-            Add a new person to your connections. An invitation email will be sent to them automatically.
-          </Typography>
-          <TextField
-            fullWidth
-            label="Name"
-            value={newPerson.name}
-            onChange={(e) => setNewPerson(prev => ({ ...prev, name: e.target.value }))}
-            sx={{ marginBottom: 2, marginTop: 1 }}
-          />
-          <TextField
-            fullWidth
-            label="Email"
-            type="email"
-            value={newPerson.email}
-            onChange={(e) => setNewPerson(prev => ({ ...prev, email: e.target.value }))}
-            sx={{ marginBottom: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Relationship"
-            value={newPerson.relationship}
-            onChange={(e) => setNewPerson(prev => ({ ...prev, relationship: e.target.value }))}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenAddDialog(false)} disabled={loading}>Cancel</Button>
-          <Button 
-            onClick={handleAddPerson} 
-            variant="contained"
-            disabled={loading || !newPerson.name.trim() || !newPerson.email.trim()}
-          >
-            {loading ? 'Adding...' : 'Add Person & Send Invitation'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+             {/* Add Person Dialog */}
+       <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)} maxWidth="sm" fullWidth>
+         <DialogTitle>Add Person & Share Invitation</DialogTitle>
+         <DialogContent>
+           <Typography variant="body2" sx={{ marginBottom: 2, color: 'text.secondary' }}>
+             Add a new person to your connections. You'll be able to share a custom invitation message with them.
+           </Typography>
+           <TextField
+             fullWidth
+             label="Name"
+             value={newPerson.name}
+             onChange={(e) => setNewPerson(prev => ({ ...prev, name: e.target.value }))}
+             sx={{ marginBottom: 2, marginTop: 1 }}
+           />
+           <TextField
+             fullWidth
+             label="Relationship"
+             value={newPerson.relationship}
+             onChange={(e) => setNewPerson(prev => ({ ...prev, relationship: e.target.value }))}
+             sx={{ marginBottom: 2 }}
+           />
+           <TextField
+             fullWidth
+             multiline
+             rows={3}
+             label="Custom Invitation Message (Optional)"
+             value={customMessage}
+             onChange={(e) => setCustomMessage(e.target.value)}
+             placeholder="Write a personal message to invite them to join Love on the Pixel..."
+             helperText="Leave blank to use the default message"
+           />
+         </DialogContent>
+         <DialogActions>
+           <Button onClick={() => setOpenAddDialog(false)} disabled={loading}>Cancel</Button>
+           <Button 
+             onClick={handleAddPerson} 
+             variant="contained"
+             disabled={loading || !newPerson.name.trim()}
+           >
+             {loading ? 'Adding...' : 'Add Person & Share Invitation'}
+           </Button>
+         </DialogActions>
+       </Dialog>
 
       {/* Send Affirmation Dialog */}
       <Dialog open={openSendDialog} onClose={() => setOpenSendDialog(false)} maxWidth="sm" fullWidth>
