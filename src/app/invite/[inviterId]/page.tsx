@@ -22,12 +22,6 @@ export default function InvitePage() {
   const [error, setError] = useState<string | null>(null);
   const [inviterProfile, setInviterProfile] = useState<UserProfile | null>(null);
 
-  useEffect(() => {
-    if (params.inviterId) {
-      loadInviterProfile();
-    }
-  }, [params.inviterId, loadInviterProfile]);
-
   const loadInviterProfile = useCallback(async () => {
     try {
       const inviterId = params.inviterId as string;
@@ -43,6 +37,12 @@ export default function InvitePage() {
       setLoading(false);
     }
   }, [params.inviterId]);
+
+  useEffect(() => {
+    if (params.inviterId) {
+      loadInviterProfile();
+    }
+  }, [params.inviterId, loadInviterProfile]);
 
   const handleJoinApp = () => {
     // Redirect to sign up page with inviter context
