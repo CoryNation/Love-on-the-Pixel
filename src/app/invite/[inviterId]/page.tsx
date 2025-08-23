@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   Box,
@@ -26,9 +26,9 @@ export default function InvitePage() {
     if (params.inviterId) {
       loadInviterProfile();
     }
-  }, [params.inviterId]);
+  }, [params.inviterId, loadInviterProfile]);
 
-  const loadInviterProfile = async () => {
+  const loadInviterProfile = useCallback(async () => {
     try {
       const inviterId = params.inviterId as string;
       
@@ -42,7 +42,7 @@ export default function InvitePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.inviterId]);
 
   const handleJoinApp = () => {
     // Redirect to sign up page with inviter context

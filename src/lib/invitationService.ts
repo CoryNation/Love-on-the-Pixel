@@ -85,7 +85,7 @@ export const invitationService = {
   },
 
   // Get pending invitations for a user
-  async getPendingInvitations(userId: string): Promise<any[]> {
+  async getPendingInvitations(userId: string): Promise<unknown[]> {
     const { data, error } = await supabase
       .from('invitations')
       .select('*')

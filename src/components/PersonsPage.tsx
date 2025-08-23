@@ -21,7 +21,6 @@ import {
   Chip
 } from '@mui/material';
 import { 
-  Send, 
   PersonAdd,
   Refresh,
   Close

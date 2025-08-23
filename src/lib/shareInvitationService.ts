@@ -90,7 +90,7 @@ export const shareInvitationService = {
 
     // First, let's test if we can connect to the database
     console.log('Testing database connection...');
-    const { data: testData, error: testError } = await supabase
+    const { error: testError } = await supabase
       .from('invitations')
       .select('count')
       .limit(1);
