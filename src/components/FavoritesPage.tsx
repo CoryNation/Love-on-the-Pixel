@@ -11,16 +11,11 @@ import {
   CircularProgress,
   Alert,
   Button,
-  List,
-  ListItem,
-  ListItemText,
-  Divider
+  List
 } from '@mui/material';
 import { 
   Favorite, 
-  Share, 
-  Delete,
-  Edit
+  Share
 } from '@mui/icons-material';
 import { affirmationsService, type Affirmation } from '@/lib/affirmations';
 
@@ -186,7 +181,7 @@ export default function FavoritesPage() {
 
       {/* Favorites List */}
       <List sx={{ padding: 0 }}>
-        {affirmations.map((affirmation, index) => (
+                 {affirmations.map((affirmation) => (
           <Card
             key={affirmation.id}
             sx={{
