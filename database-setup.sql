@@ -15,6 +15,19 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Create invitations table
+CREATE TABLE IF NOT EXISTS invitations (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  inviter_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  inviter_name TEXT NOT NULL,
+  inviter_email TEXT NOT NULL,
+  invitee_email TEXT NOT NULL,
+  invitee_name TEXT,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Add new columns to affirmations table if they don't exist
 ALTER TABLE affirmations 
 ADD COLUMN IF NOT EXISTS viewed BOOLEAN DEFAULT FALSE,

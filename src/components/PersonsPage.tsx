@@ -23,8 +23,12 @@ import {
 import { 
   Send, 
   MoreVert, 
-  PersonAdd 
+  PersonAdd,
+  Email
 } from '@mui/icons-material';
+import { emailService, type InvitationData } from '@/lib/emailService';
+import { userProfileService } from '@/lib/userProfile';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Person {
   id: string;
@@ -35,6 +39,7 @@ interface Person {
 }
 
 export default function PersonsPage() {
+  const { user } = useAuth();
   const [persons, setPersons] = useState<Person[]>([
     {
       id: '1',
@@ -46,9 +51,12 @@ export default function PersonsPage() {
   ]);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openSendDialog, setOpenSendDialog] = useState(false);
+  const [openInviteDialog, setOpenInviteDialog] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [newPerson, setNewPerson] = useState({ name: '', email: '', relationship: '' });
+  const [inviteData, setInviteData] = useState({ name: '', email: '' });
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleAddPerson = () => {
     if (newPerson.name && newPerson.email) {
@@ -65,6 +73,41 @@ export default function PersonsPage() {
       setMessage('');
       setOpenSendDialog(false);
       setSelectedPerson(null);
+    }
+  };
+
+  const handleSendInvitation = async () => {
+    if (!inviteData.email.trim()) return;
+
+    try {
+      setLoading(true);
+      
+      // Get current user's profile for the invitation
+      const userProfile = await userProfileService.getCurrentProfile();
+      
+      const invitationData: InvitationData = {
+        inviterName: userProfile?.full_name || user?.email || 'Someone',
+        inviterEmail: user?.email || '',
+        inviteeEmail: inviteData.email.trim(),
+        inviteeName: inviteData.name.trim() || undefined
+      };
+
+      // Send invitation email
+      await emailService.sendInvitation(invitationData);
+      
+      // Store invitation in database
+      await emailService.storeInvitation(invitationData);
+      
+      setInviteData({ name: '', email: '' });
+      setOpenInviteDialog(false);
+      
+      // Show success message (you could add a snackbar here)
+      alert('Invitation sent successfully!');
+    } catch (error) {
+      console.error('Error sending invitation:', error);
+      alert('Failed to send invitation. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -90,16 +133,28 @@ export default function PersonsPage() {
         >
           Persons
         </Typography>
-        <IconButton 
-          onClick={() => setOpenAddDialog(true)}
-          sx={{ 
-            color: 'white',
-            backgroundColor: 'rgba(255,255,255,0.2)',
-            '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' }
-          }}
-        >
-          <PersonAdd />
-        </IconButton>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconButton 
+            onClick={() => setOpenInviteDialog(true)}
+            sx={{ 
+              color: 'white',
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' }
+            }}
+          >
+            <Email />
+          </IconButton>
+          <IconButton 
+            onClick={() => setOpenAddDialog(true)}
+            sx={{ 
+              color: 'white',
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' }
+            }}
+          >
+            <PersonAdd />
+          </IconButton>
+        </Box>
       </Box>
 
       {/* Persons List */}
@@ -206,6 +261,44 @@ export default function PersonsPage() {
         <DialogActions>
           <Button onClick={() => setOpenSendDialog(false)}>Cancel</Button>
           <Button onClick={handleSendAffirmation} variant="contained">Send</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Invite Person Dialog */}
+      <Dialog open={openInviteDialog} onClose={() => setOpenInviteDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Invite Someone to Love on the Pixel</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ marginBottom: 2, color: 'text.secondary' }}>
+            Send an invitation email to someone you'd like to connect with. They'll receive a link to download the app.
+          </Typography>
+          <TextField
+            fullWidth
+            label="Name (Optional)"
+            value={inviteData.name}
+            onChange={(e) => setInviteData(prev => ({ ...prev, name: e.target.value }))}
+            sx={{ marginBottom: 2, marginTop: 1 }}
+            placeholder="Enter their name"
+          />
+          <TextField
+            fullWidth
+            label="Email Address"
+            type="email"
+            value={inviteData.email}
+            onChange={(e) => setInviteData(prev => ({ ...prev, email: e.target.value }))}
+            sx={{ marginBottom: 2 }}
+            placeholder="Enter their email address"
+            required
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenInviteDialog(false)}>Cancel</Button>
+          <Button 
+            onClick={handleSendInvitation} 
+            variant="contained"
+            disabled={loading || !inviteData.email.trim()}
+          >
+            {loading ? 'Sending...' : 'Send Invitation'}
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

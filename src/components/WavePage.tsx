@@ -291,11 +291,11 @@ export default function WavePage() {
             onClick={() => setActiveTab('received')}
             sx={{
               width: '70%',
-              color: 'white',
-              borderColor: 'white',
+              color: activeTab === 'received' ? 'white' : '#95a5a6',
+              borderColor: activeTab === 'received' ? 'white' : '#95a5a6',
               backgroundColor: activeTab === 'received' ? 'rgba(255,255,255,0.1)' : 'transparent',
               '&:hover': {
-                borderColor: 'white',
+                borderColor: activeTab === 'received' ? 'white' : '#95a5a6',
                 backgroundColor: 'rgba(255,255,255,0.1)'
               }
             }}
@@ -307,11 +307,11 @@ export default function WavePage() {
             onClick={() => setActiveTab('sent')}
             sx={{
               width: '30%',
-              color: 'white',
-              borderColor: 'white',
+              color: activeTab === 'sent' ? 'white' : '#95a5a6',
+              borderColor: activeTab === 'sent' ? 'white' : '#95a5a6',
               backgroundColor: activeTab === 'sent' ? 'rgba(255,255,255,0.1)' : 'transparent',
               '&:hover': {
-                borderColor: 'white',
+                borderColor: activeTab === 'sent' ? 'white' : '#95a5a6',
                 backgroundColor: 'rgba(255,255,255,0.1)'
               }
             }}
@@ -338,10 +338,14 @@ export default function WavePage() {
              <AnimatePresence mode="wait">
                <motion.div
                  key={currentAffirmation.id}
-                 initial={{ opacity: 0, scale: 0.8, rotateY: -15 }}
-                 animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-                 exit={{ opacity: 0, scale: 0.8, rotateY: 15 }}
-                 transition={{ duration: 0.5, ease: "easeInOut" }}
+                 initial={{ opacity: 0, scale: 0.8, x: 0 }}
+                 animate={{ opacity: 1, scale: 1, x: 0 }}
+                 exit={{ 
+                   opacity: 0, 
+                   scale: 0.8, 
+                   x: swipeOffset > 0 ? 300 : -300 
+                 }}
+                 transition={{ duration: 0.3, ease: "easeInOut" }}
                >
                  <Card
                    sx={{
@@ -447,8 +451,9 @@ export default function WavePage() {
                        left: 16,
                        right: 16,
                        display: 'flex',
-                       justifyContent: 'space-between',
-                       alignItems: 'center'
+                       justifyContent: 'center',
+                       alignItems: 'center',
+                       gap: 3
                      }}
                    >
                      <IconButton
@@ -460,15 +465,6 @@ export default function WavePage() {
                      >
                        {currentAffirmation.is_favorite ? <Favorite /> : <FavoriteBorder />}
                      </IconButton>
-
-                     <Box sx={{ display: 'flex', gap: 1 }}>
-                       <IconButton onClick={loadRandomViewed} sx={{ color: '#7f8c8d' }}>
-                         <ArrowBack />
-                       </IconButton>
-                       <IconButton onClick={loadNextUnviewed} sx={{ color: '#7f8c8d' }}>
-                         <ArrowForward />
-                       </IconButton>
-                     </Box>
 
                      <IconButton onClick={handleShare} sx={{ color: '#7f8c8d' }}>
                        <Share />
