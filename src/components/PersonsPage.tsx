@@ -198,9 +198,9 @@ export default function PersonsPage() {
        <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)} maxWidth="sm" fullWidth>
          <DialogTitle>Add Person & Share Invitation</DialogTitle>
          <DialogContent>
-           <Typography variant="body2" sx={{ marginBottom: 2, color: 'text.secondary' }}>
-             Add a new person to your connections. You'll be able to share a custom invitation message with them.
-           </Typography>
+                       <Typography variant="body2" sx={{ marginBottom: 2, color: 'text.secondary' }}>
+              Add a new person to your connections. You&apos;ll be able to share a custom invitation message with them.
+            </Typography>
            <TextField
              fullWidth
              label="Name"

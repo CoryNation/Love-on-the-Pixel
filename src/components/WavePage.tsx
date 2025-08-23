@@ -18,8 +18,6 @@ import {
   Favorite, 
   FavoriteBorder, 
   Share, 
-  ArrowBack, 
-  ArrowForward,
   Edit,
   Delete,
   Person

@@ -13,19 +13,18 @@ import {
   Avatar
 } from '@mui/material';
 import { Person } from '@mui/icons-material';
-import { supabase } from '@/lib/supabase';
-import { userProfileService } from '@/lib/userProfile';
+import { userProfileService, type UserProfile } from '@/lib/userProfile';
 
 export default function InvitePage() {
   const params = useParams();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [inviterProfile, setInviterProfile] = useState<any>(null);
+  const [inviterProfile, setInviterProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     loadInviterProfile();
-  }, []);
+  }, [params.inviterId]);
 
   const loadInviterProfile = async () => {
     try {
@@ -146,19 +145,19 @@ export default function InvitePage() {
             </Typography>
           </Box>
 
-          {/* Invitation Message */}
-          <Typography
-            variant="body1"
-            sx={{
-              color: '#2c3e50',
-              lineHeight: 1.6,
-              marginBottom: 3,
-              fontStyle: 'italic'
-            }}
-          >
-            "Join me in spreading love, encouragement, and appreciation through meaningful messages. 
-            Let's create a world filled with positivity and connection! 💕"
-          </Typography>
+                     {/* Invitation Message */}
+           <Typography
+             variant="body1"
+             sx={{
+               color: '#2c3e50',
+               lineHeight: 1.6,
+               marginBottom: 3,
+               fontStyle: 'italic'
+             }}
+           >
+             &ldquo;Join me in spreading love, encouragement, and appreciation through meaningful messages. 
+             Let&apos;s create a world filled with positivity and connection! 💕&rdquo;
+           </Typography>
 
           {/* Action Buttons */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
