@@ -22,8 +22,9 @@ import {
 } from '@mui/material';
 import { 
   Send, 
-  MoreVert, 
-  PersonAdd
+  PersonAdd,
+  Refresh,
+  Close
 } from '@mui/icons-material';
 import { shareInvitationService, type ShareInvitationData } from '@/lib/shareInvitationService';
 import { userProfileService } from '@/lib/userProfile';
@@ -121,6 +122,51 @@ export default function PersonsPage() {
     }
   };
 
+  const handleRegenerateShare = async (person: Person) => {
+    try {
+      setLoading(true);
+      
+      // Get current user's profile for the invitation
+      const userProfile = await userProfileService.getCurrentProfile();
+      
+      const invitationData: ShareInvitationData = {
+        inviterName: userProfile?.full_name || user?.email || 'Someone',
+        inviterEmail: user?.email || '',
+        inviteeName: person.name,
+        customMessage: undefined
+      };
+
+      // Store invitation in database
+      await shareInvitationService.storeInvitation(invitationData);
+      
+      // Share invitation
+      await shareInvitationService.shareInvitation(invitationData);
+      
+      alert('New invitation link generated and shared successfully!');
+    } catch (error) {
+      console.error('Error regenerating share:', error);
+      alert('Failed to regenerate invitation. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeletePerson = async (person: Person) => {
+    if (confirm(`Are you sure you want to remove ${person.name} from your connections?`)) {
+      try {
+        setLoading(true);
+        await personsService.delete(person.id);
+        await loadPersons(); // Reload the list
+        alert(`${person.name} has been removed from your connections.`);
+      } catch (error) {
+        console.error('Error deleting person:', error);
+        alert('Failed to remove person. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
 
 
   return (
@@ -190,22 +236,67 @@ export default function PersonsPage() {
                   </Box>
                 }
               />
-              <ListItemSecondaryAction>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <IconButton
-                    onClick={() => {
-                      setSelectedPerson(person);
-                      setOpenSendDialog(true);
-                    }}
-                    sx={{ color: '#667eea' }}
-                  >
-                    <Send />
-                  </IconButton>
-                  <IconButton sx={{ color: '#7f8c8d' }}>
-                    <MoreVert />
-                  </IconButton>
-                </Box>
-              </ListItemSecondaryAction>
+                             <ListItemSecondaryAction>
+                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                   {/* Send Affirmation Button */}
+                   <Button
+                     variant="contained"
+                     onClick={() => {
+                       setSelectedPerson(person);
+                       setOpenSendDialog(true);
+                     }}
+                     disabled={loading}
+                     sx={{
+                       backgroundColor: '#667eea',
+                       color: 'white',
+                       borderRadius: 2,
+                       padding: '8px 16px',
+                       minWidth: 'auto',
+                       fontSize: '0.875rem',
+                       textTransform: 'none',
+                       '&:hover': {
+                         backgroundColor: '#5a6fd8'
+                       }
+                     }}
+                   >
+                     Send ❤️
+                   </Button>
+                   
+                   {/* Regenerate Share Link Button */}
+                   <IconButton
+                     onClick={() => handleRegenerateShare(person)}
+                     disabled={loading}
+                     sx={{ 
+                       color: '#667eea',
+                       backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                       '&:hover': { 
+                         backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                         color: '#5a6fd8'
+                       }
+                     }}
+                     title="Regenerate share link"
+                   >
+                     <Refresh />
+                   </IconButton>
+                   
+                   {/* Delete Person Button */}
+                   <IconButton
+                     onClick={() => handleDeletePerson(person)}
+                     disabled={loading}
+                     sx={{ 
+                       color: '#e74c3c',
+                       backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                       '&:hover': { 
+                         backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                         color: '#c0392b'
+                       }
+                     }}
+                     title={`Remove ${person.name}`}
+                   >
+                     <Close />
+                   </IconButton>
+                 </Box>
+               </ListItemSecondaryAction>
             </ListItem>
           </Card>
         ))}
