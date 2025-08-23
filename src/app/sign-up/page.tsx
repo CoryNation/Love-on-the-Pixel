@@ -12,8 +12,9 @@ import {
   Alert,
   CircularProgress
 } from '@mui/material';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { invitationService } from '@/lib/invitationService';
 
 export default function SignUp() {
   const [email, setEmail] = useState('');
@@ -22,7 +23,11 @@ export default function SignUp() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signUp } = useAuth();
+  
+  // Get inviter ID from URL if this is an invitation sign-up
+  const inviterId = searchParams.get('inviter');
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,8 +47,27 @@ export default function SignUp() {
       setError(null);
       
       console.log('Attempting to sign up user:', email);
-      await signUp(email, password);
+      const signUpResult = await signUp(email, password);
       console.log('Sign up successful, redirecting to dashboard');
+      
+      // If this was an invitation sign-up, accept the invitation
+      if (inviterId && signUpResult?.user?.id) {
+        try {
+          console.log('Accepting invitation from:', inviterId);
+          await invitationService.acceptInvitation({
+            inviterId: inviterId,
+            inviteeId: signUpResult.user.id,
+            inviteeName: email.split('@')[0], // Use email prefix as name
+            inviteeEmail: email
+          });
+          console.log('Invitation accepted successfully');
+        } catch (invitationError) {
+          console.error('Error accepting invitation:', invitationError);
+          // Don't fail the sign-up if invitation acceptance fails
+        }
+      } else if (inviterId) {
+        console.log('No user ID available for invitation acceptance');
+      }
       
       // After successful sign-up, redirect to dashboard
       // Note: In Supabase, users might need to confirm their email first
