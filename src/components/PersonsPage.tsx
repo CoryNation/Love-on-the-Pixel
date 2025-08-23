@@ -75,7 +75,9 @@ export default function PersonsPage() {
         await shareInvitationService.storeInvitation(invitationData);
         
         // Share invitation
+        console.log('About to share invitation...');
         await shareInvitationService.shareInvitation(invitationData);
+        console.log('Share invitation completed');
         
         // Add person to local state
         setPersons(prev => [...prev, { ...newPerson, id: Date.now().toString() }]);

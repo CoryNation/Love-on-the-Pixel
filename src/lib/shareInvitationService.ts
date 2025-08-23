@@ -33,15 +33,27 @@ export const shareInvitationService = {
       url: invitationLink
     };
 
-    if (navigator.share) {
+    console.log('Attempting to share:', shareData);
+    console.log('navigator.share available:', !!navigator.share);
+
+    // Check if we're on a mobile device or have share support
+    if (navigator.share && (navigator.userAgent.includes('Mobile') || navigator.userAgent.includes('Android') || navigator.userAgent.includes('iPhone'))) {
       try {
+        console.log('Using native share API...');
         await navigator.share(shareData);
+        console.log('Share successful!');
       } catch (error) {
-        console.error('Error sharing:', error);
-        // Fallback: copy to clipboard
+        console.error('Native share failed:', error);
+        // If user cancelled, don't fall back to clipboard
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log('User cancelled sharing');
+          return;
+        }
+        // For other errors, fall back to clipboard
         await this.copyToClipboard(`${message}\n\n${invitationLink}`);
       }
     } else {
+      console.log('Native share not available, using clipboard fallback');
       // Fallback for browsers that don't support native sharing
       await this.copyToClipboard(`${message}\n\n${invitationLink}`);
     }
@@ -51,12 +63,13 @@ export const shareInvitationService = {
   async copyToClipboard(text: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(text);
-      // You could show a toast notification here
       console.log('Invitation copied to clipboard!');
+      // Show a more user-friendly notification
+      alert('Invitation copied to clipboard! You can now paste it in any app to share with your friend.');
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
-      // Final fallback: alert
-      alert(`Invitation message:\n\n${text}`);
+      // Final fallback: show the text for manual copying
+      alert(`Please copy this invitation message and share it with your friend:\n\n${text}`);
     }
   },
 
