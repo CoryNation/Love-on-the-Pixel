@@ -12,7 +12,7 @@ export const invitationService = {
   async acceptInvitation(data: InvitationAcceptanceData): Promise<void> {
     const { inviterId, inviteeId, inviteeName, inviteeEmail } = data;
 
-    // Get inviter's profile
+    // Get inviter's profile (don't fail if not found)
     const { data: inviterProfile, error: inviterError } = await supabase
       .from('user_profiles')
       .select('full_name, photo_url')
@@ -20,11 +20,10 @@ export const invitationService = {
       .single();
 
     if (inviterError) {
-      console.error('Error fetching inviter profile:', inviterError);
-      throw new Error('Failed to fetch inviter details');
+      console.warn('Inviter profile not found, using default name:', inviterError);
     }
 
-    // Get invitee's profile
+    // Get invitee's profile (don't fail if not found)
     const { data: inviteeProfile, error: inviteeError } = await supabase
       .from('user_profiles')
       .select('full_name, photo_url')
@@ -32,8 +31,7 @@ export const invitationService = {
       .single();
 
     if (inviteeError) {
-      console.error('Error fetching invitee profile:', inviteeError);
-      throw new Error('Failed to fetch invitee details');
+      console.warn('Invitee profile not found, using default name:', inviteeError);
     }
 
     // Create bidirectional connections

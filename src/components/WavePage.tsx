@@ -24,8 +24,10 @@ import {
 } from '@mui/icons-material';
 import { affirmationsService, type Affirmation } from '@/lib/affirmations';
 import { userProfileService, type UserProfile } from '@/lib/userProfile';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function WavePage() {
+  const { user } = useAuth();
   const [currentAffirmation, setCurrentAffirmation] = useState<Affirmation | null>(null);
   const [sentAffirmations, setSentAffirmations] = useState<Affirmation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,9 +71,11 @@ export default function WavePage() {
       }
       
       // Load sent affirmations
-      const allAffirmations = await affirmationsService.getAll();
-      const sent = allAffirmations.filter(aff => aff.created_by === 'current-user-id');
-      setSentAffirmations(sent);
+      if (user?.id) {
+        const allAffirmations = await affirmationsService.getAll();
+        const sent = allAffirmations.filter(aff => aff.created_by === user.id);
+        setSentAffirmations(sent);
+      }
     } catch (err) {
       setError('Failed to load love notes. Please try again.');
       console.error('Error loading affirmations:', err);
