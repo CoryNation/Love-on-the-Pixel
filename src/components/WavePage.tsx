@@ -24,10 +24,8 @@ import {
   Delete,
   Person
 } from '@mui/icons-material';
-import { motion, AnimatePresence } from 'framer-motion';
 import { affirmationsService, type Affirmation } from '@/lib/affirmations';
 import { userProfileService, type UserProfile } from '@/lib/userProfile';
-import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 
 export default function WavePage() {
   const [currentAffirmation, setCurrentAffirmation] = useState<Affirmation | null>(null);
@@ -129,11 +127,7 @@ export default function WavePage() {
     }
   };
 
-  // Swipe gesture handlers
-  const { elementRef, isDragging, swipeOffset } = useSwipeGesture({
-    onSwipeLeft: loadNextUnviewed, // Swipe left = new unviewed
-    onSwipeRight: loadRandomViewed, // Swipe right = random viewed
-  });
+
 
   const handleFavorite = async () => {
     if (!currentAffirmation) return;
@@ -324,34 +318,14 @@ export default function WavePage() {
              {/* Content based on active tab */}
        {activeTab === 'received' ? (
          <>
-           {/* Main Card */}
-                       <Box 
-              ref={elementRef}
+                       {/* Main Card */}
+            <Box 
               sx={{ 
                 width: '100%', 
                 maxWidth: 400, 
                 position: 'relative'
               }}
             >
-                           <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentAffirmation.id}
-                  initial={{ opacity: 0, scale: 0.8, x: 0 }}
-                  animate={{ 
-                    opacity: isDragging ? 0.5 : 1, 
-                    scale: isDragging ? 0.95 : 1, 
-                    x: isDragging ? swipeOffset : 0 
-                  }}
-                  exit={{ 
-                    opacity: 0, 
-                    scale: 0.8, 
-                    x: swipeOffset > 0 ? -300 : 300 
-                  }}
-                  transition={{ 
-                    duration: isDragging ? 0.1 : 0.3, 
-                    ease: "easeInOut" 
-                  }}
-                >
                  <Card
                    sx={{
                      background: 'rgba(255, 255, 255, 0.95)',
@@ -475,122 +449,45 @@ export default function WavePage() {
                        <Share />
                      </IconButton>
                    </Box>
-                 </Card>
-               </motion.div>
-             </AnimatePresence>
-           </Box>
+                                   </Card>
+            </Box>
 
-                       {/* Swipe Instructions */}
-            <Box sx={{ display: 'flex', gap: 4, marginTop: 3, justifyContent: 'center', alignItems: 'center' }}>
-              {/* Left Arrow */}
-              <Box
+                       {/* Navigation Buttons */}
+            <Box sx={{ display: 'flex', gap: 2, marginTop: 3, justifyContent: 'center' }}>
+              <Button
+                variant="outlined"
+                onClick={loadRandomViewed}
                 sx={{
-                  position: 'relative',
-                  width: 120,
-                  height: 60,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
+                  minWidth: 140,
+                  height: 48,
+                  color: 'white',
+                  borderColor: 'white',
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  '&:hover': {
+                    borderColor: 'white',
+                    backgroundColor: 'rgba(255,255,255,0.2)'
+                  }
                 }}
               >
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    left: 0,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    width: 0,
-                    height: 0,
-                    borderTop: '15px solid transparent',
-                    borderBottom: '15px solid transparent',
-                    borderRight: '20px solid rgba(255,255,255,0.3)',
-                    zIndex: 1
-                  }}
-                />
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    left: 0,
-                    top: 0,
-                    width: '100%',
-                    height: '100%',
-                    background: 'linear-gradient(90deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%)',
-                    borderRadius: '30px 0 0 30px',
-                    border: '1px solid rgba(255,255,255,0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: 'rgba(255,255,255,0.9)',
-                      fontSize: '0.7rem',
-                      fontWeight: 500,
-                      textAlign: 'center',
-                      lineHeight: 1.2
-                    }}
-                  >
-                    Swipe right<br />for viewed
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* Right Arrow */}
-              <Box
+                Viewed Affirmation
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={loadNextUnviewed}
                 sx={{
-                  position: 'relative',
-                  width: 120,
-                  height: 60,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
+                  minWidth: 140,
+                  height: 48,
+                  color: 'white',
+                  borderColor: 'white',
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  '&:hover': {
+                    borderColor: 'white',
+                    backgroundColor: 'rgba(255,255,255,0.2)'
+                  }
                 }}
               >
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    right: 0,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    width: 0,
-                    height: 0,
-                    borderTop: '15px solid transparent',
-                    borderBottom: '15px solid transparent',
-                    borderLeft: '20px solid rgba(255,255,255,0.3)',
-                    zIndex: 1
-                  }}
-                />
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    right: 0,
-                    top: 0,
-                    width: '100%',
-                    height: '100%',
-                    background: 'linear-gradient(270deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%)',
-                    borderRadius: '0 30px 30px 0',
-                    border: '1px solid rgba(255,255,255,0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: 'rgba(255,255,255,0.9)',
-                      fontSize: '0.7rem',
-                      fontWeight: 500,
-                      textAlign: 'center',
-                      lineHeight: 1.2
-                    }}
-                  >
-                    Swipe left<br />for new
-                  </Typography>
-                </Box>
-              </Box>
+                New Affirmation
+              </Button>
             </Box>
          </>
       ) : (
