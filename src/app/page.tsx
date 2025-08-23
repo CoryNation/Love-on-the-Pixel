@@ -1,103 +1,346 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import { 
+  Card, 
+  CardContent, 
+  Typography, 
+  Box, 
+  IconButton, 
+  Chip,
+  CircularProgress,
+  Alert
+} from '@mui/material';
+import { 
+  Favorite, 
+  FavoriteBorder, 
+  Share, 
+  ArrowBack, 
+  ArrowForward 
+} from '@mui/icons-material';
+import { motion, AnimatePresence } from 'framer-motion';
+import { affirmationsService, type Affirmation } from '@/lib/affirmations';
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [affirmations, setAffirmations] = useState<Affirmation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  // Fetch affirmations on component mount
+  useEffect(() => {
+    loadAffirmations();
+  }, []);
+
+  const loadAffirmations = async () => {
+    try {
+      setLoading(true);
+      const data = await affirmationsService.getAll();
+      setAffirmations(data);
+    } catch (err) {
+      setError('Failed to load love notes. Please try again.');
+      console.error('Error loading affirmations:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFavorite = async (id: string) => {
+    try {
+      const affirmation = affirmations.find(a => a.id === id);
+      if (!affirmation) return;
+
+      const newFavoriteStatus = !affirmation.is_favorite;
+      
+      // Optimistically update UI
+      setAffirmations(prev => 
+        prev.map(aff => 
+          aff.id === id ? { ...aff, is_favorite: newFavoriteStatus } : aff
+        )
+      );
+
+      // Update in database
+      await affirmationsService.toggleFavorite(id, newFavoriteStatus);
+    } catch (err) {
+      console.error('Error updating favorite:', err);
+      // Revert optimistic update on error
+      loadAffirmations();
+    }
+  };
+
+  const handleShare = async () => {
+    const currentAffirmation = affirmations[currentIndex];
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'A message of love for you',
+          text: currentAffirmation.message,
+        });
+      } catch (error) {
+        console.log('Error sharing:', error);
+      }
+    }
+  };
+
+  const nextCard = () => {
+    setCurrentIndex((prev) => (prev + 1) % affirmations.length);
+  };
+
+  const prevCard = () => {
+    setCurrentIndex((prev) => (prev - 1 + affirmations.length) % affirmations.length);
+  };
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'love': return '#ff6b9d';
+      case 'encouragement': return '#4ecdc4';
+      case 'appreciation': return '#45b7d1';
+      case 'gratitude': return '#96ceb4';
+      default: return '#96ceb4';
+    }
+  };
+
+  const getCategoryEmoji = (category: string) => {
+    switch (category) {
+      case 'love': return '💕';
+      case 'encouragement': return '💪';
+      case 'appreciation': return '🙏';
+      case 'gratitude': return '💝';
+      default: return '💝';
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 2
+        }}
+      >
+        <CircularProgress sx={{ color: 'white' }} />
+        <Typography sx={{ color: 'white', marginTop: 2 }}>
+          Loading love notes...
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 2
+        }}
+      >
+        <Alert severity="error" sx={{ maxWidth: 400 }}>
+          {error}
+        </Alert>
+        <Button 
+          onClick={loadAffirmations} 
+          variant="contained" 
+          sx={{ marginTop: 2 }}
+        >
+          Try Again
+        </Button>
+      </Box>
+    );
+  }
+
+  if (affirmations.length === 0) {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 2
+        }}
+      >
+        <Typography sx={{ color: 'white', textAlign: 'center' }}>
+          No love notes yet. Add some in the admin panel!
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box
+      sx={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 2,
+        position: 'relative'
+      }}
+    >
+      {/* Header */}
+      <Box sx={{ position: 'absolute', top: 20, left: 20, right: 20 }}>
+        <Typography 
+          variant="h4" 
+          sx={{ 
+            color: 'white', 
+            textAlign: 'center',
+            fontWeight: 300,
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+          }}
+        >
+          Love Notes
+        </Typography>
+      </Box>
+
+      {/* Main Card */}
+      <Box sx={{ width: '100%', maxWidth: 400, position: 'relative' }}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentIndex}
+            initial={{ opacity: 0, scale: 0.8, rotateY: -15 }}
+            animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+            exit={{ opacity: 0, scale: 0.8, rotateY: 15 }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+            <Card
+              sx={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: 4,
+                boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                minHeight: 300,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+            >
+              {/* Category Badge */}
+              <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
+                <Chip
+                  icon={<span>{getCategoryEmoji(affirmations[currentIndex].category)}</span>}
+                  label={affirmations[currentIndex].category}
+                  sx={{
+                    backgroundColor: getCategoryColor(affirmations[currentIndex].category),
+                    color: 'white',
+                    fontWeight: 600,
+                    '& .MuiChip-icon': { color: 'white' }
+                  }}
+                />
+              </Box>
+
+              <CardContent sx={{ padding: 4, textAlign: 'center' }}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontSize: '1.25rem',
+                    lineHeight: 1.6,
+                    color: '#2c3e50',
+                    fontWeight: 400,
+                    marginBottom: 3,
+                    fontStyle: 'italic'
+                  }}
+                >
+                  "{affirmations[currentIndex].message}"
+                </Typography>
+
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#7f8c8d',
+                    fontStyle: 'italic',
+                    marginTop: 2
+                  }}
+                >
+                  With love, always
+                </Typography>
+              </CardContent>
+
+              {/* Action Buttons */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: 16,
+                  left: 16,
+                  right: 16,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
+              >
+                <IconButton
+                  onClick={() => handleFavorite(affirmations[currentIndex].id)}
+                  sx={{
+                    color: affirmations[currentIndex].is_favorite ? '#e74c3c' : '#bdc3c7',
+                    '&:hover': { color: '#e74c3c' }
+                  }}
+                >
+                  {affirmations[currentIndex].is_favorite ? <Favorite /> : <FavoriteBorder />}
+                </IconButton>
+
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <IconButton onClick={prevCard} sx={{ color: '#7f8c8d' }}>
+                    <ArrowBack />
+                  </IconButton>
+                  <IconButton onClick={nextCard} sx={{ color: '#7f8c8d' }}>
+                    <ArrowForward />
+                  </IconButton>
+                </Box>
+
+                <IconButton onClick={handleShare} sx={{ color: '#7f8c8d' }}>
+                  <Share />
+                </IconButton>
+              </Box>
+            </Card>
+          </motion.div>
+        </AnimatePresence>
+      </Box>
+
+      {/* Navigation Dots */}
+      <Box sx={{ display: 'flex', gap: 1, marginTop: 3 }}>
+        {affirmations.map((_, index) => (
+          <Box
+            key={index}
+            onClick={() => setCurrentIndex(index)}
+            sx={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              backgroundColor: index === currentIndex ? 'white' : 'rgba(255,255,255,0.3)',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease'
+            }}
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+        ))}
+      </Box>
+
+      {/* Counter */}
+      <Typography
+        variant="body2"
+        sx={{
+          color: 'rgba(255,255,255,0.8)',
+          marginTop: 2,
+          fontSize: '0.875rem'
+        }}
+      >
+        {currentIndex + 1} of {affirmations.length}
+      </Typography>
+    </Box>
   );
 }
