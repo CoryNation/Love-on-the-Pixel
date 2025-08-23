@@ -23,7 +23,9 @@ export default function InvitePage() {
   const [inviterProfile, setInviterProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
-    loadInviterProfile();
+    if (params.inviterId) {
+      loadInviterProfile();
+    }
   }, [params.inviterId]);
 
   const loadInviterProfile = async () => {
