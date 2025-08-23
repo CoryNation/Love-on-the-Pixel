@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -17,7 +17,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField
+  TextField,
+  Avatar,
+  CircularProgress,
+  Alert
 } from '@mui/material';
 import { 
   Notifications, 
@@ -26,19 +29,45 @@ import {
   Language, 
   Help, 
   Logout,
-  Person
+  Person,
+  PhotoCamera,
+  CloudUpload
 } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
+import { userProfileService, type UserProfile } from '@/lib/userProfile';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [openProfileDialog, setOpenProfileDialog] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [profileData, setProfileData] = useState({
-    name: user?.user_metadata?.name || '',
+    fullName: '',
     email: user?.email || ''
   });
+
+  useEffect(() => {
+    loadUserProfile();
+  }, []);
+
+  const loadUserProfile = async () => {
+    try {
+      const profile = await userProfileService.getCurrentProfile();
+      setUserProfile(profile);
+      if (profile) {
+        setProfileData({
+          fullName: profile.full_name || '',
+          email: profile.email
+        });
+      }
+    } catch (err) {
+      console.error('Error loading user profile:', err);
+    }
+  };
 
   const handleSignOut = async () => {
     try {
@@ -48,10 +77,48 @@ export default function SettingsPage() {
     }
   };
 
-  const handleUpdateProfile = () => {
-    // Here you would update the user profile
-    console.log('Updating profile:', profileData);
-    setOpenProfileDialog(false);
+  const handleUpdateProfile = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      await userProfileService.upsertProfile({
+        full_name: profileData.fullName,
+        photo_url: userProfile?.photo_url
+      });
+      
+      await loadUserProfile();
+      setOpenProfileDialog(false);
+    } catch (err) {
+      setError('Failed to update profile. Please try again.');
+      console.error('Error updating profile:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingPhoto(true);
+      setError(null);
+      
+      const photoUrl = await userProfileService.uploadProfilePhoto(file);
+      
+      await userProfileService.upsertProfile({
+        full_name: profileData.fullName,
+        photo_url: photoUrl
+      });
+      
+      await loadUserProfile();
+    } catch (err) {
+      setError('Failed to upload photo. Please try again.');
+      console.error('Error uploading photo:', err);
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
 
   return (
@@ -88,10 +155,15 @@ export default function SettingsPage() {
         <List>
           <ListItem onClick={() => setOpenProfileDialog(true)} sx={{ cursor: 'pointer' }}>
             <ListItemIcon>
-              <Person />
+              <Avatar
+                src={userProfile?.photo_url}
+                sx={{ width: 32, height: 32 }}
+              >
+                {userProfile?.full_name?.charAt(0) || <Person />}
+              </Avatar>
             </ListItemIcon>
             <ListItemText 
-              primary="Profile" 
+              primary={userProfile?.full_name || "Profile"} 
               secondary={user?.email}
             />
           </ListItem>
@@ -170,25 +242,71 @@ export default function SettingsPage() {
       <Dialog open={openProfileDialog} onClose={() => setOpenProfileDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Edit Profile</DialogTitle>
         <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ marginBottom: 2 }}>
+              {error}
+            </Alert>
+          )}
+          
+          {/* Profile Photo Section */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 3 }}>
+            <Avatar
+              src={userProfile?.photo_url}
+              sx={{ 
+                width: 80, 
+                height: 80, 
+                marginBottom: 2,
+                border: '3px solid #667eea'
+              }}
+            >
+              {userProfile?.full_name?.charAt(0) || <Person />}
+            </Avatar>
+            
+            <input
+              accept="image/*"
+              style={{ display: 'none' }}
+              id="photo-upload"
+              type="file"
+              onChange={handlePhotoUpload}
+            />
+            <label htmlFor="photo-upload">
+              <Button
+                variant="outlined"
+                component="span"
+                startIcon={uploadingPhoto ? <CircularProgress size={16} /> : <PhotoCamera />}
+                disabled={uploadingPhoto}
+                sx={{ marginBottom: 1 }}
+              >
+                {uploadingPhoto ? 'Uploading...' : 'Upload Photo'}
+              </Button>
+            </label>
+          </Box>
+
           <TextField
             fullWidth
-            label="Name"
-            value={profileData.name}
-            onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
-            sx={{ marginBottom: 2, marginTop: 1 }}
+            label="Full Name"
+            value={profileData.fullName}
+            onChange={(e) => setProfileData(prev => ({ ...prev, fullName: e.target.value }))}
+            sx={{ marginBottom: 2 }}
           />
           <TextField
             fullWidth
             label="Email"
             type="email"
             value={profileData.email}
-            onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
             disabled
+            sx={{ marginBottom: 2 }}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenProfileDialog(false)}>Cancel</Button>
-          <Button onClick={handleUpdateProfile} variant="contained">Save</Button>
+          <Button 
+            onClick={handleUpdateProfile} 
+            variant="contained"
+            disabled={loading}
+          >
+            {loading ? 'Saving...' : 'Save'}
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

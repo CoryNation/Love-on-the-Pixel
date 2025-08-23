@@ -75,5 +75,62 @@ export const affirmationsService = {
       console.error('Error deleting affirmation:', error);
       throw error;
     }
+  },
+
+  // Mark affirmation as viewed
+  async markAsViewed(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('affirmations')
+      .update({ viewed: true })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error marking affirmation as viewed:', error);
+      throw error;
+    }
+  },
+
+  // Get random unviewed affirmation
+  async getRandomUnviewed(): Promise<Affirmation | null> {
+    const { data, error } = await supabase
+      .from('affirmations')
+      .select('*')
+      .eq('viewed', false)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching unviewed affirmations:', error);
+      throw error;
+    }
+
+    if (!data || data.length === 0) {
+      return null;
+    }
+
+    // Return a random unviewed affirmation
+    const randomIndex = Math.floor(Math.random() * data.length);
+    return data[randomIndex];
+  },
+
+  // Get random viewed affirmation
+  async getRandomViewed(): Promise<Affirmation | null> {
+    const { data, error } = await supabase
+      .from('affirmations')
+      .select('*')
+      .eq('viewed', true)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching viewed affirmations:', error);
+      throw error;
+    }
+
+    if (!data || data.length === 0) {
+      return null;
+    }
+
+    // Return a random viewed affirmation
+    const randomIndex = Math.floor(Math.random() * data.length);
+    return data[randomIndex];
   }
 };

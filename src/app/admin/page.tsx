@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   TextField,
@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { Send } from '@mui/icons-material';
 import { affirmationsService } from '@/lib/affirmations';
+import { userProfileService, type UserProfile } from '@/lib/userProfile';
 
 export default function AdminPage() {
   const [message, setMessage] = useState('');
@@ -26,6 +27,20 @@ export default function AdminPage() {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    loadUserProfile();
+  }, []);
+
+  const loadUserProfile = async () => {
+    try {
+      const profile = await userProfileService.getCurrentProfile();
+      setUserProfile(profile);
+    } catch (err) {
+      console.error('Error loading user profile:', err);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,10 +53,16 @@ export default function AdminPage() {
 
     try {
       setLoading(true);
-      await affirmationsService.create({
+      
+      // Create affirmation with sender info
+      const affirmationData = {
         message: message.trim(),
-        category
-      });
+        category,
+        sender_name: userProfile?.full_name || 'Anonymous',
+        sender_photo_url: userProfile?.photo_url || null
+      };
+      
+      await affirmationsService.create(affirmationData);
       
       setShowSuccess(true);
       setMessage('');

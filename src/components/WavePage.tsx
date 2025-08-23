@@ -11,7 +11,8 @@ import {
   CircularProgress,
   Alert,
   Button,
-  List
+  List,
+  Avatar
 } from '@mui/material';
 import { 
   Favorite, 
@@ -20,32 +21,60 @@ import {
   ArrowBack, 
   ArrowForward,
   Edit,
-  Delete
+  Delete,
+  Person
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { affirmationsService, type Affirmation } from '@/lib/affirmations';
+import { userProfileService, type UserProfile } from '@/lib/userProfile';
+import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 
 export default function WavePage() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [affirmations, setAffirmations] = useState<Affirmation[]>([]);
+  const [currentAffirmation, setCurrentAffirmation] = useState<Affirmation | null>(null);
   const [sentAffirmations, setSentAffirmations] = useState<Affirmation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
+  const [senderProfile, setSenderProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
-    loadAffirmations();
+    loadInitialAffirmation();
   }, []);
 
-  const loadAffirmations = async () => {
+  const loadInitialAffirmation = async () => {
     try {
       setLoading(true);
-      const data = await affirmationsService.getAll();
-      setAffirmations(data);
       
-      // For now, we'll simulate sent affirmations
-      // In a real app, you'd filter by created_by field
-      const sent = data.filter(aff => aff.created_by === 'current-user-id');
+      // Load a random unviewed affirmation first
+      let affirmation = await affirmationsService.getRandomUnviewed();
+      
+      // If no unviewed affirmations, get a random viewed one
+      if (!affirmation) {
+        affirmation = await affirmationsService.getRandomViewed();
+      }
+      
+      if (affirmation) {
+        setCurrentAffirmation(affirmation);
+        
+        // Load sender profile if available
+        if (affirmation.created_by) {
+          try {
+            const profile = await userProfileService.getProfileById(affirmation.created_by);
+            setSenderProfile(profile);
+          } catch (err) {
+            console.error('Error loading sender profile:', err);
+          }
+        }
+        
+        // Mark as viewed if it wasn't already
+        if (!affirmation.viewed) {
+          await affirmationsService.markAsViewed(affirmation.id);
+        }
+      }
+      
+      // Load sent affirmations
+      const allAffirmations = await affirmationsService.getAll();
+      const sent = allAffirmations.filter(aff => aff.created_by === 'current-user-id');
       setSentAffirmations(sent);
     } catch (err) {
       setError('Failed to load love notes. Please try again.');
@@ -55,28 +84,77 @@ export default function WavePage() {
     }
   };
 
-  const handleFavorite = async (id: string) => {
+  const loadNextUnviewed = async () => {
     try {
-      const affirmation = affirmations.find(a => a.id === id);
-      if (!affirmation) return;
+      const affirmation = await affirmationsService.getRandomUnviewed();
+      if (affirmation) {
+        setCurrentAffirmation(affirmation);
+        
+        // Load sender profile
+        if (affirmation.created_by) {
+          try {
+            const profile = await userProfileService.getProfileById(affirmation.created_by);
+            setSenderProfile(profile);
+          } catch (err) {
+            console.error('Error loading sender profile:', err);
+          }
+        }
+        
+        // Mark as viewed
+        await affirmationsService.markAsViewed(affirmation.id);
+      }
+    } catch (err) {
+      console.error('Error loading next unviewed affirmation:', err);
+    }
+  };
 
-      const newFavoriteStatus = !affirmation.is_favorite;
+  const loadRandomViewed = async () => {
+    try {
+      const affirmation = await affirmationsService.getRandomViewed();
+      if (affirmation) {
+        setCurrentAffirmation(affirmation);
+        
+        // Load sender profile
+        if (affirmation.created_by) {
+          try {
+            const profile = await userProfileService.getProfileById(affirmation.created_by);
+            setSenderProfile(profile);
+          } catch (err) {
+            console.error('Error loading sender profile:', err);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error loading random viewed affirmation:', err);
+    }
+  };
+
+  // Swipe gesture handlers
+  const { elementRef, isDragging, swipeOffset } = useSwipeGesture({
+    onSwipeLeft: loadNextUnviewed, // Swipe left = new unviewed
+    onSwipeRight: loadRandomViewed, // Swipe right = random viewed
+  });
+
+  const handleFavorite = async () => {
+    if (!currentAffirmation) return;
+    
+    try {
+      const newFavoriteStatus = !currentAffirmation.is_favorite;
       
-      setAffirmations(prev => 
-        prev.map(aff => 
-          aff.id === id ? { ...aff, is_favorite: newFavoriteStatus } : aff
-        )
+      setCurrentAffirmation(prev => 
+        prev ? { ...prev, is_favorite: newFavoriteStatus } : null
       );
 
-      await affirmationsService.toggleFavorite(id, newFavoriteStatus);
+      await affirmationsService.toggleFavorite(currentAffirmation.id, newFavoriteStatus);
     } catch (err) {
       console.error('Error updating favorite:', err);
-      loadAffirmations();
+      loadInitialAffirmation();
     }
   };
 
   const handleShare = async () => {
-    const currentAffirmation = affirmations[currentIndex];
+    if (!currentAffirmation) return;
+    
     if (navigator.share) {
       try {
         await navigator.share({
@@ -87,14 +165,6 @@ export default function WavePage() {
         console.log('Error sharing:', error);
       }
     }
-  };
-
-  const nextCard = () => {
-    setCurrentIndex((prev) => (prev + 1) % affirmations.length);
-  };
-
-  const prevCard = () => {
-    setCurrentIndex((prev) => (prev - 1 + affirmations.length) % affirmations.length);
   };
 
   const getCategoryColor = (category: string) => {
@@ -165,7 +235,7 @@ export default function WavePage() {
     );
   }
 
-  if (affirmations.length === 0) {
+  if (!currentAffirmation) {
     return (
       <Box
         sx={{
@@ -251,145 +321,194 @@ export default function WavePage() {
         </Box>
       </Box>
 
-      {/* Content based on active tab */}
-      {activeTab === 'received' ? (
-        <>
-          {/* Main Card */}
-          <Box sx={{ width: '100%', maxWidth: 400, position: 'relative' }}>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentIndex}
-                initial={{ opacity: 0, scale: 0.8, rotateY: -15 }}
-                animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-                exit={{ opacity: 0, scale: 0.8, rotateY: 15 }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
-              >
-                <Card
-                  sx={{
-                    background: 'rgba(255, 255, 255, 0.95)',
-                    backdropFilter: 'blur(10px)',
-                    borderRadius: 4,
-                    boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    minHeight: 300,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    position: 'relative',
-                    overflow: 'hidden'
-                  }}
-                >
-                  {/* Category Badge */}
-                  <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
-                    <Chip
-                      icon={<span>{getCategoryEmoji(affirmations[currentIndex].category)}</span>}
-                      label={affirmations[currentIndex].category}
-                      sx={{
-                        backgroundColor: getCategoryColor(affirmations[currentIndex].category),
-                        color: 'white',
-                        fontWeight: 600,
-                        '& .MuiChip-icon': { color: 'white' }
-                      }}
-                    />
-                  </Box>
+             {/* Content based on active tab */}
+       {activeTab === 'received' ? (
+         <>
+           {/* Main Card */}
+           <Box 
+             ref={elementRef}
+             sx={{ 
+               width: '100%', 
+               maxWidth: 400, 
+               position: 'relative',
+               transform: isDragging ? `translateX(${swipeOffset}px)` : 'translateX(0)',
+               transition: isDragging ? 'none' : 'transform 0.3s ease'
+             }}
+           >
+             <AnimatePresence mode="wait">
+               <motion.div
+                 key={currentAffirmation.id}
+                 initial={{ opacity: 0, scale: 0.8, rotateY: -15 }}
+                 animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                 exit={{ opacity: 0, scale: 0.8, rotateY: 15 }}
+                 transition={{ duration: 0.5, ease: "easeInOut" }}
+               >
+                 <Card
+                   sx={{
+                     background: 'rgba(255, 255, 255, 0.95)',
+                     backdropFilter: 'blur(10px)',
+                     borderRadius: 4,
+                     boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+                     border: '1px solid rgba(255,255,255,0.2)',
+                     minHeight: 300,
+                     display: 'flex',
+                     flexDirection: 'column',
+                     justifyContent: 'center',
+                     position: 'relative',
+                     overflow: 'hidden',
+                     cursor: 'grab',
+                     '&:active': { cursor: 'grabbing' }
+                   }}
+                 >
+                   {/* Sender Profile */}
+                   <Box sx={{ 
+                     position: 'absolute', 
+                     top: 16, 
+                     left: '50%', 
+                     transform: 'translateX(-50%)',
+                     display: 'flex',
+                     flexDirection: 'column',
+                     alignItems: 'center',
+                     gap: 1
+                   }}>
+                     <Avatar
+                       src={senderProfile?.photo_url}
+                       sx={{ 
+                         width: 48, 
+                         height: 48,
+                         border: '2px solid rgba(255,255,255,0.3)'
+                       }}
+                     >
+                       {senderProfile?.full_name?.charAt(0) || <Person />}
+                     </Avatar>
+                     <Typography
+                       variant="caption"
+                       sx={{
+                         color: '#2c3e50',
+                         fontWeight: 500,
+                         fontSize: '0.75rem',
+                         textAlign: 'center',
+                         maxWidth: 120,
+                         overflow: 'hidden',
+                         textOverflow: 'ellipsis',
+                         whiteSpace: 'nowrap'
+                       }}
+                     >
+                       {senderProfile?.full_name || 'Anonymous'}
+                     </Typography>
+                   </Box>
 
-                  <CardContent sx={{ padding: 4, textAlign: 'center' }}>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontSize: '1.25rem',
-                        lineHeight: 1.6,
-                        color: '#2c3e50',
-                        fontWeight: 400,
-                        marginBottom: 3,
-                        fontStyle: 'italic'
-                      }}
-                    >
-                      &ldquo;{affirmations[currentIndex].message}&rdquo;
-                    </Typography>
+                   {/* Category Badge */}
+                   <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
+                     <Chip
+                       icon={<span>{getCategoryEmoji(currentAffirmation.category)}</span>}
+                       label={currentAffirmation.category}
+                       sx={{
+                         backgroundColor: getCategoryColor(currentAffirmation.category),
+                         color: 'white',
+                         fontWeight: 600,
+                         '& .MuiChip-icon': { color: 'white' }
+                       }}
+                     />
+                   </Box>
 
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: '#7f8c8d',
-                        fontStyle: 'italic',
-                        marginTop: 2
-                      }}
-                    >
-                      With love, always
-                    </Typography>
-                  </CardContent>
+                   <CardContent sx={{ padding: 4, textAlign: 'center', paddingTop: 8 }}>
+                     <Typography
+                       variant="h6"
+                       sx={{
+                         fontSize: '1.25rem',
+                         lineHeight: 1.6,
+                         color: '#2c3e50',
+                         fontWeight: 400,
+                         marginBottom: 3,
+                         fontStyle: 'italic'
+                       }}
+                     >
+                       &ldquo;{currentAffirmation.message}&rdquo;
+                     </Typography>
 
-                  {/* Action Buttons */}
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      bottom: 16,
-                      left: 16,
-                      right: 16,
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <IconButton
-                      onClick={() => handleFavorite(affirmations[currentIndex].id)}
-                      sx={{
-                        color: affirmations[currentIndex].is_favorite ? '#e74c3c' : '#bdc3c7',
-                        '&:hover': { color: '#e74c3c' }
-                      }}
-                    >
-                      {affirmations[currentIndex].is_favorite ? <Favorite /> : <FavoriteBorder />}
-                    </IconButton>
+                     <Typography
+                       variant="body2"
+                       sx={{
+                         color: '#7f8c8d',
+                         fontStyle: 'italic',
+                         marginTop: 2
+                       }}
+                     >
+                       With love, always
+                     </Typography>
+                   </CardContent>
 
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <IconButton onClick={prevCard} sx={{ color: '#7f8c8d' }}>
-                        <ArrowBack />
-                      </IconButton>
-                      <IconButton onClick={nextCard} sx={{ color: '#7f8c8d' }}>
-                        <ArrowForward />
-                      </IconButton>
-                    </Box>
+                   {/* Action Buttons */}
+                   <Box
+                     sx={{
+                       position: 'absolute',
+                       bottom: 16,
+                       left: 16,
+                       right: 16,
+                       display: 'flex',
+                       justifyContent: 'space-between',
+                       alignItems: 'center'
+                     }}
+                   >
+                     <IconButton
+                       onClick={handleFavorite}
+                       sx={{
+                         color: currentAffirmation.is_favorite ? '#e74c3c' : '#bdc3c7',
+                         '&:hover': { color: '#e74c3c' }
+                       }}
+                     >
+                       {currentAffirmation.is_favorite ? <Favorite /> : <FavoriteBorder />}
+                     </IconButton>
 
-                    <IconButton onClick={handleShare} sx={{ color: '#7f8c8d' }}>
-                      <Share />
-                    </IconButton>
-                  </Box>
-                </Card>
-              </motion.div>
-            </AnimatePresence>
-          </Box>
+                     <Box sx={{ display: 'flex', gap: 1 }}>
+                       <IconButton onClick={loadRandomViewed} sx={{ color: '#7f8c8d' }}>
+                         <ArrowBack />
+                       </IconButton>
+                       <IconButton onClick={loadNextUnviewed} sx={{ color: '#7f8c8d' }}>
+                         <ArrowForward />
+                       </IconButton>
+                     </Box>
 
-          {/* Navigation Dots */}
-          <Box sx={{ display: 'flex', gap: 1, marginTop: 3 }}>
-            {affirmations.map((_, index) => (
-              <Box
-                key={index}
-                onClick={() => setCurrentIndex(index)}
-                sx={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  backgroundColor: index === currentIndex ? 'white' : 'rgba(255,255,255,0.3)',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-              />
-            ))}
-          </Box>
+                     <IconButton onClick={handleShare} sx={{ color: '#7f8c8d' }}>
+                       <Share />
+                     </IconButton>
+                   </Box>
+                 </Card>
+               </motion.div>
+             </AnimatePresence>
+           </Box>
 
-          {/* Counter */}
-          <Typography
-            variant="body2"
-            sx={{
-              color: 'rgba(255,255,255,0.8)',
-              marginTop: 2,
-              fontSize: '0.875rem'
-            }}
-          >
-            {currentIndex + 1} of {affirmations.length}
-          </Typography>
-        </>
+           {/* Swipe Instructions */}
+           <Box sx={{ display: 'flex', gap: 2, marginTop: 3, justifyContent: 'center' }}>
+             <Typography
+               variant="caption"
+               sx={{
+                 color: 'rgba(255,255,255,0.8)',
+                 fontSize: '0.75rem',
+                 display: 'flex',
+                 alignItems: 'center',
+                 gap: 0.5
+               }}
+             >
+               <ArrowBack sx={{ fontSize: 16 }} />
+               Swipe right for viewed
+             </Typography>
+             <Typography
+               variant="caption"
+               sx={{
+                 color: 'rgba(255,255,255,0.8)',
+                 fontSize: '0.75rem',
+                 display: 'flex',
+                 alignItems: 'center',
+                 gap: 0.5
+               }}
+             >
+               Swipe left for new
+               <ArrowForward sx={{ fontSize: 16 }} />
+             </Typography>
+           </Box>
+         </>
       ) : (
         /* Sent Affirmations List View */
         <Box sx={{ width: '100%', maxWidth: 600, marginTop: 2 }}>
