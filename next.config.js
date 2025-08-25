@@ -10,7 +10,6 @@ const nextConfig = {
     // your project has TypeScript errors.
     ignoreBuildErrors: true,
   },
-  trailingSlash: true,
   images: {
     unoptimized: true
   }
