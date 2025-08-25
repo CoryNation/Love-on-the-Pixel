@@ -242,11 +242,6 @@ export default function PersonsPage() {
                   </ListItemAvatar>
                   <ListItemText
                     primary={person.name}
-                    secondary={
-                      <span>
-                        {person.email ? person.email : 'No email provided'}
-                      </span>
-                    }
                   />
                   <ListItemSecondaryAction>
                     <Button
