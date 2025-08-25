@@ -48,7 +48,7 @@ export default function SettingsPage() {
   const loadProfile = async () => {
     if (user?.id) {
       try {
-        const data = await userProfileService.getProfile();
+        const data = await userProfileService.getCurrentProfile();
         setProfile(data);
         setEditForm({
           full_name: data?.full_name || '',
@@ -88,7 +88,7 @@ export default function SettingsPage() {
 
     try {
       setEditLoading(true);
-      await userProfileService.updateProfile({
+      await userProfileService.upsertProfile({
         full_name: editForm.full_name.trim(),
         photo_url: editForm.photo_url
       });

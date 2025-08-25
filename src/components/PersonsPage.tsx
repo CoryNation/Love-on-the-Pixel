@@ -222,7 +222,7 @@ export default function PersonsPage() {
                   <ListItemSecondaryAction>
                     <Button
                       variant="contained"
-                      startIcon={<Favorite />}
+                      endIcon={<Favorite />}
                       onClick={() => {
                         setSelectedPerson(person);
                         setOpenSendDialog(true);
