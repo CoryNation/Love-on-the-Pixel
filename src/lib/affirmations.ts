@@ -4,11 +4,15 @@ import { supabase, type Affirmation, type NewAffirmation } from './supabase';
 export type { Affirmation, NewAffirmation };
 
 export const affirmationsService = {
-  // Get all affirmations
+  // Get all affirmations for current user (sent and received)
   async getAll(): Promise<Affirmation[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
     const { data, error } = await supabase
       .from('affirmations')
       .select('*')
+      .or(`created_by.eq.${user.id},recipient_id.eq.${user.id}`)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -16,6 +20,51 @@ export const affirmationsService = {
       throw error;
     }
 
+    return data || [];
+  },
+
+  // Get affirmations sent by current user
+  async getSent(): Promise<Affirmation[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    console.log('Getting sent affirmations for user:', user.id);
+
+    const { data, error } = await supabase
+      .from('affirmations')
+      .select('*')
+      .eq('created_by', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching sent affirmations:', error);
+      throw error;
+    }
+
+    console.log('Sent affirmations:', data);
+    return data || [];
+  },
+
+  // Get affirmations received by current user
+  async getReceived(): Promise<Affirmation[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    console.log('Getting received affirmations for user:', user.id);
+
+    const { data, error } = await supabase
+      .from('affirmations')
+      .select('*')
+      .eq('recipient_id', user.id)
+      .eq('status', 'delivered') // Only show delivered affirmations
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching received affirmations:', error);
+      throw error;
+    }
+
+    console.log('Received affirmations:', data);
     return data || [];
   },
 
@@ -44,7 +93,8 @@ export const affirmationsService = {
       .from('affirmations')
       .insert([{
         ...affirmation,
-        created_by: user.id
+        created_by: user.id,
+        status: affirmation.recipient_id ? 'delivered' : 'pending'
       }])
       .select()
       .single();
@@ -55,6 +105,23 @@ export const affirmationsService = {
     }
 
     return data;
+  },
+
+  // Process pending affirmations when a user signs up
+  async processPendingAffirmations(userEmail: string, userId: string): Promise<void> {
+    const { error } = await supabase
+      .from('affirmations')
+      .update({ 
+        recipient_id: userId, 
+        status: 'delivered' 
+      })
+      .eq('recipient_email', userEmail)
+      .eq('status', 'pending');
+
+    if (error) {
+      console.error('Error processing pending affirmations:', error);
+      throw error;
+    }
   },
 
   // Toggle favorite status
@@ -98,10 +165,15 @@ export const affirmationsService = {
 
   // Get random unviewed affirmation
   async getRandomUnviewed(): Promise<Affirmation | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
     const { data, error } = await supabase
       .from('affirmations')
       .select('*')
+      .eq('recipient_id', user.id)
       .eq('viewed', false)
+      .eq('status', 'delivered')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -120,10 +192,15 @@ export const affirmationsService = {
 
   // Get random viewed affirmation
   async getRandomViewed(): Promise<Affirmation | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
     const { data, error } = await supabase
       .from('affirmations')
       .select('*')
+      .eq('recipient_id', user.id)
       .eq('viewed', true)
+      .eq('status', 'delivered')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -138,5 +215,29 @@ export const affirmationsService = {
     // Return a random viewed affirmation
     const randomIndex = Math.floor(Math.random() * data.length);
     return data[randomIndex];
+  },
+
+  // Update affirmation
+  async update(id: string, updates: Partial<Affirmation>): Promise<Affirmation> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase
+      .from('affirmations')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .eq('created_by', user.id) // Only allow updating affirmations created by the current user
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating affirmation:', error);
+      throw error;
+    }
+
+    return data;
   }
 };

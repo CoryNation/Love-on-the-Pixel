@@ -67,18 +67,20 @@ export default function Dashboard() {
           onChange={(event, newValue) => setCurrentTab(newValue)}
           sx={{
             '& .MuiBottomNavigationAction-root': {
-              color: '#95a5a6 !important',
+              color: '#95a5a6',
               '&.Mui-selected': {
-                color: '#667eea !important'
-              },
-              '& .MuiBottomNavigationAction-label': {
-                color: '#95a5a6 !important',
-                '&.Mui-selected': {
-                  color: '#667eea !important'
-                }
+                color: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)'
+              }
+            },
+            '& .MuiBottomNavigationAction-label': {
+              fontSize: '0.75rem',
+              '&.Mui-selected': {
+                fontSize: '0.75rem'
               }
             }
           }}
+          showLabels
         >
           <BottomNavigationAction 
             label="Wave" 

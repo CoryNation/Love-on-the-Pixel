@@ -1,0 +1,36 @@
+{
+  "packageId": "com.lovenotes.app",
+  "host": "localhost:3000",
+  "name": "Love Notes",
+  "launcherName": "Love Notes",
+  "display": "standalone",
+  "themeColor": "#667eea",
+  "navigationColor": "#667eea",
+  "backgroundColor": "#667eea",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "http://localhost:3000/icon-512x512.png",
+  "maskableIconUrl": "http://localhost:3000/icon-512x512.png",
+  "monochromeIconUrl": "http://localhost:3000/icon-512x512.png",
+  "shortcuts": [],
+  "shareTarget": {
+    "action": "/",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "versionCode": 1,
+  "versionName": "1.0.0",
+  "appVersionCode": 1,
+  "appVersionName": "1.0.0",
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "orientation": "portrait",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "appVersion": "1.0.0"
+}

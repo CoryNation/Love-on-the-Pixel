@@ -38,7 +38,6 @@ import { userProfileService, type UserProfile } from '@/lib/userProfile';
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
   const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [openProfileDialog, setOpenProfileDialog] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
@@ -179,22 +178,6 @@ export default function SettingsPage() {
                 edge="end"
                 checked={notifications}
                 onChange={(e) => setNotifications(e.target.checked)}
-              />
-            </ListItemSecondaryAction>
-          </ListItem>
-
-          <Divider />
-
-          <ListItem>
-            <ListItemIcon>
-              <Palette />
-            </ListItemIcon>
-            <ListItemText primary="Dark Mode" />
-            <ListItemSecondaryAction>
-              <Switch
-                edge="end"
-                checked={darkMode}
-                onChange={(e) => setDarkMode(e.target.checked)}
               />
             </ListItemSecondaryAction>
           </ListItem>

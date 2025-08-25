@@ -86,5 +86,21 @@ export const userProfileService = {
     }
 
     return data;
+  },
+
+  // Get user profile by email
+  async getProfileByEmail(email: string): Promise<UserProfile | null> {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (error) {
+      console.error('Error fetching user profile by email:', error);
+      return null;
+    }
+
+    return data;
   }
 };

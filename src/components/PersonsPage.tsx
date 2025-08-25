@@ -29,7 +29,9 @@ import { shareInvitationService, type ShareInvitationData } from '@/lib/shareInv
 import { userProfileService } from '@/lib/userProfile';
 import { personsService, type Person } from '@/lib/personsService';
 import { useAuth } from '@/contexts/AuthContext';
-
+import { affirmationsService } from '@/lib/affirmations';
+import { supabase } from '@/lib/supabaseClient';
+import { AFFIRMATION_THEMES, type AffirmationTheme } from '@/lib/affirmationThemes';
 
 
 export default function PersonsPage() {
@@ -38,8 +40,9 @@ export default function PersonsPage() {
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openSendDialog, setOpenSendDialog] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
-  const [newPerson, setNewPerson] = useState({ name: '', email: '', relationship: '' });
+  const [newPerson, setNewPerson] = useState({ name: '' }); // Remove email field
   const [message, setMessage] = useState('');
+  const [selectedTheme, setSelectedTheme] = useState<string>('love');
   const [loading, setLoading] = useState(false);
   const [customMessage, setCustomMessage] = useState('');
 
@@ -82,17 +85,15 @@ export default function PersonsPage() {
         await shareInvitationService.shareInvitation(invitationData);
         console.log('Share invitation completed');
         
-        // Add person to database
+        // Add person to database (without email)
         await personsService.create({
-          name: newPerson.name.trim(),
-          email: newPerson.email.trim() || undefined,
-          relationship: newPerson.relationship.trim() || undefined
+          name: newPerson.name.trim()
         });
         
         // Reload persons list
         await loadPersons();
         
-        setNewPerson({ name: '', email: '', relationship: '' });
+        setNewPerson({ name: '' }); // Reset without email
         setCustomMessage('');
         setOpenAddDialog(false);
         
@@ -111,13 +112,56 @@ export default function PersonsPage() {
     }
   };
 
-  const handleSendAffirmation = () => {
+  const handleSendAffirmation = async () => {
     if (message.trim() && selectedPerson) {
-      // Here you would send the affirmation to the selected person
-      console.log('Sending to:', selectedPerson.name, 'Message:', message);
-      setMessage('');
-      setOpenSendDialog(false);
-      setSelectedPerson(null);
+      try {
+        setLoading(true);
+        
+        console.log('Sending affirmation to:', selectedPerson);
+        console.log('Selected person user_id:', selectedPerson.user_id);
+        console.log('Current user:', user?.id);
+        
+        // Check if the recipient has signed up (has a user_id)
+        if (!selectedPerson.user_id) {
+          // Recipient hasn't signed up yet - store the affirmation with pending status
+          console.log('Creating pending affirmation for:', selectedPerson.name);
+          const newAffirmation = await affirmationsService.create({
+            message: message.trim(),
+            category: selectedTheme,
+            recipient_id: null, // No recipient_id since they haven't signed up
+            recipient_name: selectedPerson.name // Store name for future matching
+          });
+          console.log('Created pending affirmation:', newAffirmation);
+
+          alert('Affirmation sent! It will be delivered when the recipient signs up.');
+        } else {
+          // Recipient has signed up - send immediately
+          console.log('Creating delivered affirmation for user_id:', selectedPerson.user_id);
+          const newAffirmation = await affirmationsService.create({
+            message: message.trim(),
+            category: selectedTheme,
+            recipient_id: selectedPerson.user_id
+          });
+          console.log('Created delivered affirmation:', newAffirmation);
+
+          alert('Affirmation sent successfully!');
+        }
+
+        // Clear the form
+        setMessage('');
+        setSelectedTheme('love');
+        setSelectedPerson(null);
+        setOpenSendDialog(false); // Close the dialog
+        
+        // Trigger a refresh of affirmations in WavePage
+        window.dispatchEvent(new CustomEvent('affirmationCreated'));
+        
+      } catch (error) {
+        console.error('Error creating affirmation:', error);
+        alert('Failed to send affirmation. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -222,80 +266,69 @@ export default function PersonsPage() {
               </ListItemAvatar>
               <ListItemText
                 primary={person.name}
-                secondary={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, marginTop: 0.5 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {person.email}
-                    </Typography>
-                    <Chip 
-                      label={person.relationship} 
-                      size="small" 
-                      sx={{ backgroundColor: '#667eea', color: 'white' }}
-                    />
-                  </Box>
-                }
+                secondary={person.email}
               />
-                             <ListItemSecondaryAction>
-                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                   {/* Send Affirmation Button */}
-                   <Button
-                     variant="contained"
-                     onClick={() => {
-                       setSelectedPerson(person);
-                       setOpenSendDialog(true);
-                     }}
-                     disabled={loading}
-                     sx={{
-                       backgroundColor: '#667eea',
-                       color: 'white',
-                       borderRadius: 2,
-                       padding: '8px 16px',
-                       minWidth: 'auto',
-                       fontSize: '0.875rem',
-                       textTransform: 'none',
-                       '&:hover': {
-                         backgroundColor: '#5a6fd8'
-                       }
-                     }}
-                   >
-                     Send ❤️
-                   </Button>
-                   
-                   {/* Regenerate Share Link Button */}
-                   <IconButton
-                     onClick={() => handleRegenerateShare(person)}
-                     disabled={loading}
-                     sx={{ 
-                       color: '#667eea',
-                       backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                       '&:hover': { 
-                         backgroundColor: 'rgba(102, 126, 234, 0.2)',
-                         color: '#5a6fd8'
-                       }
-                     }}
-                     title="Regenerate share link"
-                   >
-                     <Refresh />
-                   </IconButton>
-                   
-                   {/* Delete Person Button */}
-                   <IconButton
-                     onClick={() => handleDeletePerson(person)}
-                     disabled={loading}
-                     sx={{ 
-                       color: '#e74c3c',
-                       backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                       '&:hover': { 
-                         backgroundColor: 'rgba(231, 76, 60, 0.2)',
-                         color: '#c0392b'
-                       }
-                     }}
-                     title={`Remove ${person.name}`}
-                   >
-                     <Close />
-                   </IconButton>
-                 </Box>
-               </ListItemSecondaryAction>
+              <ListItemSecondaryAction>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  {/* Send Affirmation Button */}
+                  <Button
+                    variant="contained"
+                    onClick={() => {
+                      setSelectedPerson(person);
+                      setOpenSendDialog(true);
+                    }}
+                    disabled={loading}
+                    sx={{
+                      backgroundColor: '#667eea',
+                      color: 'white',
+                      borderRadius: 2,
+                      padding: '8px 16px',
+                      minWidth: 'auto',
+                      fontSize: '0.875rem',
+                      textTransform: 'none',
+                      '&:hover': {
+                        backgroundColor: '#5a6fd8'
+                      }
+                    }}
+                  >
+                    Send ❤️
+                  </Button>
+                  
+                  {/* Regenerate Share Link Button */}
+                  <IconButton
+                    onClick={() => handleRegenerateShare(person)}
+                    disabled={loading}
+                    sx={{ 
+                      color: '#667eea',
+                      backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                      '&:hover': { 
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        color: '#5a6fd8'
+                      }
+                    }}
+                    title="Regenerate share link"
+                  >
+                    <Refresh />
+                  </IconButton>
+                  
+                  {/* Delete Person Button */}
+                  <IconButton
+                    onClick={() => handleDeletePerson(person)}
+                    disabled={loading}
+                    sx={{ 
+                      color: '#e74c3c',
+                      backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                      '&:hover': { 
+                        backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                        color: '#c0392b'
+                      }
+                    }}
+                    title={`Remove ${person.name}`}
+                  >
+                    <Close />
+                  </IconButton>
+                </Box>
+              </ListItemSecondaryAction>
             </ListItem>
           </Card>
         ))}
@@ -314,13 +347,6 @@ export default function PersonsPage() {
              value={newPerson.name}
              onChange={(e) => setNewPerson(prev => ({ ...prev, name: e.target.value }))}
              sx={{ marginBottom: 2, marginTop: 1 }}
-           />
-           <TextField
-             fullWidth
-             label="Relationship"
-             value={newPerson.relationship}
-             onChange={(e) => setNewPerson(prev => ({ ...prev, relationship: e.target.value }))}
-             sx={{ marginBottom: 2 }}
            />
            <TextField
              fullWidth
@@ -349,6 +375,45 @@ export default function PersonsPage() {
       <Dialog open={openSendDialog} onClose={() => setOpenSendDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Send Love Note to {selectedPerson?.name}</DialogTitle>
         <DialogContent>
+          {/* Theme Selection */}
+          <Typography variant="subtitle2" sx={{ marginBottom: 1, marginTop: 1, fontWeight: 600 }}>
+            Choose Theme:
+          </Typography>
+          <Box sx={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', 
+            gap: 1, 
+            marginBottom: 2 
+          }}>
+            {AFFIRMATION_THEMES.map((theme) => (
+              <Button
+                key={theme.id}
+                variant={selectedTheme === theme.id ? 'contained' : 'outlined'}
+                onClick={() => setSelectedTheme(theme.id)}
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  padding: 1,
+                  minHeight: 60,
+                  backgroundColor: selectedTheme === theme.id ? theme.color : 'transparent',
+                  borderColor: theme.color,
+                  color: selectedTheme === theme.id ? 'white' : theme.color, // Use theme color for unselected text
+                  '&:hover': {
+                    backgroundColor: selectedTheme === theme.id ? theme.color : `${theme.color}20`,
+                    borderColor: theme.color,
+                    color: selectedTheme === theme.id ? 'white' : theme.color, // Maintain theme color on hover
+                  }
+                }}
+              >
+                <span style={{ fontSize: '1.5rem', marginBottom: 4 }}>{theme.emoji}</span>
+                <Typography variant="caption" sx={{ fontSize: '0.75rem', fontWeight: 500 }}>
+                  {theme.name}
+                </Typography>
+              </Button>
+            ))}
+          </Box>
+          
           <TextField
             fullWidth
             multiline

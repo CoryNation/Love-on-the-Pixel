@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -17,13 +17,19 @@ export const metadata: Metadata = {
   title: "Love Notes - Messages of Love & Affirmation",
   description: "A personal collection of love notes, affirmations, and words of encouragement",
   manifest: "/manifest.webmanifest",
-  themeColor: "#667eea",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Love Notes"
   }
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#667eea"
 };
 
 export default function RootLayout({
