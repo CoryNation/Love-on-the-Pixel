@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Box, 
   List, 
@@ -16,20 +16,19 @@ import {
   DialogActions, 
   TextField, 
   Typography, 
-  CircularProgress,
-  Alert
+  Card,
+  ListItemSecondaryAction
 } from '@mui/material';
 import { 
-  Add, 
-  Send, 
   Person, 
-  Delete 
+  PersonAdd,
+  Refresh,
+  Close
 } from '@mui/icons-material';
 import { personsService, type Person } from '@/lib/personsService';
 import { affirmationsService } from '@/lib/affirmations';
 import { useAuth } from '@/contexts/AuthContext';
-import { AFFIRMATION_THEMES, getThemeColor, getThemeEmoji } from '@/lib/affirmationThemes';
-
+import { AFFIRMATION_THEMES } from '@/lib/affirmationThemes';
 
 export default function PersonsPage() {
   const { user } = useAuth();
@@ -37,16 +36,14 @@ export default function PersonsPage() {
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openSendDialog, setOpenSendDialog] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
-  const [newPerson, setNewPerson] = useState({ name: '' }); // Remove email field
+  const [newPerson, setNewPerson] = useState({ name: '' });
   const [message, setMessage] = useState('');
-  const [selectedTheme, setSelectedTheme] = useState<string>('love');
+  const [selectedTheme, setSelectedTheme] = useState('love');
   const [loading, setLoading] = useState(false);
-  const [customMessage, setCustomMessage] = useState('');
 
-  // Load persons on component mount
   useEffect(() => {
     loadPersons();
-  }, []);
+  }, [user?.id]);
 
   const loadPersons = async () => {
     try {
@@ -58,51 +55,16 @@ export default function PersonsPage() {
   };
 
   const handleAddPerson = async () => {
-    if (newPerson.name) {
+    if (newPerson.name.trim()) {
       try {
         setLoading(true);
-        
-        // Get current user's profile for the invitation
-        const userProfile = await userProfileService.getCurrentProfile();
-        
-        const invitationData: ShareInvitationData = {
-          inviterName: userProfile?.full_name || user?.email || 'Someone',
-          inviterEmail: user?.email || '',
-          inviteeName: newPerson.name.trim(),
-          customMessage: customMessage.trim() || undefined
-        };
-
-        // Store invitation in database
-        console.log('Storing invitation in database...');
-        await shareInvitationService.storeInvitation(invitationData);
-        console.log('Invitation stored successfully');
-        
-        // Share invitation
-        console.log('About to share invitation...');
-        await shareInvitationService.shareInvitation(invitationData);
-        console.log('Share invitation completed');
-        
-        // Add person to database (without email)
-        await personsService.create({
-          name: newPerson.name.trim()
-        });
-        
-        // Reload persons list
-        await loadPersons();
-        
-        setNewPerson({ name: '' }); // Reset without email
-        setCustomMessage('');
+        await personsService.create(newPerson);
+        setNewPerson({ name: '' });
         setOpenAddDialog(false);
-        
-        // Show success message
-        alert('Person added and invitation shared successfully!');
+        await loadPersons();
       } catch (error) {
-        console.error('Error adding person and sharing invitation:', error);
-        console.error('Error details:', {
-          message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : 'No stack trace'
-        });
-        alert(`Failed to add person or share invitation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error('Error adding person:', error);
+        alert('Failed to add person or share invitation');
       } finally {
         setLoading(false);
       }
@@ -121,18 +83,16 @@ export default function PersonsPage() {
         // Check if the recipient has signed up (has a user_id)
         if (!selectedPerson.user_id) {
           // Recipient hasn't signed up yet - store the affirmation with pending status
-          console.log('Creating pending affirmation for:', selectedPerson.name);
+          console.log('Creating pending affirmation for email:', selectedPerson.email);
           const newAffirmation = await affirmationsService.create({
             message: message.trim(),
             category: selectedTheme,
             recipient_id: null, // No recipient_id since they haven't signed up
-            recipient_name: selectedPerson.name // Store name for future matching
+            recipient_email: selectedPerson.email // Store email for later matching
           });
           console.log('Created pending affirmation:', newAffirmation);
-
-          alert('Affirmation sent! It will be delivered when the recipient signs up.');
         } else {
-          // Recipient has signed up - send immediately
+          // Recipient has signed up - create delivered affirmation
           console.log('Creating delivered affirmation for user_id:', selectedPerson.user_id);
           const newAffirmation = await affirmationsService.create({
             message: message.trim(),
@@ -140,21 +100,21 @@ export default function PersonsPage() {
             recipient_id: selectedPerson.user_id
           });
           console.log('Created delivered affirmation:', newAffirmation);
-
-          alert('Affirmation sent successfully!');
         }
 
-        // Clear the form
         setMessage('');
         setSelectedTheme('love');
+        setOpenSendDialog(false);
         setSelectedPerson(null);
-        setOpenSendDialog(false); // Close the dialog
         
-        // Trigger a refresh of affirmations in WavePage
-        window.dispatchEvent(new CustomEvent('affirmationCreated'));
+        // Refresh the affirmations in WavePage
+        if (typeof window !== 'undefined' && (window as any).refreshAffirmations) {
+          (window as any).refreshAffirmations();
+        }
         
+        alert('Affirmation sent successfully!');
       } catch (error) {
-        console.error('Error creating affirmation:', error);
+        console.error('Error sending affirmation:', error);
         alert('Failed to send affirmation. Please try again.');
       } finally {
         setLoading(false);
@@ -162,218 +122,173 @@ export default function PersonsPage() {
     }
   };
 
-  const handleRegenerateShare = async (person: Person) => {
-    try {
-      setLoading(true);
-      
-      // Get current user's profile for the invitation
-      const userProfile = await userProfileService.getCurrentProfile();
-      
-      const invitationData: ShareInvitationData = {
-        inviterName: userProfile?.full_name || user?.email || 'Someone',
-        inviterEmail: user?.email || '',
-        inviteeName: person.name,
-        customMessage: undefined
-      };
-
-      // Store invitation in database
-      await shareInvitationService.storeInvitation(invitationData);
-      
-      // Share invitation
-      await shareInvitationService.shareInvitation(invitationData);
-      
-      alert('New invitation link generated and shared successfully!');
-    } catch (error) {
-      console.error('Error regenerating share:', error);
-      alert('Failed to regenerate invitation. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeletePerson = async (person: Person) => {
-    if (confirm(`Are you sure you want to remove ${person.name} from your connections?`)) {
+  const handleDeletePerson = async (personId: string) => {
+    if (confirm('Are you sure you want to remove this person?')) {
       try {
-        setLoading(true);
-        await personsService.delete(person.id);
-        await loadPersons(); // Reload the list
-        alert(`${person.name} has been removed from your connections.`);
+        await personsService.delete(personId);
+        await loadPersons();
       } catch (error) {
         console.error('Error deleting person:', error);
-        alert('Failed to remove person. Please try again.');
-      } finally {
-        setLoading(false);
+        alert('Failed to delete person. Please try again.');
       }
     }
   };
-
-
 
   return (
     <Box
       sx={{
         height: '100%',
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        flexDirection: 'column',
         padding: 2,
-        paddingBottom: 8,
-        overflow: 'auto'
+        overflow: 'hidden'
       }}
     >
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-        <Typography 
-          variant="h4" 
-          sx={{ 
-            color: 'white', 
+      <Box sx={{ marginBottom: 2 }}>
+        <Typography
+          variant="h4"
+          sx={{
+            color: 'white',
+            textAlign: 'center',
             fontWeight: 300,
-            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+            marginBottom: 2
           }}
         >
           Persons
         </Typography>
-        <IconButton 
+        
+        <Button
+          variant="contained"
+          startIcon={<PersonAdd />}
           onClick={() => setOpenAddDialog(true)}
-          sx={{ 
-            color: 'white',
+          sx={{
             backgroundColor: 'rgba(255,255,255,0.2)',
-            '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' }
+            color: 'white',
+            '&:hover': {
+              backgroundColor: 'rgba(255,255,255,0.3)'
+            }
           }}
         >
-          <PersonAdd />
-        </IconButton>
+          Add Person
+        </Button>
       </Box>
 
       {/* Persons List */}
-      <List sx={{ padding: 0 }}>
-        {persons.map((person) => (
+      <Box sx={{ flex: 1, overflow: 'auto' }}>
+        {persons.length === 0 ? (
           <Card
-            key={person.id}
             sx={{
-              marginBottom: 2,
               background: 'rgba(255, 255, 255, 0.95)',
               backdropFilter: 'blur(10px)',
-              borderRadius: 2
+              borderRadius: 2,
+              padding: 3,
+              textAlign: 'center'
             }}
           >
-            <ListItem>
-              <ListItemAvatar>
-                <Avatar sx={{ fontSize: '1.5rem' }}>
-                  {person.avatar || person.name.charAt(0)}
-                </Avatar>
-              </ListItemAvatar>
-              <ListItemText
-                primary={person.name}
-                secondary={person.email}
-              />
-              <ListItemSecondaryAction>
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                  {/* Send Affirmation Button */}
-                  <Button
-                    variant="contained"
-                    onClick={() => {
-                      setSelectedPerson(person);
-                      setOpenSendDialog(true);
-                    }}
-                    disabled={loading}
-                    sx={{
-                      backgroundColor: '#667eea',
-                      color: 'white',
-                      borderRadius: 2,
-                      padding: '8px 16px',
-                      minWidth: 'auto',
-                      fontSize: '0.875rem',
-                      textTransform: 'none',
-                      '&:hover': {
-                        backgroundColor: '#5a6fd8'
-                      }
-                    }}
-                  >
-                    Send ❤️
-                  </Button>
-                  
-                  {/* Regenerate Share Link Button */}
-                  <IconButton
-                    onClick={() => handleRegenerateShare(person)}
-                    disabled={loading}
-                    sx={{ 
-                      color: '#667eea',
-                      backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                      '&:hover': { 
-                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
-                        color: '#5a6fd8'
-                      }
-                    }}
-                    title="Regenerate share link"
-                  >
-                    <Refresh />
-                  </IconButton>
-                  
-                  {/* Delete Person Button */}
-                  <IconButton
-                    onClick={() => handleDeletePerson(person)}
-                    disabled={loading}
-                    sx={{ 
-                      color: '#e74c3c',
-                      backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                      '&:hover': { 
-                        backgroundColor: 'rgba(231, 76, 60, 0.2)',
-                        color: '#c0392b'
-                      }
-                    }}
-                    title={`Remove ${person.name}`}
-                  >
-                    <Close />
-                  </IconButton>
-                </Box>
-              </ListItemSecondaryAction>
-            </ListItem>
-          </Card>
-        ))}
-      </List>
-
-             {/* Add Person Dialog */}
-       <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)} maxWidth="sm" fullWidth>
-         <DialogTitle>Add Person & Share Invitation</DialogTitle>
-         <DialogContent>
-                       <Typography variant="body2" sx={{ marginBottom: 2, color: 'text.secondary' }}>
-              Add a new person to your connections. You&apos;ll be able to share a custom invitation message with them.
+            <Typography variant="body1" sx={{ color: '#2c3e50' }}>
+              No persons added yet. Add someone special to start sending affirmations!
             </Typography>
-           <TextField
-             fullWidth
-             label="Name"
-             value={newPerson.name}
-             onChange={(e) => setNewPerson(prev => ({ ...prev, name: e.target.value }))}
-             sx={{ marginBottom: 2, marginTop: 1 }}
-           />
-           <TextField
-             fullWidth
-             multiline
-             rows={3}
-             label="Custom Invitation Message (Optional)"
-             value={customMessage}
-             onChange={(e) => setCustomMessage(e.target.value)}
-             placeholder="Write a personal message to invite them to join Love on the Pixel..."
-             helperText="Leave blank to use the default message"
-           />
-         </DialogContent>
-         <DialogActions>
-           <Button onClick={() => setOpenAddDialog(false)} disabled={loading}>Cancel</Button>
-           <Button 
-             onClick={handleAddPerson} 
-             variant="contained"
-             disabled={loading || !newPerson.name.trim()}
-           >
-             {loading ? 'Adding...' : 'Add Person & Share Invitation'}
-           </Button>
-         </DialogActions>
-       </Dialog>
+          </Card>
+        ) : (
+          <List>
+            {persons.map((person) => (
+              <Card
+                key={person.id}
+                sx={{
+                  marginBottom: 1,
+                  background: 'rgba(255, 255, 255, 0.95)',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: 2
+                }}
+              >
+                <ListItem>
+                  <ListItemAvatar>
+                    <Avatar>
+                      <Person />
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={person.name}
+                    secondary={
+                      <span>
+                        {person.email || 'No email provided'}
+                        {person.user_id && (
+                          <span style={{ color: '#27ae60', marginLeft: 8 }}>
+                            • Signed up
+                          </span>
+                        )}
+                      </span>
+                    }
+                  />
+                  <ListItemSecondaryAction>
+                    <IconButton
+                      edge="end"
+                      onClick={() => {
+                        setSelectedPerson(person);
+                        setOpenSendDialog(true);
+                      }}
+                      sx={{ color: '#667eea', marginRight: 1 }}
+                    >
+                      <Person />
+                    </IconButton>
+                    <IconButton
+                      edge="end"
+                      onClick={() => handleDeletePerson(person.id)}
+                      sx={{ color: '#e74c3c' }}
+                    >
+                      <Close />
+                    </IconButton>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              </Card>
+            ))}
+          </List>
+        )}
+      </Box>
+
+      {/* Add Person Dialog */}
+      <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)}>
+        <DialogTitle>Add Person</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Name"
+            fullWidth
+            variant="outlined"
+            value={newPerson.name}
+            onChange={(e) => setNewPerson({ name: e.target.value })}
+            sx={{ marginTop: 1 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenAddDialog(false)} disabled={loading}>
+            Cancel
+          </Button>
+          <Button onClick={handleAddPerson} variant="contained" disabled={loading || !newPerson.name.trim()}>
+            {loading ? 'Adding...' : 'Add'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Send Affirmation Dialog */}
-      <Dialog open={openSendDialog} onClose={() => setOpenSendDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Send Love Note to {selectedPerson?.name}</DialogTitle>
+      <Dialog 
+        open={openSendDialog} 
+        onClose={() => setOpenSendDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Send Affirmation to {selectedPerson?.name}</DialogTitle>
         <DialogContent>
+          <Typography variant="body2" sx={{ marginBottom: 2, color: 'text.secondary' }}>
+            Choose a theme and write your message of love, encouragement, or appreciation.
+          </Typography>
+          
           {/* Theme Selection */}
-          <Typography variant="subtitle2" sx={{ marginBottom: 1, marginTop: 1, fontWeight: 600 }}>
+          <Typography variant="subtitle2" sx={{ marginBottom: 1, fontWeight: 600 }}>
             Choose Theme:
           </Typography>
           <Box sx={{ 
@@ -395,11 +310,11 @@ export default function PersonsPage() {
                   minHeight: 60,
                   backgroundColor: selectedTheme === theme.id ? theme.color : 'transparent',
                   borderColor: theme.color,
-                  color: selectedTheme === theme.id ? 'white' : theme.color, // Use theme color for unselected text
+                  color: selectedTheme === theme.id ? 'white' : theme.color,
                   '&:hover': {
                     backgroundColor: selectedTheme === theme.id ? theme.color : `${theme.color}20`,
                     borderColor: theme.color,
-                    color: selectedTheme === theme.id ? 'white' : theme.color, // Maintain theme color on hover
+                    color: selectedTheme === theme.id ? 'white' : theme.color,
                   }
                 }}
               >
@@ -411,6 +326,7 @@ export default function PersonsPage() {
             ))}
           </Box>
           
+          {/* Message */}
           <TextField
             fullWidth
             multiline
@@ -423,12 +339,18 @@ export default function PersonsPage() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenSendDialog(false)}>Cancel</Button>
-          <Button onClick={handleSendAffirmation} variant="contained">Send</Button>
+          <Button onClick={() => setOpenSendDialog(false)} disabled={loading}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSendAffirmation} 
+            variant="contained"
+            disabled={loading || !message.trim()}
+          >
+            {loading ? 'Sending...' : 'Send Affirmation'}
+          </Button>
         </DialogActions>
       </Dialog>
-
-
     </Box>
   );
 }

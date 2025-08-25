@@ -1,69 +1,43 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Card,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  ListItemSecondaryAction,
-  Switch,
-  Divider,
+import { 
+  Box, 
+  List, 
+  ListItem, 
+  ListItemText, 
+  ListItemIcon, 
+  Typography, 
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Avatar,
-  CircularProgress,
-  Alert
+  Avatar
 } from '@mui/material';
 import { 
-  Notifications, 
-  Security, 
-  Palette, 
-  Language, 
-  Help, 
-  Logout,
-  Person,
-  PhotoCamera
+  Settings, 
+  Person, 
+  Logout 
 } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 import { userProfileService, type UserProfile } from '@/lib/userProfile';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
-  const [notifications, setNotifications] = useState(true);
-  const [openProfileDialog, setOpenProfileDialog] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [profileData, setProfileData] = useState({
-    fullName: '',
-    email: user?.email || ''
-  });
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadUserProfile();
-  }, []);
+    loadProfile();
+  }, [user?.id]);
 
-  const loadUserProfile = async () => {
-    try {
-      const profile = await userProfileService.getCurrentProfile();
-      setUserProfile(profile);
-      if (profile) {
-        setProfileData({
-          fullName: profile.full_name || '',
-          email: profile.email
-        });
+  const loadProfile = async () => {
+    if (user?.id) {
+      try {
+        const data = await userProfileService.getProfile();
+        setProfile(data);
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Error loading user profile:', err);
     }
   };
 
@@ -75,222 +49,123 @@ export default function SettingsPage() {
     }
   };
 
-  const handleUpdateProfile = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      await userProfileService.upsertProfile({
-        full_name: profileData.fullName,
-        photo_url: userProfile?.photo_url
-      });
-      
-      await loadUserProfile();
-      setOpenProfileDialog(false);
-    } catch (err) {
-      setError('Failed to update profile. Please try again.');
-      console.error('Error updating profile:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setUploadingPhoto(true);
-      setError(null);
-      
-      const photoUrl = await userProfileService.uploadProfilePhoto(file);
-      
-      await userProfileService.upsertProfile({
-        full_name: profileData.fullName,
-        photo_url: photoUrl
-      });
-      
-      await loadUserProfile();
-    } catch (err) {
-      setError('Failed to upload photo. Please try again.');
-      console.error('Error uploading photo:', err);
-    } finally {
-      setUploadingPhoto(false);
-    }
-  };
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          height: '100%',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 2
+        }}
+      >
+        <Typography sx={{ color: 'white' }}>
+          Loading...
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box
       sx={{
         height: '100%',
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: 2,
-        paddingBottom: 8,
-        overflow: 'auto'
+        display: 'flex',
+        flexDirection: 'column',
+        padding: 2
       }}
     >
       {/* Header */}
-      <Typography 
-        variant="h4" 
-        sx={{ 
-          color: 'white', 
-          fontWeight: 300,
-          textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-          marginBottom: 3
-        }}
-      >
-        Settings
-      </Typography>
+      <Box sx={{ marginBottom: 3, textAlign: 'center' }}>
+        <Typography
+          variant="h4"
+          sx={{
+            color: 'white',
+            fontWeight: 300,
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+            marginBottom: 2
+          }}
+        >
+          Settings
+        </Typography>
+        
+        {/* Profile Section */}
+        <Box sx={{ 
+          background: 'rgba(255, 255, 255, 0.95)', 
+          borderRadius: 2, 
+          padding: 2, 
+          marginBottom: 2 
+        }}>
+          <Avatar
+            src={profile?.photo_url}
+            sx={{ 
+              width: 80, 
+              height: 80, 
+              margin: '0 auto 16px',
+              border: '3px solid rgba(255,255,255,0.3)'
+            }}
+          >
+            {profile?.full_name?.charAt(0) || <Person />}
+          </Avatar>
+          <Typography variant="h6" sx={{ color: '#2c3e50', marginBottom: 1 }}>
+            {profile?.full_name || 'User'}
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#7f8c8d' }}>
+            {user?.email}
+          </Typography>
+        </Box>
+      </Box>
 
       {/* Settings List */}
-      <Card
-        sx={{
-          background: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: 2
-        }}
-      >
-        <List>
-          <ListItem onClick={() => setOpenProfileDialog(true)} sx={{ cursor: 'pointer' }}>
+      <Box sx={{ flex: 1 }}>
+        <List sx={{ 
+          background: 'rgba(255, 255, 255, 0.95)', 
+          borderRadius: 2,
+          overflow: 'hidden'
+        }}>
+          <ListItem>
             <ListItemIcon>
-              <Avatar
-                src={userProfile?.photo_url}
-                sx={{ width: 32, height: 32 }}
-              >
-                {userProfile?.full_name?.charAt(0) || <Person />}
-              </Avatar>
+              <Settings sx={{ color: '#667eea' }} />
             </ListItemIcon>
             <ListItemText 
-              primary={userProfile?.full_name || "Profile"} 
-              secondary={user?.email}
+              primary="Account Settings" 
+              secondary="Manage your account preferences"
             />
           </ListItem>
-
-          <Divider />
-
+          
           <ListItem>
             <ListItemIcon>
-              <Notifications />
+              <Person sx={{ color: '#667eea' }} />
             </ListItemIcon>
-            <ListItemText primary="Push Notifications" />
-            <ListItemSecondaryAction>
-              <Switch
-                edge="end"
-                checked={notifications}
-                onChange={(e) => setNotifications(e.target.checked)}
-              />
-            </ListItemSecondaryAction>
-          </ListItem>
-
-          <Divider />
-
-          <ListItem>
-            <ListItemIcon>
-              <Security />
-            </ListItemIcon>
-            <ListItemText primary="Privacy & Security" />
-          </ListItem>
-
-          <Divider />
-
-          <ListItem>
-            <ListItemIcon>
-              <Language />
-            </ListItemIcon>
-            <ListItemText primary="Language" secondary="English" />
-          </ListItem>
-
-          <Divider />
-
-          <ListItem>
-            <ListItemIcon>
-              <Help />
-            </ListItemIcon>
-            <ListItemText primary="Help & Support" />
-          </ListItem>
-
-          <Divider />
-
-          <ListItem onClick={handleSignOut} sx={{ cursor: 'pointer' }}>
-            <ListItemIcon>
-              <Logout />
-            </ListItemIcon>
-            <ListItemText primary="Sign Out" />
+            <ListItemText 
+              primary="Profile" 
+              secondary="Edit your profile information"
+            />
           </ListItem>
         </List>
-      </Card>
+      </Box>
 
-      {/* Profile Dialog */}
-      <Dialog open={openProfileDialog} onClose={() => setOpenProfileDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Edit Profile</DialogTitle>
-        <DialogContent>
-          {error && (
-            <Alert severity="error" sx={{ marginBottom: 2 }}>
-              {error}
-            </Alert>
-          )}
-          
-          {/* Profile Photo Section */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 3 }}>
-            <Avatar
-              src={userProfile?.photo_url}
-              sx={{ 
-                width: 80, 
-                height: 80, 
-                marginBottom: 2,
-                border: '3px solid #667eea'
-              }}
-            >
-              {userProfile?.full_name?.charAt(0) || <Person />}
-            </Avatar>
-            
-            <input
-              accept="image/*"
-              style={{ display: 'none' }}
-              id="photo-upload"
-              type="file"
-              onChange={handlePhotoUpload}
-            />
-            <label htmlFor="photo-upload">
-              <Button
-                variant="outlined"
-                component="span"
-                startIcon={uploadingPhoto ? <CircularProgress size={16} /> : <PhotoCamera />}
-                disabled={uploadingPhoto}
-                sx={{ marginBottom: 1 }}
-              >
-                {uploadingPhoto ? 'Uploading...' : 'Upload Photo'}
-              </Button>
-            </label>
-          </Box>
-
-          <TextField
-            fullWidth
-            label="Full Name"
-            value={profileData.fullName}
-            onChange={(e) => setProfileData(prev => ({ ...prev, fullName: e.target.value }))}
-            sx={{ marginBottom: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Email"
-            type="email"
-            value={profileData.email}
-            disabled
-            sx={{ marginBottom: 2 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenProfileDialog(false)}>Cancel</Button>
-          <Button 
-            onClick={handleUpdateProfile} 
-            variant="contained"
-            disabled={loading}
-          >
-            {loading ? 'Saving...' : 'Save'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Sign Out Button */}
+      <Button
+        variant="outlined"
+        startIcon={<Logout />}
+        onClick={handleSignOut}
+        sx={{
+          marginTop: 2,
+          color: 'white',
+          borderColor: 'white',
+          '&:hover': {
+            borderColor: 'white',
+            backgroundColor: 'rgba(255,255,255,0.1)'
+          }
+        }}
+      >
+        Sign Out
+      </Button>
     </Box>
   );
 }
