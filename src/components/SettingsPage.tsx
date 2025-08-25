@@ -9,12 +9,20 @@ import {
   ListItemIcon, 
   Typography, 
   Button,
-  Avatar
+  Avatar,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField
 } from '@mui/material';
 import { 
   Settings, 
   Person, 
-  Logout 
+  Logout,
+  Edit,
+  Delete
 } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 import { userProfileService, type UserProfile } from '@/lib/userProfile';
@@ -23,6 +31,12 @@ export default function SettingsPage() {
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    full_name: '',
+    email: ''
+  });
+  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -33,6 +47,10 @@ export default function SettingsPage() {
       try {
         const data = await userProfileService.getProfile();
         setProfile(data);
+        setEditForm({
+          full_name: data?.full_name || '',
+          email: user.email || ''
+        });
       } catch (error) {
         console.error('Error loading profile:', error);
       } finally {
@@ -46,6 +64,37 @@ export default function SettingsPage() {
       await signOut();
     } catch (error) {
       console.error('Error signing out:', error);
+    }
+  };
+
+  const handleEditProfile = async () => {
+    if (!editForm.full_name.trim()) return;
+
+    try {
+      setEditLoading(true);
+      await userProfileService.updateProfile({
+        full_name: editForm.full_name.trim()
+      });
+      await loadProfile();
+      setEditDialogOpen(false);
+      alert('Profile updated successfully!');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Failed to update profile. Please try again.');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+      try {
+        // Add account deletion logic here
+        alert('Account deletion feature coming soon.');
+      } catch (error) {
+        console.error('Error deleting account:', error);
+        alert('Failed to delete account. Please try again.');
+      }
     }
   };
 
@@ -98,8 +147,20 @@ export default function SettingsPage() {
           background: 'rgba(255, 255, 255, 0.95)', 
           borderRadius: 2, 
           padding: 2, 
-          marginBottom: 2 
+          marginBottom: 2,
+          position: 'relative'
         }}>
+          <IconButton
+            onClick={() => setEditDialogOpen(true)}
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              color: '#667eea'
+            }}
+          >
+            <Edit />
+          </IconButton>
           <Avatar
             src={profile?.photo_url}
             sx={{ 
@@ -127,7 +188,7 @@ export default function SettingsPage() {
           borderRadius: 2,
           overflow: 'hidden'
         }}>
-          <ListItem>
+          <ListItem button onClick={() => setEditDialogOpen(true)}>
             <ListItemIcon>
               <Settings sx={{ color: '#667eea' }} />
             </ListItemIcon>
@@ -137,13 +198,14 @@ export default function SettingsPage() {
             />
           </ListItem>
           
-          <ListItem>
+          <ListItem button onClick={handleDeleteAccount}>
             <ListItemIcon>
-              <Person sx={{ color: '#667eea' }} />
+              <Delete sx={{ color: '#e74c3c' }} />
             </ListItemIcon>
             <ListItemText 
-              primary="Profile" 
-              secondary="Edit your profile information"
+              primary="Delete Account" 
+              secondary="Permanently delete your account and data"
+              sx={{ '& .MuiListItemText-primary': { color: '#e74c3c' } }}
             />
           </ListItem>
         </List>
@@ -166,6 +228,46 @@ export default function SettingsPage() {
       >
         Sign Out
       </Button>
+
+      {/* Edit Profile Dialog */}
+      <Dialog 
+        open={editDialogOpen} 
+        onClose={() => setEditDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Edit Profile</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="Full Name"
+            value={editForm.full_name}
+            onChange={(e) => setEditForm(prev => ({ ...prev, full_name: e.target.value }))}
+            sx={{ marginBottom: 2, marginTop: 1 }}
+            placeholder="Enter your full name"
+          />
+          <TextField
+            fullWidth
+            label="Email"
+            value={editForm.email}
+            disabled
+            sx={{ marginBottom: 2 }}
+            helperText="Email cannot be changed"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditDialogOpen(false)} disabled={editLoading}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleEditProfile} 
+            variant="contained"
+            disabled={editLoading || !editForm.full_name.trim()}
+          >
+            {editLoading ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

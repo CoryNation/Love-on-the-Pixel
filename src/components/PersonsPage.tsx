@@ -22,8 +22,9 @@ import {
 import { 
   Person, 
   PersonAdd,
+  Favorite,
   Refresh,
-  Close
+  Delete
 } from '@mui/icons-material';
 import { personsService, type Person } from '@/lib/personsService';
 import { affirmationsService } from '@/lib/affirmations';
@@ -146,15 +147,13 @@ export default function PersonsPage() {
       }}
     >
       {/* Header */}
-      <Box sx={{ marginBottom: 2 }}>
+      <Box sx={{ marginBottom: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography
           variant="h4"
           sx={{
             color: 'white',
-            textAlign: 'center',
             fontWeight: 300,
-            textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-            marginBottom: 2
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
           }}
         >
           Persons
@@ -213,14 +212,11 @@ export default function PersonsPage() {
                   <ListItemText
                     primary={person.name}
                     secondary={
-                      <span>
-                        {person.email || 'No email provided'}
-                        {person.user_id && (
-                          <span style={{ color: '#27ae60', marginLeft: 8 }}>
-                            • Signed up
-                          </span>
-                        )}
-                      </span>
+                      person.user_id && (
+                        <span style={{ color: '#27ae60' }}>
+                          • Signed up
+                        </span>
+                      )
                     }
                   />
                   <ListItemSecondaryAction>
@@ -230,16 +226,26 @@ export default function PersonsPage() {
                         setSelectedPerson(person);
                         setOpenSendDialog(true);
                       }}
-                      sx={{ color: '#667eea', marginRight: 1 }}
+                      sx={{ color: '#e74c3c', marginRight: 1 }}
+                      title="Send heart"
                     >
-                      <Person />
+                      <Favorite />
+                    </IconButton>
+                    <IconButton
+                      edge="end"
+                      onClick={() => loadPersons()}
+                      sx={{ color: '#667eea', marginRight: 1 }}
+                      title="Refresh invitation"
+                    >
+                      <Refresh />
                     </IconButton>
                     <IconButton
                       edge="end"
                       onClick={() => handleDeletePerson(person.id)}
                       sx={{ color: '#e74c3c' }}
+                      title="Delete person"
                     >
-                      <Close />
+                      <Delete />
                     </IconButton>
                   </ListItemSecondaryAction>
                 </ListItem>

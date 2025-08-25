@@ -137,8 +137,6 @@ export default function WavePage() {
           // Reload the initial affirmation since the current one was deleted
           await loadInitialAffirmation();
         }
-        
-        alert('Affirmation deleted successfully!');
       } catch (error) {
         console.error('Error deleting affirmation:', error);
         alert('Failed to delete affirmation. Please try again.');
