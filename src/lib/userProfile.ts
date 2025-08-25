@@ -72,6 +72,29 @@ export const userProfileService = {
     return publicUrl;
   },
 
+  // Update user profile
+  async updateProfile(updates: Partial<UserProfile>): Promise<UserProfile> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', user.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+
+    return data;
+  },
+
   // Get user profile by ID
   async getProfileById(userId: string): Promise<UserProfile | null> {
     const { data, error } = await supabase

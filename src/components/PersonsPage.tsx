@@ -220,22 +220,33 @@ export default function PersonsPage() {
                     }
                   />
                   <ListItemSecondaryAction>
-                    <IconButton
-                      edge="end"
+                    <Button
+                      variant="contained"
+                      startIcon={<Favorite />}
                       onClick={() => {
                         setSelectedPerson(person);
                         setOpenSendDialog(true);
                       }}
-                      sx={{ color: '#e74c3c', marginRight: 1 }}
-                      title="Send heart"
+                      sx={{ 
+                        backgroundColor: '#667eea',
+                        color: 'white',
+                        marginRight: 1,
+                        '&:hover': {
+                          backgroundColor: '#5a6fd8'
+                        }
+                      }}
+                      size="small"
                     >
-                      <Favorite />
-                    </IconButton>
+                      Send
+                    </Button>
                     <IconButton
                       edge="end"
-                      onClick={() => loadPersons()}
+                      onClick={() => {
+                        // Send invitation logic here
+                        alert('Invitation sent!');
+                      }}
                       sx={{ color: '#667eea', marginRight: 1 }}
-                      title="Refresh invitation"
+                      title="Send invitation"
                     >
                       <Refresh />
                     </IconButton>

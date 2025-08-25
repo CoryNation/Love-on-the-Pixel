@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Box, 
   List, 
@@ -22,7 +22,8 @@ import {
   Person, 
   Logout,
   Edit,
-  Delete
+  Delete,
+  PhotoCamera
 } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 import { userProfileService, type UserProfile } from '@/lib/userProfile';
@@ -34,9 +35,11 @@ export default function SettingsPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     full_name: '',
-    email: ''
+    email: '',
+    photo_url: ''
   });
   const [editLoading, setEditLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadProfile();
@@ -49,7 +52,8 @@ export default function SettingsPage() {
         setProfile(data);
         setEditForm({
           full_name: data?.full_name || '',
-          email: user.email || ''
+          email: user.email || '',
+          photo_url: data?.photo_url || ''
         });
       } catch (error) {
         console.error('Error loading profile:', error);
@@ -67,13 +71,26 @@ export default function SettingsPage() {
     }
   };
 
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setEditForm(prev => ({ ...prev, photo_url: result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleEditProfile = async () => {
     if (!editForm.full_name.trim()) return;
 
     try {
       setEditLoading(true);
       await userProfileService.updateProfile({
-        full_name: editForm.full_name.trim()
+        full_name: editForm.full_name.trim(),
+        photo_url: editForm.photo_url
       });
       await loadProfile();
       setEditDialogOpen(false);
@@ -188,14 +205,22 @@ export default function SettingsPage() {
           borderRadius: 2,
           overflow: 'hidden'
         }}>
-          <ListItem button onClick={() => setEditDialogOpen(true)}>
-            <ListItemIcon>
-              <Settings sx={{ color: '#667eea' }} />
-            </ListItemIcon>
-            <ListItemText 
-              primary="Account Settings" 
-              secondary="Manage your account preferences"
-            />
+          {/* Account Settings Section Header */}
+          <ListItem sx={{ 
+            backgroundColor: '#f8f9fa',
+            borderBottom: '1px solid #e9ecef'
+          }}>
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                color: '#000000',
+                fontWeight: 600,
+                width: '100%',
+                textAlign: 'center'
+              }}
+            >
+              Account Settings
+            </Typography>
           </ListItem>
           
           <ListItem button onClick={handleDeleteAccount}>
@@ -238,12 +263,42 @@ export default function SettingsPage() {
       >
         <DialogTitle>Edit Profile</DialogTitle>
         <DialogContent>
+          {/* Photo Upload Section */}
+          <Box sx={{ textAlign: 'center', marginBottom: 3 }}>
+            <Avatar
+              src={editForm.photo_url}
+              sx={{ 
+                width: 100, 
+                height: 100, 
+                margin: '0 auto 16px',
+                border: '3px solid #e9ecef'
+              }}
+            >
+              {editForm.full_name?.charAt(0) || <Person />}
+            </Avatar>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoUpload}
+              style={{ display: 'none' }}
+            />
+            <Button
+              variant="outlined"
+              startIcon={<PhotoCamera />}
+              onClick={() => fileInputRef.current?.click()}
+              sx={{ marginBottom: 2 }}
+            >
+              Change Photo
+            </Button>
+          </Box>
+
           <TextField
             fullWidth
             label="Full Name"
             value={editForm.full_name}
             onChange={(e) => setEditForm(prev => ({ ...prev, full_name: e.target.value }))}
-            sx={{ marginBottom: 2, marginTop: 1 }}
+            sx={{ marginBottom: 2 }}
             placeholder="Enter your full name"
           />
           <TextField
