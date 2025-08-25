@@ -31,6 +31,140 @@ import { affirmationsService } from '@/lib/affirmations';
 import { shareInvitationService } from '@/lib/shareInvitationService';
 import { useAuth } from '@/contexts/AuthContext';
 import { AFFIRMATION_THEMES } from '@/lib/affirmationThemes';
+import { supabase, type UserProfile, type NewUserProfile } from './supabase';
+
+export type { UserProfile, NewUserProfile };
+
+export const userProfileService = {
+  // Get current user's profile
+  async getCurrentProfile(): Promise<UserProfile | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+      console.error('Error fetching user profile:', error);
+      throw error;
+    }
+
+    return data;
+  },
+
+  // Create or update user profile
+  async upsertProfile(profile: Partial<UserProfile>): Promise<UserProfile> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    // Remove email from the profile data since it's not in the table schema
+    const { email, ...profileWithoutEmail } = profile;
+
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .upsert({
+        id: user.id,
+        ...profileWithoutEmail,
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error upserting user profile:', error);
+      throw error;
+    }
+
+    return data;
+  },
+
+  // Upload profile photo
+  async uploadProfilePhoto(file: File): Promise<string> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+    const filePath = `profile-photos/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      console.error('Error uploading photo:', uploadError);
+      throw uploadError;
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  },
+
+  // Update user profile
+  async updateProfile(updates: Partial<UserProfile>): Promise<UserProfile> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    // Remove email from the updates since it's not in the table schema
+    const { email, ...updatesWithoutEmail } = updates;
+
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .update({
+        ...updatesWithoutEmail,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', user.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+
+    return data;
+  },
+
+  // Get user profile by ID
+  async getProfileById(userId: string): Promise<UserProfile | null> {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching user profile by ID:', error);
+      throw error;
+    }
+
+    return data;
+  },
+
+  // Get user profile by email
+  async getProfileByEmail(email: string): Promise<UserProfile | null> {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (error) {
+      console.error('Error fetching user profile by email:', error);
+      return null;
+    }
+
+    return data;
+  }
+};
 
 export default function PersonsPage() {
   const { user } = useAuth();
@@ -76,7 +210,7 @@ export default function PersonsPage() {
   const handleSendInvitation = async (person: Person) => {
     try {
       // Get current user's profile for the invitation
-      const userProfile = await personsService.getCurrentUserProfile();
+      const userProfile = await userProfileService.getCurrentProfile();
       
       await shareInvitationService.shareInvitation({
         inviterName: userProfile?.full_name || user?.email || 'A friend',

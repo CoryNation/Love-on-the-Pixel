@@ -23,16 +23,18 @@ export const userProfileService = {
   },
 
   // Create or update user profile
-  async upsertProfile(profile: NewUserProfile): Promise<UserProfile> {
+  async upsertProfile(profile: Partial<UserProfile>): Promise<UserProfile> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
+
+    // Remove email from the profile data since it's not in the table schema
+    const { email, ...profileWithoutEmail } = profile;
 
     const { data, error } = await supabase
       .from('user_profiles')
       .upsert({
         id: user.id,
-        email: user.email!,
-        ...profile,
+        ...profileWithoutEmail,
         updated_at: new Date().toISOString()
       })
       .select()
@@ -77,10 +79,13 @@ export const userProfileService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
+    // Remove email from the updates since it's not in the table schema
+    const { email, ...updatesWithoutEmail } = updates;
+
     const { data, error } = await supabase
       .from('user_profiles')
       .update({
-        ...updates,
+        ...updatesWithoutEmail,
         updated_at: new Date().toISOString()
       })
       .eq('id', user.id)

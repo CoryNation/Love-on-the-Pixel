@@ -35,7 +35,6 @@ export default function SettingsPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     full_name: '',
-    email: '',
     photo_url: ''
   });
   const [editLoading, setEditLoading] = useState(false);
@@ -52,7 +51,6 @@ export default function SettingsPage() {
         setProfile(data);
         setEditForm({
           full_name: data?.full_name || '',
-          email: user.email || '',
           photo_url: data?.photo_url || ''
         });
       } catch (error) {
@@ -307,14 +305,6 @@ export default function SettingsPage() {
             onChange={(e) => setEditForm(prev => ({ ...prev, full_name: e.target.value }))}
             sx={{ marginBottom: 2 }}
             placeholder="Enter your full name"
-          />
-          <TextField
-            fullWidth
-            label="Email"
-            value={editForm.email}
-            disabled
-            sx={{ marginBottom: 2 }}
-            helperText="Email cannot be changed"
           />
         </DialogContent>
         <DialogActions>
