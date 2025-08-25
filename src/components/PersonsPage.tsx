@@ -1,37 +1,34 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Card,
-  Avatar,
-  IconButton,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  ListItemSecondaryAction,
-  Chip
+import { useState, useEffect, useCallback } from 'react';
+import { 
+  Box, 
+  List, 
+  ListItem, 
+  ListItemText, 
+  ListItemAvatar, 
+  Avatar, 
+  IconButton, 
+  Button, 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  DialogActions, 
+  TextField, 
+  Typography, 
+  CircularProgress,
+  Alert
 } from '@mui/material';
 import { 
-  PersonAdd,
-  Refresh,
-  Close
+  Add, 
+  Send, 
+  Person, 
+  Delete 
 } from '@mui/icons-material';
-import { shareInvitationService, type ShareInvitationData } from '@/lib/shareInvitationService';
-import { userProfileService } from '@/lib/userProfile';
 import { personsService, type Person } from '@/lib/personsService';
-import { useAuth } from '@/contexts/AuthContext';
 import { affirmationsService } from '@/lib/affirmations';
-import { supabase } from '@/lib/supabaseClient';
-import { AFFIRMATION_THEMES, type AffirmationTheme } from '@/lib/affirmationThemes';
+import { useAuth } from '@/contexts/AuthContext';
+import { AFFIRMATION_THEMES, getThemeColor, getThemeEmoji } from '@/lib/affirmationThemes';
 
 
 export default function PersonsPage() {

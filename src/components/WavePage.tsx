@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   Box, 
   Card, 
@@ -13,17 +13,11 @@ import {
   Button,
   List,
   Avatar,
-  Tabs,
-  Tab,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem
+  TextField
 } from '@mui/material';
 import { 
   Favorite, 
@@ -31,14 +25,12 @@ import {
   Share, 
   Edit,
   Delete,
-  Person,
-  NavigateNext,
-  NavigateBefore
+  Person
 } from '@mui/icons-material';
 import { affirmationsService, type Affirmation } from '@/lib/affirmations';
 import { userProfileService, type UserProfile } from '@/lib/userProfile';
 import { useAuth } from '@/contexts/AuthContext';
-import { AFFIRMATION_THEMES, getThemeColor, getThemeEmoji, type AffirmationTheme } from '@/lib/affirmationThemes';
+import { AFFIRMATION_THEMES, getThemeColor, getThemeEmoji } from '@/lib/affirmationThemes';
 
 export default function WavePage() {
   const { user } = useAuth();
@@ -60,35 +52,7 @@ export default function WavePage() {
   });
   const [editLoading, setEditLoading] = useState(false);
 
-  useEffect(() => {
-    loadInitialAffirmation();
-    
-    // Listen for new affirmations being created
-    const handleAffirmationCreated = () => {
-      loadInitialAffirmation();
-    };
-    
-    window.addEventListener('affirmationCreated', handleAffirmationCreated);
-    
-    return () => {
-      window.removeEventListener('affirmationCreated', handleAffirmationCreated);
-    };
-  }, [user?.id]); // Add user?.id as dependency
-
-  // Add a refresh function that can be called from outside
-  const refreshAffirmations = () => {
-    loadInitialAffirmation();
-  };
-
-  // Expose the refresh function globally for now (for testing)
-  useEffect(() => {
-    (window as any).refreshAffirmations = refreshAffirmations;
-    return () => {
-      delete (window as any).refreshAffirmations;
-    };
-  }, []);
-
-  const loadInitialAffirmation = async () => {
+  const loadInitialAffirmation = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -130,7 +94,35 @@ export default function WavePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
+
+  useEffect(() => {
+    loadInitialAffirmation();
+    
+    // Listen for new affirmations being created
+    const handleAffirmationCreated = () => {
+      loadInitialAffirmation();
+    };
+    
+    window.addEventListener('affirmationCreated', handleAffirmationCreated);
+    
+    return () => {
+      window.removeEventListener('affirmationCreated', handleAffirmationCreated);
+    };
+  }, [loadInitialAffirmation]);
+
+  // Add a refresh function that can be called from outside
+  const refreshAffirmations = useCallback(() => {
+    loadInitialAffirmation();
+  }, [loadInitialAffirmation]);
+
+  // Expose the refresh function globally for now (for testing)
+  useEffect(() => {
+    (window as Window & { refreshAffirmations?: () => void }).refreshAffirmations = refreshAffirmations;
+    return () => {
+      delete (window as Window & { refreshAffirmations?: () => void }).refreshAffirmations;
+    };
+  }, [refreshAffirmations]);
 
   const handleDeleteAffirmation = async (affirmationId: string) => {
     if (confirm('Are you sure you want to delete this affirmation?')) {
