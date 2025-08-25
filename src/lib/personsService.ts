@@ -33,6 +33,25 @@ export const personsService = {
     return data || [];
   },
 
+  // Get current user's profile
+  async getCurrentUserProfile(): Promise<any> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+      console.error('Error fetching user profile:', error);
+      throw error;
+    }
+
+    return data;
+  },
+
   // Create a new person
   async create(person: NewPerson): Promise<Person> {
     const { data: { user } } = await supabase.auth.getUser();

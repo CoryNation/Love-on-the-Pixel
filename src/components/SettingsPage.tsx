@@ -88,16 +88,23 @@ export default function SettingsPage() {
 
     try {
       setEditLoading(true);
+      console.log('Attempting to update profile with:', {
+        full_name: editForm.full_name.trim(),
+        photo_url: editForm.photo_url
+      });
+      
       await userProfileService.upsertProfile({
         full_name: editForm.full_name.trim(),
         photo_url: editForm.photo_url
       });
+      
+      console.log('Profile updated successfully');
       await loadProfile();
       setEditDialogOpen(false);
       alert('Profile updated successfully!');
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile. Please try again.');
+      alert(`Failed to update profile: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setEditLoading(false);
     }

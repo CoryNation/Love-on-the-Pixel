@@ -28,6 +28,7 @@ import {
 } from '@mui/icons-material';
 import { personsService, type Person } from '@/lib/personsService';
 import { affirmationsService } from '@/lib/affirmations';
+import { shareInvitationService } from '@/lib/shareInvitationService';
 import { useAuth } from '@/contexts/AuthContext';
 import { AFFIRMATION_THEMES } from '@/lib/affirmationThemes';
 
@@ -69,6 +70,32 @@ export default function PersonsPage() {
       } finally {
         setLoading(false);
       }
+    }
+  };
+
+  const handleSendInvitation = async (person: Person) => {
+    try {
+      // Get current user's profile for the invitation
+      const userProfile = await personsService.getCurrentUserProfile();
+      
+      await shareInvitationService.shareInvitation({
+        inviterName: userProfile?.full_name || user?.email || 'A friend',
+        inviterEmail: user?.email || '',
+        inviteeName: person.name,
+        customMessage: `Hi ${person.name}! I'd love to share affirmations and words of encouragement with you through Love on the Pixel. Join me in spreading love and positivity! 💕`
+      });
+
+      // Store the invitation in the database
+      await shareInvitationService.storeInvitation({
+        inviterName: userProfile?.full_name || user?.email || 'A friend',
+        inviterEmail: user?.email || '',
+        inviteeName: person.name,
+        customMessage: `Hi ${person.name}! I'd love to share affirmations and words of encouragement with you through Love on the Pixel. Join me in spreading love and positivity! 💕`
+      });
+
+    } catch (error) {
+      console.error('Error sending invitation:', error);
+      alert('Failed to send invitation. Please try again.');
     }
   };
 
@@ -142,12 +169,16 @@ export default function PersonsPage() {
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         display: 'flex',
         flexDirection: 'column',
-        padding: 2,
-        overflow: 'hidden'
+        padding: 2
       }}
     >
       {/* Header */}
-      <Box sx={{ marginBottom: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: 3 
+      }}>
         <Typography
           variant="h4"
           sx={{
@@ -158,16 +189,15 @@ export default function PersonsPage() {
         >
           Persons
         </Typography>
-        
         <Button
           variant="contained"
           startIcon={<PersonAdd />}
           onClick={() => setOpenAddDialog(true)}
           sx={{
-            backgroundColor: 'rgba(255,255,255,0.2)',
+            backgroundColor: 'rgba(255, 255, 255, 0.2)',
             color: 'white',
             '&:hover': {
-              backgroundColor: 'rgba(255,255,255,0.3)'
+              backgroundColor: 'rgba(255, 255, 255, 0.3)'
             }
           }}
         >
@@ -178,45 +208,44 @@ export default function PersonsPage() {
       {/* Persons List */}
       <Box sx={{ flex: 1, overflow: 'auto' }}>
         {persons.length === 0 ? (
-          <Card
+          <Box
             sx={{
-              background: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: 2,
-              padding: 3,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              color: 'white',
               textAlign: 'center'
             }}
           >
-            <Typography variant="body1" sx={{ color: '#2c3e50' }}>
-              No persons added yet. Add someone special to start sending affirmations!
+            <Typography variant="h6" sx={{ marginBottom: 2 }}>
+              No persons yet
             </Typography>
-          </Card>
+            <Typography variant="body2" sx={{ opacity: 0.8 }}>
+              Add someone special to start sharing affirmations with them.
+            </Typography>
+          </Box>
         ) : (
-          <List>
+          <List sx={{ 
+            background: 'rgba(255, 255, 255, 0.95)', 
+            borderRadius: 2,
+            overflow: 'hidden'
+          }}>
             {persons.map((person) => (
-              <Card
-                key={person.id}
-                sx={{
-                  marginBottom: 1,
-                  background: 'rgba(255, 255, 255, 0.95)',
-                  backdropFilter: 'blur(10px)',
-                  borderRadius: 2
-                }}
-              >
+              <Card key={person.id} sx={{ marginBottom: 1, boxShadow: 'none' }}>
                 <ListItem>
                   <ListItemAvatar>
-                    <Avatar>
-                      <Person />
+                    <Avatar src={person.avatar}>
+                      {person.name.charAt(0)}
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText
                     primary={person.name}
                     secondary={
-                      person.user_id && (
-                        <span style={{ color: '#27ae60' }}>
-                          • Signed up
-                        </span>
-                      )
+                      <span>
+                        {person.email ? person.email : 'No email provided'}
+                      </span>
                     }
                   />
                   <ListItemSecondaryAction>
@@ -241,10 +270,7 @@ export default function PersonsPage() {
                     </Button>
                     <IconButton
                       edge="end"
-                      onClick={() => {
-                        // Send invitation logic here
-                        alert('Invitation sent!');
-                      }}
+                      onClick={() => handleSendInvitation(person)}
                       sx={{ color: '#667eea', marginRight: 1 }}
                       title="Send invitation"
                     >
