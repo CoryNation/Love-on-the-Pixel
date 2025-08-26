@@ -65,6 +65,7 @@ export const affirmationsService = {
     }
 
     console.log('Received affirmations:', data);
+    console.log('Query conditions: recipient_id =', user.id, 'status = delivered');
     return data || [];
   },
 

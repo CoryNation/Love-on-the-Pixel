@@ -56,8 +56,11 @@ export default function WavePage() {
     try {
       setLoading(true);
       
+      console.log('Loading affirmations for user:', user?.id);
+      
       // Load received affirmations for the main view
       const receivedAffirmations = await affirmationsService.getReceived();
+      console.log('Received affirmations:', receivedAffirmations);
       setReceivedAffirmations(receivedAffirmations);
       
       if (receivedAffirmations.length > 0) {
@@ -65,6 +68,7 @@ export default function WavePage() {
         const unviewed = receivedAffirmations.filter(aff => !aff.viewed);
         const affirmation = unviewed.length > 0 ? unviewed[0] : receivedAffirmations[0];
         
+        console.log('Selected affirmation to display:', affirmation);
         setCurrentAffirmation(affirmation);
         
         // Load sender profile if available
@@ -81,11 +85,14 @@ export default function WavePage() {
         if (!affirmation.viewed) {
           await affirmationsService.markAsViewed(affirmation.id);
         }
+      } else {
+        console.log('No received affirmations found');
       }
       
       // Load sent affirmations for the sent tab
       if (user?.id) {
         const sent = await affirmationsService.getSent();
+        console.log('Sent affirmations:', sent);
         setSentAffirmations(sent);
       }
     } catch (err) {

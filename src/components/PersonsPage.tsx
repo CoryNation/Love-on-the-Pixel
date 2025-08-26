@@ -105,12 +105,13 @@ export default function PersonsPage() {
       try {
         setLoading(true);
         
-        
+        console.log('Sending affirmation to:', selectedPerson);
         
         // Check if the recipient has signed up (has a user_id)
         if (!selectedPerson.user_id) {
           // Recipient hasn't signed up yet - store the affirmation with pending status
-  
+          console.log('Recipient not signed up, creating pending affirmation');
+          
           const newAffirmation = await affirmationsService.create({
             message: message.trim(),
             category: selectedTheme,
@@ -120,6 +121,7 @@ export default function PersonsPage() {
 
         } else {
           // Recipient has signed up - create delivered affirmation
+          console.log('Recipient signed up, creating delivered affirmation for user_id:', selectedPerson.user_id);
           
           const newAffirmation = await affirmationsService.create({
             message: message.trim(),
@@ -128,15 +130,19 @@ export default function PersonsPage() {
             recipient_email: selectedPerson.email
           });
           
+          console.log('Created affirmation:', newAffirmation);
         }
         
         setMessage('');
         setSelectedTheme('love');
         setOpenSendDialog(false);
         
+        // Show success message
+        alert('Affirmation sent successfully!');
+        
         // Refresh the affirmations in WavePage
-        if (typeof window !== 'undefined' && window.loadInitialAffirmation) {
-          window.loadInitialAffirmation();
+        if (typeof window !== 'undefined' && (window as any).refreshAffirmations) {
+          (window as any).refreshAffirmations();
         }
         
       } catch (error) {
