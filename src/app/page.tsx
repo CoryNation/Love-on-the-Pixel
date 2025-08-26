@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Box, CircularProgress, Typography, Fade } from '@mui/material';
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -21,22 +21,31 @@ export default function Home() {
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 2
-        }}
-      >
-        <CircularProgress sx={{ color: 'white' }} />
-        <Typography sx={{ color: 'white', marginTop: 2 }}>
-          Loading...
-        </Typography>
-      </Box>
+      <Fade in={true} timeout={500}>
+        <Box
+          sx={{
+            minHeight: '100vh',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 2
+          }}
+        >
+          <CircularProgress sx={{ color: 'white', marginBottom: 2 }} />
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              color: 'white', 
+              textAlign: 'center',
+              fontWeight: 300
+            }}
+          >
+            Loading Love on the Pixel...
+          </Typography>
+        </Box>
+      </Fade>
     );
   }
 

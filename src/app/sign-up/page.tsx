@@ -47,27 +47,27 @@ function SignUpForm() {
       setLoading(true);
       setError(null);
       
-      console.log('Attempting to sign up user:', email);
+  
       const signUpResult = await signUp(email, password);
-      console.log('Sign up successful, redirecting to dashboard');
+      
       
       // If this was an invitation sign-up, accept the invitation
       if (inviterId && signUpResult?.user?.id) {
         try {
-          console.log('Accepting invitation from:', inviterId);
+  
           await invitationService.acceptInvitation({
             inviterId: inviterId,
             inviteeId: signUpResult.user.id,
             inviteeName: email.split('@')[0], // Use email prefix as name
             inviteeEmail: email
           });
-          console.log('Invitation accepted successfully');
+          
         } catch (invitationError) {
           console.error('Error accepting invitation:', invitationError);
           // Don't fail the sign-up if invitation acceptance fails
         }
       } else if (inviterId) {
-        console.log('No user ID available for invitation acceptance');
+        
       }
       
       // After successful sign-up, redirect to dashboard

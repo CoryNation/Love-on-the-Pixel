@@ -96,7 +96,7 @@ export default function SettingsPage() {
         photo_url: editForm.photo_url
       });
       
-      console.log('Profile updated successfully');
+
       await loadProfile();
       setEditDialogOpen(false);
       alert('Profile updated successfully!');

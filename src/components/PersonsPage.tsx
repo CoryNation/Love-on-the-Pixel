@@ -105,31 +105,29 @@ export default function PersonsPage() {
       try {
         setLoading(true);
         
-        console.log('Sending affirmation to:', selectedPerson);
-        console.log('Selected person user_id:', selectedPerson.user_id);
-        console.log('Current user:', user?.id);
+        
         
         // Check if the recipient has signed up (has a user_id)
         if (!selectedPerson.user_id) {
           // Recipient hasn't signed up yet - store the affirmation with pending status
-          console.log('Creating pending affirmation for email:', selectedPerson.email);
+  
           const newAffirmation = await affirmationsService.create({
             message: message.trim(),
             category: selectedTheme,
             recipient_id: null, // No recipient_id since they haven't signed up
             recipient_email: selectedPerson.email // Store email for later matching
           });
-          console.log('Created pending affirmation:', newAffirmation);
+
         } else {
           // Recipient has signed up - create delivered affirmation
-          console.log('Creating delivered affirmation for user_id:', selectedPerson.user_id);
+          
           const newAffirmation = await affirmationsService.create({
             message: message.trim(),
             category: selectedTheme,
             recipient_id: selectedPerson.user_id,
             recipient_email: selectedPerson.email
           });
-          console.log('Created delivered affirmation:', newAffirmation);
+          
         }
         
         setMessage('');

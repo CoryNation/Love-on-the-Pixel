@@ -501,7 +501,13 @@ export default function WavePage() {
       </Box>
 
       {/* Content based on active tab */}
-      <Box sx={{ flex: 1, overflow: 'hidden', marginTop: 1, width: '100%' }}>
+      <Box sx={{ 
+        flex: 1, 
+        overflow: 'hidden', 
+        marginTop: 1, 
+        width: '100%',
+        paddingBottom: '80px' // Add padding to account for bottom navigation
+      }}>
         {activeTab === 'received' ? (
           // Received tab content
           filteredReceivedAffirmations.length === 0 ? (
@@ -595,10 +601,10 @@ export default function WavePage() {
                   {/* Category Badge */}
                   <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
                     <Chip
-                      icon={<span>{getCategoryEmoji(currentAffirmation.category)}</span>}
-                      label={AFFIRMATION_THEMES.find(t => t.id === currentAffirmation.category)?.name || currentAffirmation.category}
+                      icon={<span>{getCategoryEmoji(currentAffirmation?.category || 'love')}</span>}
+                      label={AFFIRMATION_THEMES.find(t => t.id === currentAffirmation?.category)?.name || currentAffirmation?.category || 'Love'}
                       sx={{
-                        backgroundColor: getCategoryColor(currentAffirmation.category),
+                        backgroundColor: getCategoryColor(currentAffirmation?.category || 'love'),
                         color: 'white',
                         fontWeight: 600,
                         '& .MuiChip-icon': { color: 'white' }
@@ -606,111 +612,128 @@ export default function WavePage() {
                     />
                   </Box>
 
-                  <CardContent sx={{ padding: 4, textAlign: 'center', paddingTop: 8 }}>
+                  {/* Message */}
+                  <CardContent sx={{ 
+                    padding: 4, 
+                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    minHeight: 200
+                  }}>
                     <Typography
                       variant="h6"
                       sx={{
-                        fontSize: '1.25rem',
                         lineHeight: 1.6,
                         color: '#2c3e50',
                         fontWeight: 400,
-                        marginBottom: 3,
+                        fontStyle: 'italic',
+                        marginBottom: 2
+                      }}
+                    >
+                      &ldquo;{currentAffirmation?.message}&rdquo;
+                    </Typography>
+                    
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: '#7f8c8d',
                         fontStyle: 'italic'
                       }}
                     >
-                      &ldquo;{currentAffirmation.message}&rdquo;
-                    </Typography>
-
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: '#7f8c8d',
-                        fontStyle: 'italic',
-                        marginTop: 2
-                      }}
-                    >
-                      With love, always
+                      {currentAffirmation?.created_at ? new Date(currentAffirmation.created_at).toLocaleDateString() : ''}
                     </Typography>
                   </CardContent>
 
                   {/* Action Buttons */}
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      bottom: 16,
-                      left: 16,
-                      right: 16,
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      gap: 3
-                    }}
-                  >
+                  <Box sx={{ 
+                    position: 'absolute', 
+                    bottom: 16, 
+                    left: '50%', 
+                    transform: 'translateX(-50%)',
+                    display: 'flex',
+                    gap: 2
+                  }}>
                     <IconButton
                       onClick={handleFavorite}
-                      sx={{
-                        color: currentAffirmation.is_favorite ? '#e74c3c' : '#bdc3c7',
-                        '&:hover': { color: '#e74c3c' }
+                      sx={{ 
+                        color: currentAffirmation?.is_favorite ? '#e74c3c' : '#95a5a6',
+                        backgroundColor: 'rgba(255,255,255,0.9)',
+                        '&:hover': {
+                          backgroundColor: 'rgba(255,255,255,1)',
+                          color: currentAffirmation?.is_favorite ? '#c0392b' : '#7f8c8d'
+                        }
                       }}
                     >
-                      {currentAffirmation.is_favorite ? <Favorite /> : <FavoriteBorder />}
+                      {currentAffirmation?.is_favorite ? <Favorite /> : <FavoriteBorder />}
                     </IconButton>
-
-                    <IconButton onClick={handleShare} sx={{ color: '#7f8c8d' }}>
+                    <IconButton
+                      onClick={handleShare}
+                      sx={{ 
+                        color: '#667eea',
+                        backgroundColor: 'rgba(255,255,255,0.9)',
+                        '&:hover': {
+                          backgroundColor: 'rgba(255,255,255,1)',
+                          color: '#5a6fd8'
+                        }
+                      }}
+                    >
                       <Share />
                     </IconButton>
                   </Box>
                 </Card>
-              </Box>
 
-              {/* Navigation Buttons */}
-              <Box sx={{ display: 'flex', gap: 2, marginTop: 3, justifyContent: 'center' }}>
-                <Button
-                  variant="outlined"
-                  onClick={loadRandomViewed}
-                  disabled={filteredReceivedAffirmations.filter(aff => aff.viewed).length === 0}
-                  sx={{
-                    minWidth: 140,
-                    height: 48,
-                    color: 'white',
-                    borderColor: 'white',
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    '&:hover': {
+                {/* Navigation Buttons */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  gap: 2, 
+                  marginTop: 2 
+                }}>
+                  <Button
+                    onClick={loadNextUnviewed}
+                    variant="outlined"
+                    disabled={filteredReceivedAffirmations.filter(aff => !aff.viewed).length === 0}
+                    sx={{
+                      color: 'white',
                       borderColor: 'white',
-                      backgroundColor: 'rgba(255,255,255,0.2)'
-                    },
-                    '&:disabled': {
-                      color: 'rgba(255,255,255,0.5)',
-                      borderColor: 'rgba(255,255,255,0.3)',
-                      backgroundColor: 'rgba(255,255,255,0.05)'
-                    }
-                  }}
-                >
-                  Viewed Affirmation
-                </Button>
-                <Button
-                  variant="outlined"
-                  onClick={loadNextUnviewed}
-                  disabled={filteredReceivedAffirmations.filter(aff => !aff.viewed).length === 0}
-                  sx={{
-                    minWidth: 140,
-                    height: 48,
-                    color: 'white',
-                    borderColor: 'white',
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    '&:hover': {
+                      backgroundColor: 'rgba(255,255,255,0.1)',
+                      '&:hover': {
+                        borderColor: 'white',
+                        backgroundColor: 'rgba(255,255,255,0.2)'
+                      },
+                      '&:disabled': {
+                        color: 'rgba(255,255,255,0.5)',
+                        borderColor: 'rgba(255,255,255,0.3)',
+                        backgroundColor: 'rgba(255,255,255,0.05)'
+                      }
+                    }}
+                  >
+                    Next Unviewed
+                  </Button>
+                  <Button
+                    onClick={loadRandomViewed}
+                    variant="outlined"
+                    disabled={filteredReceivedAffirmations.filter(aff => aff.viewed).length === 0}
+                    sx={{
+                      color: 'white',
                       borderColor: 'white',
-                      backgroundColor: 'rgba(255,255,255,0.2)'
-                    },
-                    '&:disabled': {
-                      color: 'rgba(255,255,255,0.5)',
-                      borderColor: 'rgba(255,255,255,0.3)',
-                      backgroundColor: 'rgba(255,255,255,0.05)'
-                    }
-                  }}
-                >
-                  New Affirmation
-                </Button>
+                      backgroundColor: 'rgba(255,255,255,0.1)',
+                      '&:hover': {
+                        borderColor: 'white',
+                        backgroundColor: 'rgba(255,255,255,0.2)'
+                      },
+                      '&:disabled': {
+                        color: 'rgba(255,255,255,0.5)',
+                        borderColor: 'rgba(255,255,255,0.3)',
+                        backgroundColor: 'rgba(255,255,255,0.05)'
+                      }
+                    }}
+                  >
+                    Random Viewed
+                  </Button>
+                </Box>
               </Box>
             </Box>
           )
@@ -725,6 +748,7 @@ export default function WavePage() {
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'flex-start',
+              paddingTop: 1,
               // Custom scrollbar styling
               '&::-webkit-scrollbar': {
                 width: '24px !important',
@@ -774,7 +798,7 @@ export default function WavePage() {
                 display: 'flex', 
                 flexDirection: 'column', 
                 alignItems: 'center',
-                padding: '0 16px'
+                padding: '0 16px 16px 16px' // Add bottom padding
               }}>
                 <List sx={{ 
                   padding: 0, 
