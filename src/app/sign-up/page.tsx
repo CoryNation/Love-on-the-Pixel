@@ -15,7 +15,8 @@ import {
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { invitationService } from '@/lib/invitationService';
+import { emailInvitationService } from '@/lib/emailInvitationService';
+import { supabase } from '@/lib/supabase';
 
 function SignUpForm() {
 
@@ -55,20 +56,23 @@ function SignUpForm() {
       // If this was an invitation sign-up, accept the invitation
       if (inviterId && signUpResult?.user?.id) {
         try {
-  
-          await invitationService.acceptInvitation({
-            inviterId: inviterId,
-            inviteeId: signUpResult.user.id,
-            inviteeName: email.split('@')[0], // Use email prefix as name
-            inviteeEmail: email
-          });
+          // Find the invitation by inviter ID and invitee email
+          const { data: invitations } = await supabase
+            .from('invitations')
+            .select('id')
+            .eq('inviter_id', inviterId)
+            .eq('invitee_email', email)
+            .eq('status', 'pending')
+            .limit(1);
+
+          if (invitations && invitations.length > 0) {
+            await emailInvitationService.acceptInvitation(invitations[0].id);
+          }
           
         } catch (invitationError) {
           console.error('Error accepting invitation:', invitationError);
           // Don't fail the sign-up if invitation acceptance fails
         }
-      } else if (inviterId) {
-        
       }
       
       // After successful sign-up, redirect to dashboard

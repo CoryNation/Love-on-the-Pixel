@@ -556,9 +556,6 @@ export default function PersonsPage() {
             >
               Copy Invitation Link
             </Button>
-            <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
-              Since email service isn't set up yet, you'll need to share this link manually.
-            </Typography>
           </Box>
         </DialogContent>
         <DialogActions>

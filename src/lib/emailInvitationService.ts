@@ -91,14 +91,8 @@ export const emailInvitationService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    // Get user's email to find invitations sent to them
-    const { data: userProfile } = await supabase
-      .from('user_profiles')
-      .select('email')
-      .eq('id', user.id)
-      .single();
-
-    const userEmail = userProfile?.email || user.email;
+    // Use the user's email directly from auth
+    const userEmail = user.email;
 
     const { data, error } = await supabase
       .from('invitations')

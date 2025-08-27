@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { authService } from '@/lib/auth';
+import { emailInvitationService } from '@/lib/emailInvitationService';
 
 interface AuthContextType {
   user: User | null;
@@ -23,7 +24,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     authService.getCurrentUser().then(setUser).finally(() => setLoading(false));
 
     // Listen for auth changes
-    const { data: { subscription } } = authService.onAuthStateChange(setUser);
+    const { data: { subscription } } = authService.onAuthStateChange((user) => {
+      setUser(user);
+      // Auto-accept pending invitations when user logs in
+      if (user) {
+        emailInvitationService.autoAcceptPendingInvitations().catch(console.error);
+      }
+    });
 
     return () => subscription.unsubscribe();
   }, []);
