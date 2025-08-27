@@ -170,8 +170,26 @@ export default function PersonsPage() {
   const handleDeletePerson = async (id: string) => {
     if (confirm('Are you sure you want to delete this person?')) {
       try {
-        // For now, we'll just remove from the persons list
-        // In the future, this will also handle connection removal
+        // Delete the person from the database
+        await personsService.delete(id);
+        
+        // Also delete any pending invitations for this person
+        const personToDelete = persons.find(p => p.id === id);
+        if (personToDelete?.email) {
+          try {
+            const pendingInvitations = invitations.filter(inv => 
+              inv.invitee_email === personToDelete.email && inv.status === 'pending'
+            );
+            for (const invitation of pendingInvitations) {
+              await emailInvitationService.declineInvitation(invitation.id);
+            }
+          } catch (invitationError) {
+            console.error('Error deleting invitations:', invitationError);
+            // Continue with person deletion even if invitation deletion fails
+          }
+        }
+        
+        // Reload data to reflect changes
         await loadData();
         alert('Person removed from your list.');
       } catch (error) {
@@ -321,18 +339,16 @@ export default function PersonsPage() {
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <Button
                         size="small"
-                        variant="outlined"
-                        startIcon={<Favorite />}
+                        variant="contained"
                         onClick={() => {
                           setSelectedPerson(person);
                           setOpenSendDialog(true);
                         }}
                         sx={{ 
-                          color: '#667eea', 
-                          borderColor: '#667eea',
+                          backgroundColor: '#ff69b4',
+                          color: 'white',
                           '&:hover': {
-                            borderColor: '#667eea',
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)'
+                            backgroundColor: '#ff1493'
                           }
                         }}
                       >
