@@ -337,23 +337,57 @@ export default function WavePage() {
       </Box>
 
       {/* Theme Filter */}
-      <Box sx={{ marginBottom: 2 }}>
-        <Chip
-          label="All"
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        gap: 1,
+        marginBottom: 2,
+        flexWrap: 'wrap'
+      }}>
+        <Button
+          variant={selectedTheme === 'all' ? 'contained' : 'outlined'}
           onClick={() => setSelectedTheme('all')}
-          color={selectedTheme === 'all' ? 'primary' : 'default'}
-          variant={selectedTheme === 'all' ? 'filled' : 'outlined'}
-          sx={{ marginRight: 1, marginBottom: 1 }}
-        />
-        {Object.entries(AFFIRMATION_THEMES).map(([key, theme]) => (
-          <Chip
-            key={key}
-            label={theme.name}
-            onClick={() => setSelectedTheme(key)}
-            color={selectedTheme === key ? 'primary' : 'default'}
-            variant={selectedTheme === key ? 'filled' : 'outlined'}
-            sx={{ marginRight: 1, marginBottom: 1 }}
-          />
+          sx={{
+            color: selectedTheme === 'all' ? 'white' : 'white',
+            borderColor: 'white',
+            backgroundColor: selectedTheme === 'all' ? 'rgba(255,255,255,0.3)' : 'transparent',
+            textTransform: 'none',
+            fontSize: '0.875rem',
+            padding: '4px 12px',
+            minWidth: 'auto',
+            '&:hover': {
+              backgroundColor: selectedTheme === 'all' ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.1)',
+              borderColor: 'white'
+            }
+          }}
+        >
+          All
+        </Button>
+        {AFFIRMATION_THEMES.map((theme) => (
+          <Button
+            key={theme.id}
+            variant={selectedTheme === theme.id ? 'contained' : 'outlined'}
+            onClick={() => setSelectedTheme(theme.id)}
+            sx={{
+              color: selectedTheme === theme.id ? 'white' : 'white',
+              borderColor: 'white',
+              backgroundColor: selectedTheme === theme.id ? 'rgba(255,255,255,0.3)' : 'transparent',
+              textTransform: 'none',
+              fontSize: '0.875rem',
+              padding: '4px 8px',
+              minWidth: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              '&:hover': {
+                backgroundColor: selectedTheme === theme.id ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.1)',
+                borderColor: 'white'
+              }
+            }}
+          >
+            <span style={{ fontSize: '1rem' }}>{theme.emoji}</span>
+            {theme.name}
+          </Button>
         ))}
       </Box>
 

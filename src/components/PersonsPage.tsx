@@ -50,8 +50,18 @@ export default function PersonsPage() {
 
   const loadPersons = async () => {
     try {
-      const data = await bidirectionalConnectionsService.getPersonsWithConnections();
-      setPersons(data);
+      // Use the existing personsService for now to avoid database issues
+      const { personsService } = await import('@/lib/personsService');
+      const data = await personsService.getAll();
+      
+      // Convert to PersonWithConnection format for compatibility
+      const personsWithConnections = data.map(person => ({
+        ...person,
+        connection_status: 'no_connection' as const,
+        connected_user_id: null
+      }));
+      
+      setPersons(personsWithConnections);
     } catch (error) {
       console.error('Error loading persons:', error);
     }
@@ -62,16 +72,9 @@ export default function PersonsPage() {
       try {
         setLoading(true);
         
-        // Try to find if this person is an existing user
-        const existingUser = await bidirectionalConnectionsService.findUserByName(newPerson.name);
-        
-        if (existingUser) {
-          // Person exists - create bidirectional connection
-          await bidirectionalConnectionsService.addPersonWithConnection(newPerson.name, existingUser.id);
-        } else {
-          // Person doesn't exist - add without connection for now
-          await bidirectionalConnectionsService.addPersonWithConnection(newPerson.name);
-        }
+        // Use the existing personsService for now to avoid database issues
+        const { personsService } = await import('@/lib/personsService');
+        await personsService.create(newPerson);
         
         setNewPerson({ name: '' });
         setOpenAddDialog(false);
