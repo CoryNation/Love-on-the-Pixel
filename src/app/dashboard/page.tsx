@@ -83,7 +83,7 @@ export default function Dashboard() {
           showLabels
         >
           <BottomNavigationAction 
-            label="Wave" 
+            label="Wellspring" 
             icon={<Water />} 
           />
           <BottomNavigationAction 

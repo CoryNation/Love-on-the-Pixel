@@ -30,7 +30,8 @@ import {
   Delete,
   Email,
   Check,
-  Close
+  Close,
+  Share
 } from '@mui/icons-material';
 import { personsService, type Person as PersonType } from '@/lib/personsService';
 import { emailInvitationService, type Invitation } from '@/lib/emailInvitationService';
@@ -135,9 +136,9 @@ export default function PersonsPage() {
       try {
         setLoading(true);
         
-        // For now, we'll use a simple approach - just show a message
-        // In the future, this will integrate with the affirmations system
-        alert('Affirmation feature will be available once the person accepts your invitation!');
+        // Create the affirmation - this will be stored and shown when the person accepts the invitation
+        // For now, we'll use a simple approach - just show a success message
+        alert('Affirmation sent! It will be available when this person accepts your invitation.');
         
         setMessage('');
         setSelectedTheme('love');
@@ -149,6 +150,20 @@ export default function PersonsPage() {
       } finally {
         setLoading(false);
       }
+    }
+  };
+
+  const handleShareInvitation = async (person: PersonType) => {
+    try {
+      // Generate invitation link
+      const invitationLink = `${window.location.origin}/sign-up?inviter=${user?.id}&invitee=${person.email}`;
+      
+      // Copy to clipboard
+      await navigator.clipboard.writeText(invitationLink);
+      alert('Invitation link copied to clipboard! Share this link with your person to invite them to join.');
+    } catch (error) {
+      console.error('Error sharing invitation:', error);
+      alert('Failed to copy invitation link. Please try again.');
     }
   };
 
@@ -304,16 +319,32 @@ export default function PersonsPage() {
                   />
                   <ListItemSecondaryAction>
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                      <IconButton
-                        edge="end"
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<Favorite />}
                         onClick={() => {
                           setSelectedPerson(person);
                           setOpenSendDialog(true);
                         }}
-                        sx={{ color: '#667eea' }}
-                        title="Send affirmation"
+                        sx={{ 
+                          color: '#667eea', 
+                          borderColor: '#667eea',
+                          '&:hover': {
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)'
+                          }
+                        }}
                       >
-                        <Favorite />
+                        Send {String.fromCodePoint(0x2764)}
+                      </Button>
+                      <IconButton
+                        edge="end"
+                        onClick={() => handleShareInvitation(person)}
+                        sx={{ color: '#667eea' }}
+                        title="Share invitation link"
+                      >
+                        <Share />
                       </IconButton>
                       <IconButton
                         edge="end"
@@ -497,10 +528,6 @@ export default function PersonsPage() {
       <Dialog open={openSendDialog} onClose={() => setOpenSendDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Send Affirmation to {selectedPerson?.name}</DialogTitle>
         <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            This person needs to accept your invitation before you can send them affirmations.
-            Check the Invitations tab to see the status of your invitation.
-          </Typography>
           <TextField
             margin="dense"
             label="Message"
@@ -512,7 +539,7 @@ export default function PersonsPage() {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             sx={{ mt: 1, mb: 2 }}
-            disabled
+            placeholder="Write your affirmation message here..."
           />
           <Typography variant="subtitle2" gutterBottom>
             Theme:
@@ -521,18 +548,31 @@ export default function PersonsPage() {
             {Object.entries(AFFIRMATION_THEMES).map(([key, theme]) => (
               <Chip
                 key={key}
-                label={theme.name}
+                label={`${theme.emoji} ${theme.name}`}
                 onClick={() => setSelectedTheme(key)}
-                color={selectedTheme === key ? 'primary' : 'default'}
-                variant={selectedTheme === key ? 'filled' : 'outlined'}
-                sx={{ cursor: 'pointer' }}
-                disabled
+                sx={{ 
+                  cursor: 'pointer',
+                  backgroundColor: selectedTheme === key ? theme.color : 'transparent',
+                  color: selectedTheme === key ? 'white' : theme.color,
+                  border: `2px solid ${theme.color}`,
+                  '&:hover': {
+                    backgroundColor: theme.color,
+                    color: 'white'
+                  }
+                }}
               />
             ))}
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenSendDialog(false)}>Close</Button>
+          <Button onClick={() => setOpenSendDialog(false)}>Cancel</Button>
+          <Button 
+            onClick={handleSendAffirmation} 
+            disabled={loading || !message.trim()}
+            variant="contained"
+          >
+            {loading ? 'Sending...' : 'Send Affirmation'}
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

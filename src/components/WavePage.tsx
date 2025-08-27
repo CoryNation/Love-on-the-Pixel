@@ -292,16 +292,29 @@ export default function WavePage() {
         alignItems: 'center', 
         marginBottom: 3 
       }}>
-        <Typography
-          variant="h4"
-          sx={{
-            color: 'white',
-            fontWeight: 300,
-            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-          }}
-        >
-          Love Wave
-        </Typography>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography
+            variant="h4"
+            sx={{
+              color: 'white',
+              fontWeight: 300,
+              textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+              marginBottom: 0.5
+            }}
+          >
+            Wellspring
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              color: 'rgba(255,255,255,0.8)',
+              fontStyle: 'italic',
+              textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+            }}
+          >
+            A flow of love from your persons
+          </Typography>
+        </Box>
         
         {/* Tab Buttons */}
         <Box sx={{ display: 'flex', gap: 1 }}>

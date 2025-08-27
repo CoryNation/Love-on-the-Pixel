@@ -12,7 +12,7 @@ import {
   Alert,
   Link
 } from '@mui/material';
-import { Favorite } from '@mui/icons-material';
+import Image from 'next/image';
 import { authService } from '@/lib/auth';
 
 export default function SignIn() {
@@ -61,14 +61,20 @@ export default function SignIn() {
         <CardContent sx={{ padding: 4 }}>
           {/* App Title and Icon */}
           <Box sx={{ textAlign: 'center', marginBottom: 3 }}>
-            <Favorite 
-              sx={{ 
-                fontSize: 48, 
-                color: '#667eea', 
-                marginBottom: 1,
-                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
-              }} 
-            />
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              marginBottom: 1,
+              filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
+            }}>
+              <Image
+                src="/android-chrome-192x192.png"
+                alt="Love on the Pixel"
+                width={48}
+                height={48}
+                style={{ borderRadius: '8px' }}
+              />
+            </Box>
             <Typography 
               variant="h3" 
               sx={{ 
