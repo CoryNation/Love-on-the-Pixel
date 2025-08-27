@@ -148,8 +148,11 @@ export default function PersonsPage() {
 
   const handleShareInvitation = async (person: PersonType) => {
     try {
-      // Generate invitation link
-      const invitationLink = `${window.location.origin}/sign-up?inviter=${user?.id}&invitee=${person.email}`;
+      // Generate invitation link - use the actual domain instead of Vercel preview
+      const baseUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://love-on-the-pixel.vercel.app' 
+        : window.location.origin;
+      const invitationLink = `${baseUrl}/sign-up?inviter=${user?.id}&invitee=${person.email}`;
       
       // Copy to clipboard
       await navigator.clipboard.writeText(invitationLink);
@@ -157,7 +160,10 @@ export default function PersonsPage() {
     } catch (error) {
       console.error('Error sharing invitation:', error);
       // Fallback: show the link in an alert if clipboard fails
-      const invitationLink = `${window.location.origin}/sign-up?inviter=${user?.id}&invitee=${person.email}`;
+      const baseUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://love-on-the-pixel.vercel.app' 
+        : window.location.origin;
+      const invitationLink = `${baseUrl}/sign-up?inviter=${user?.id}&invitee=${person.email}`;
       alert(`Invitation link: ${invitationLink}\n\nCopy this link and share it with ${person.email}`);
     }
   };
@@ -380,17 +386,17 @@ export default function PersonsPage() {
               onChange={(e, newValue) => setInvitationTabValue(newValue)}
               sx={{ borderBottom: 1, borderColor: 'divider' }}
             >
-              <Tab label={`Pending (${pendingInvitations.length})`} />
+              <Tab label={`Received (${pendingInvitations.length})`} />
               <Tab label={`Sent (${invitations.length})`} />
             </Tabs>
           </Box>
 
-          {/* Pending Invitations */}
+          {/* Received Invitations */}
           {invitationTabValue === 0 && (
             <List sx={{ maxHeight: '50vh', overflow: 'auto' }}>
               {pendingInvitations.length === 0 ? (
                 <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                  No pending invitations. All your invitations have been responded to!
+                  No received invitations. When someone invites you, it will appear here!
                 </Typography>
               ) : (
                 pendingInvitations.map((invitation) => (
