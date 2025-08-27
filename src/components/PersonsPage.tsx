@@ -17,7 +17,8 @@ import {
   TextField, 
   Typography, 
   Card,
-  ListItemSecondaryAction
+  ListItemSecondaryAction,
+  Chip
 } from '@mui/material';
 import { 
   Person, 
@@ -26,8 +27,7 @@ import {
   Refresh,
   Delete
 } from '@mui/icons-material';
-import { personsService, type Person } from '@/lib/personsService';
-import { affirmationsService } from '@/lib/affirmations';
+import { bidirectionalConnectionsService, type PersonWithConnection } from '@/lib/bidirectional-connections';
 import { shareInvitationService } from '@/lib/shareInvitationService';
 import { userProfileService } from '@/lib/userProfile';
 import { useAuth } from '@/contexts/AuthContext';
@@ -35,10 +35,10 @@ import { AFFIRMATION_THEMES } from '@/lib/affirmationThemes';
 
 export default function PersonsPage() {
   const { user } = useAuth();
-  const [persons, setPersons] = useState<Person[]>([]);
+  const [persons, setPersons] = useState<PersonWithConnection[]>([]);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openSendDialog, setOpenSendDialog] = useState(false);
-  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const [selectedPerson, setSelectedPerson] = useState<PersonWithConnection | null>(null);
   const [newPerson, setNewPerson] = useState({ name: '' });
   const [message, setMessage] = useState('');
   const [selectedTheme, setSelectedTheme] = useState('love');
@@ -50,7 +50,7 @@ export default function PersonsPage() {
 
   const loadPersons = async () => {
     try {
-      const data = await personsService.getAll();
+      const data = await bidirectionalConnectionsService.getPersonsWithConnections();
       setPersons(data);
     } catch (error) {
       console.error('Error loading persons:', error);
@@ -61,20 +61,31 @@ export default function PersonsPage() {
     if (newPerson.name.trim()) {
       try {
         setLoading(true);
-        await personsService.create(newPerson);
+        
+        // Try to find if this person is an existing user
+        const existingUser = await bidirectionalConnectionsService.findUserByName(newPerson.name);
+        
+        if (existingUser) {
+          // Person exists - create bidirectional connection
+          await bidirectionalConnectionsService.addPersonWithConnection(newPerson.name, existingUser.id);
+        } else {
+          // Person doesn't exist - add without connection for now
+          await bidirectionalConnectionsService.addPersonWithConnection(newPerson.name);
+        }
+        
         setNewPerson({ name: '' });
         setOpenAddDialog(false);
         await loadPersons();
       } catch (error) {
         console.error('Error adding person:', error);
-        alert('Failed to add person or share invitation');
+        alert('Failed to add person. Please try again.');
       } finally {
         setLoading(false);
       }
     }
   };
 
-  const handleSendInvitation = async (person: Person) => {
+  const handleSendInvitation = async (person: PersonWithConnection) => {
     try {
       // Get current user's profile for the invitation
       const userProfile = await userProfileService.getCurrentProfile();
@@ -107,30 +118,33 @@ export default function PersonsPage() {
         
         console.log('Sending affirmation to:', selectedPerson);
         
-        // Check if the recipient has signed up (has a user_id)
-        if (!selectedPerson.user_id) {
-          // Recipient hasn't signed up yet - store the affirmation with pending status
-          console.log('Recipient not signed up, creating pending affirmation');
+        // Check if the person has a connected user ID (they've accepted the connection)
+        if (selectedPerson.connected_user_id) {
+          // Person has accepted the connection - send affirmation
+          console.log('Person has accepted connection, sending affirmation to user_id:', selectedPerson.connected_user_id);
           
-          const newAffirmation = await affirmationsService.create({
+          const newAffirmation = await bidirectionalConnectionsService.createAffirmation({
             message: message.trim(),
             category: selectedTheme,
-            recipient_id: null, // No recipient_id since they haven't signed up
-            recipient_email: selectedPerson.email // Store email for later matching
-          });
-
-        } else {
-          // Recipient has signed up - create delivered affirmation
-          console.log('Recipient signed up, creating delivered affirmation for user_id:', selectedPerson.user_id);
-          
-          const newAffirmation = await affirmationsService.create({
-            message: message.trim(),
-            category: selectedTheme,
-            recipient_id: selectedPerson.user_id,
-            recipient_email: selectedPerson.email
+            recipient_id: selectedPerson.connected_user_id
           });
           
           console.log('Created affirmation:', newAffirmation);
+        } else if (selectedPerson.email) {
+          // Person hasn't accepted the connection yet, but we have their email - create pending affirmation
+          console.log('Person hasn\'t accepted connection yet, creating pending affirmation for email:', selectedPerson.email);
+          
+          await bidirectionalConnectionsService.createPendingAffirmation(
+            message.trim(),
+            selectedTheme,
+            selectedPerson.email
+          );
+          
+          console.log('Created pending affirmation for email:', selectedPerson.email);
+        } else {
+          // Person hasn't accepted the connection yet and we don't have their email - show message
+          alert('This person needs to accept your invitation before you can send them affirmations.');
+          return;
         }
         
         setMessage('');
@@ -157,12 +171,33 @@ export default function PersonsPage() {
   const handleDeletePerson = async (id: string) => {
     if (confirm('Are you sure you want to delete this person?')) {
       try {
-        await personsService.delete(id);
+        // If the person has a connected user ID, remove the bidirectional connection
+        const person = persons.find(p => p.id === id);
+        if (person?.connected_user_id) {
+          await bidirectionalConnectionsService.removeBidirectionalConnection(person.connected_user_id);
+        }
+        
+        // Note: The person will remain in the persons list but the connection will be removed
+        // This allows affirmations to persist even if connections are removed
+        
         await loadPersons();
       } catch (error) {
         console.error('Error deleting person:', error);
         alert('Failed to delete person. Please try again.');
       }
+    }
+  };
+
+  const getConnectionStatusChip = (status: string) => {
+    switch (status) {
+      case 'accepted':
+        return <Chip label="Connected" color="success" size="small" />;
+      case 'pending':
+        return <Chip label="Pending" color="warning" size="small" />;
+      case 'blocked':
+        return <Chip label="Blocked" color="error" size="small" />;
+      default:
+        return <Chip label="No Connection" color="default" size="small" />;
     }
   };
 
@@ -198,10 +233,10 @@ export default function PersonsPage() {
           startIcon={<PersonAdd />}
           onClick={() => setOpenAddDialog(true)}
           sx={{
-            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            backgroundColor: 'rgba(255,255,255,0.2)',
             color: 'white',
             '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.3)'
+              backgroundColor: 'rgba(255,255,255,0.3)'
             }
           }}
         >
@@ -210,184 +245,133 @@ export default function PersonsPage() {
       </Box>
 
       {/* Persons List */}
-      <Box sx={{ flex: 1, overflow: 'auto' }}>
-        {persons.length === 0 ? (
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              color: 'white',
-              textAlign: 'center'
-            }}
-          >
-            <Typography variant="h6" sx={{ marginBottom: 2 }}>
-              No persons yet
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.8 }}>
-              Add someone special to start sharing affirmations with them.
-            </Typography>
-          </Box>
-        ) : (
-          <List sx={{ 
-            background: 'rgba(255, 255, 255, 0.95)', 
-            borderRadius: 2,
-            overflow: 'hidden'
-          }}>
-            {persons.map((person) => (
-              <Card key={person.id} sx={{ marginBottom: 1, boxShadow: 'none' }}>
-                <ListItem>
-                  <ListItemAvatar>
-                    <Avatar src={person.avatar}>
-                      {person.name.charAt(0)}
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={person.name}
-                  />
-                  <ListItemSecondaryAction>
-                    <Button
-                      variant="contained"
-                      endIcon={<Favorite />}
+      <Card sx={{ flex: 1, overflow: 'auto', backgroundColor: 'rgba(255,255,255,0.95)' }}>
+        <List>
+          {persons.map((person) => (
+            <ListItem
+              key={person.id}
+              sx={{
+                borderBottom: '1px solid #eee',
+                '&:last-child': { borderBottom: 'none' }
+              }}
+            >
+              <ListItemAvatar>
+                <Avatar sx={{ backgroundColor: '#667eea' }}>
+                  <Person />
+                </Avatar>
+              </ListItemAvatar>
+              <ListItemText
+                primary={person.name}
+                secondary={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                    {getConnectionStatusChip(person.connection_status)}
+                  </Box>
+                }
+              />
+              <ListItemSecondaryAction>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  {person.connection_status === 'accepted' && (
+                    <IconButton
+                      edge="end"
                       onClick={() => {
                         setSelectedPerson(person);
                         setOpenSendDialog(true);
                       }}
-                      sx={{ 
-                        backgroundColor: '#667eea',
-                        color: 'white',
-                        marginRight: 1,
-                        '&:hover': {
-                          backgroundColor: '#5a6fd8'
-                        }
-                      }}
+                      sx={{ color: '#667eea' }}
+                    >
+                      <Favorite />
+                    </IconButton>
+                  )}
+                  {person.connection_status === 'no_connection' && (
+                    <Button
                       size="small"
-                    >
-                      Send
-                    </Button>
-                    <IconButton
-                      edge="end"
+                      variant="outlined"
                       onClick={() => handleSendInvitation(person)}
-                      sx={{ color: '#667eea', marginRight: 1 }}
-                      title="Send invitation"
+                      sx={{ color: '#667eea', borderColor: '#667eea' }}
                     >
-                      <Refresh />
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      onClick={() => handleDeletePerson(person.id)}
-                      sx={{ color: '#e74c3c' }}
-                      title="Delete person"
-                    >
-                      <Delete />
-                    </IconButton>
-                  </ListItemSecondaryAction>
-                </ListItem>
-              </Card>
-            ))}
-          </List>
-        )}
-      </Box>
+                      Invite
+                    </Button>
+                  )}
+                  <IconButton
+                    edge="end"
+                    onClick={() => handleDeletePerson(person.id)}
+                    sx={{ color: '#ff6b6b' }}
+                  >
+                    <Delete />
+                  </IconButton>
+                </Box>
+              </ListItemSecondaryAction>
+            </ListItem>
+          ))}
+        </List>
+      </Card>
 
       {/* Add Person Dialog */}
       <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)}>
-        <DialogTitle>Add Person</DialogTitle>
+        <DialogTitle>Add New Person</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
             margin="dense"
-            label="Name"
+            label="Person Name"
+            type="text"
             fullWidth
             variant="outlined"
             value={newPerson.name}
             onChange={(e) => setNewPerson({ name: e.target.value })}
-            sx={{ marginTop: 1 }}
+            sx={{ mt: 1 }}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenAddDialog(false)} disabled={loading}>
-            Cancel
-          </Button>
-          <Button onClick={handleAddPerson} variant="contained" disabled={loading || !newPerson.name.trim()}>
-            {loading ? 'Adding...' : 'Add'}
+          <Button onClick={() => setOpenAddDialog(false)}>Cancel</Button>
+          <Button 
+            onClick={handleAddPerson} 
+            disabled={loading || !newPerson.name.trim()}
+            variant="contained"
+          >
+            {loading ? 'Adding...' : 'Add Person'}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Send Affirmation Dialog */}
-      <Dialog 
-        open={openSendDialog} 
-        onClose={() => setOpenSendDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
+      <Dialog open={openSendDialog} onClose={() => setOpenSendDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Send Affirmation to {selectedPerson?.name}</DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ marginBottom: 2, color: 'text.secondary' }}>
-            Choose a theme and write your message of love, encouragement, or appreciation.
-          </Typography>
-          
-          {/* Theme Selection */}
-          <Typography variant="subtitle2" sx={{ marginBottom: 1, fontWeight: 600 }}>
-            Choose Theme:
-          </Typography>
-          <Box sx={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', 
-            gap: 1, 
-            marginBottom: 2 
-          }}>
-            {AFFIRMATION_THEMES.map((theme) => (
-              <Button
-                key={theme.id}
-                variant={selectedTheme === theme.id ? 'contained' : 'outlined'}
-                onClick={() => setSelectedTheme(theme.id)}
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  padding: 1,
-                  minHeight: 60,
-                  backgroundColor: selectedTheme === theme.id ? theme.color : 'transparent',
-                  borderColor: theme.color,
-                  color: selectedTheme === theme.id ? 'white' : theme.color,
-                  '&:hover': {
-                    backgroundColor: selectedTheme === theme.id ? theme.color : `${theme.color}20`,
-                    borderColor: theme.color,
-                    color: selectedTheme === theme.id ? 'white' : theme.color,
-                  }
-                }}
-              >
-                <span style={{ fontSize: '1.5rem', marginBottom: 4 }}>{theme.emoji}</span>
-                <Typography variant="caption" sx={{ fontSize: '0.75rem', fontWeight: 500 }}>
-                  {theme.name}
-                </Typography>
-              </Button>
-            ))}
-          </Box>
-          
-          {/* Message */}
           <TextField
+            margin="dense"
+            label="Message"
+            type="text"
             fullWidth
             multiline
-            rows={4}
-            label="Your Message"
+            rows={3}
+            variant="outlined"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            sx={{ marginTop: 1 }}
-            placeholder="Write your message of love, encouragement, or appreciation..."
+            sx={{ mt: 1, mb: 2 }}
           />
+          <Typography variant="subtitle2" gutterBottom>
+            Theme:
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+            {Object.entries(AFFIRMATION_THEMES).map(([key, theme]) => (
+              <Chip
+                key={key}
+                label={theme.name}
+                onClick={() => setSelectedTheme(key)}
+                color={selectedTheme === key ? 'primary' : 'default'}
+                variant={selectedTheme === key ? 'filled' : 'outlined'}
+                sx={{ cursor: 'pointer' }}
+              />
+            ))}
+          </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenSendDialog(false)} disabled={loading}>
-            Cancel
-          </Button>
+          <Button onClick={() => setOpenSendDialog(false)}>Cancel</Button>
           <Button 
             onClick={handleSendAffirmation} 
-            variant="contained"
             disabled={loading || !message.trim()}
+            variant="contained"
           >
             {loading ? 'Sending...' : 'Send Affirmation'}
           </Button>

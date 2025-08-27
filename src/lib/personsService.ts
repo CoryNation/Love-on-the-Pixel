@@ -4,13 +4,17 @@ export interface Person {
   id: string;
   name: string;
   user_id?: string | null;
-  created_by: string;
+  email?: string;
+  relationship?: string;
+  avatar?: string;
   created_at: string;
   updated_at: string;
 }
 
 export interface NewPerson {
   name: string;
+  email?: string;
+  relationship?: string;
 }
 
 export const personsService = {
@@ -22,7 +26,7 @@ export const personsService = {
     const { data, error } = await supabase
       .from('persons')
       .select('*')
-      .eq('created_by', user.id) // Get persons created by the current user
+      .eq('user_id', user.id) // Fixed: use user_id instead of created_by
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -60,9 +64,10 @@ export const personsService = {
     const { data, error } = await supabase
       .from('persons')
       .insert([{
-        user_id: null, // Set to null for people who haven't signed up yet
+        user_id: user.id, // Fixed: use user_id for the current user
         name: person.name,
-        created_by: user.id, // This should be the current user who is adding the person
+        email: person.email,
+        relationship: person.relationship || 'Connection'
       }])
       .select()
       .single();
@@ -87,7 +92,7 @@ export const personsService = {
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
-      .eq('created_by', user.id) // Changed from user_id to created_by
+      .eq('user_id', user.id) // Fixed: use user_id instead of created_by
       .select()
       .single();
 
@@ -108,7 +113,7 @@ export const personsService = {
       .from('persons')
       .delete()
       .eq('id', id)
-      .eq('created_by', user.id); // Delete persons created by the current user
+      .eq('user_id', user.id); // Fixed: use user_id instead of created_by
 
     if (error) {
       console.error('Error deleting person:', error);
