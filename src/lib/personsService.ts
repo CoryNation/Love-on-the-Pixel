@@ -5,7 +5,6 @@ export interface Person {
   name: string;
   user_id?: string | null;
   email?: string;
-  relationship?: string;
   avatar?: string;
   created_at: string;
   updated_at: string;
@@ -14,7 +13,6 @@ export interface Person {
 export interface NewPerson {
   name: string;
   email?: string;
-  relationship?: string;
 }
 
 export const personsService = {
@@ -67,7 +65,6 @@ export const personsService = {
         user_id: user.id, // Fixed: use user_id for the current user
         name: person.name,
         email: person.email,
-        relationship: person.relationship || 'Connection'
       }])
       .select()
       .single();
