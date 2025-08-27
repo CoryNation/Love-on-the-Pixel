@@ -72,7 +72,9 @@ export default function PersonsPage() {
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openSendDialog, setOpenSendDialog] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<PersonType | null>(null);
-  const [newPerson, setNewPerson] = useState({ name: '', email: '' });
+  const [newPerson, setNewPerson] = useState({ email: '' });
+  const [showShareOptions, setShowShareOptions] = useState(false);
+  const [addedPerson, setAddedPerson] = useState<PersonType | null>(null);
   const [message, setMessage] = useState('');
   const [selectedTheme, setSelectedTheme] = useState('love');
   const [loading, setLoading] = useState(false);
@@ -100,28 +102,19 @@ export default function PersonsPage() {
   };
 
   const handleAddPerson = async () => {
-    if (newPerson.name.trim() && newPerson.email.trim()) {
+    if (newPerson.email.trim()) {
       try {
         setLoading(true);
         
-        // Create the person in the persons table
-        await personsService.create({
-          name: newPerson.name,
+        // Create the person in the persons table with email as name for now
+        const createdPerson = await personsService.create({
+          name: newPerson.email.split('@')[0], // Use email prefix as temporary name
           email: newPerson.email
         });
         
-        // Create an invitation
-        await emailInvitationService.createInvitation({
-          invitee_name: newPerson.name,
-          invitee_email: newPerson.email,
-          custom_message: `Hi ${newPerson.name}! I'd love to share affirmations and words of encouragement with you through Love on the Pixel. Join me in spreading love and positivity! 💕`
-        });
+        setAddedPerson(createdPerson);
+        setShowShareOptions(true);
         
-        setNewPerson({ name: '', email: '' });
-        setOpenAddDialog(false);
-        await loadData();
-        
-        alert('Person added and invitation sent successfully!');
       } catch (error) {
         console.error('Error adding person:', error);
         alert('Failed to add person. Please try again.');
@@ -163,7 +156,9 @@ export default function PersonsPage() {
       alert('Invitation link copied to clipboard! Share this link with your person to invite them to join.');
     } catch (error) {
       console.error('Error sharing invitation:', error);
-      alert('Failed to copy invitation link. Please try again.');
+      // Fallback: show the link in an alert if clipboard fails
+      const invitationLink = `${window.location.origin}/sign-up?inviter=${user?.id}&invitee=${person.email}`;
+      alert(`Invitation link: ${invitationLink}\n\nCopy this link and share it with ${person.email}`);
     }
   };
 
@@ -191,7 +186,6 @@ export default function PersonsPage() {
         
         // Reload data to reflect changes
         await loadData();
-        alert('Person removed from your list.');
       } catch (error) {
         console.error('Error deleting person:', error);
         alert('Failed to delete person. Please try again.');
@@ -506,36 +500,70 @@ export default function PersonsPage() {
       <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Add New Person</DialogTitle>
         <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Enter the email address of the person you'd like to invite. They'll receive an invitation to join Love on the Pixel.
+          </Typography>
           <TextField
             autoFocus
-            margin="dense"
-            label="Person Name"
-            type="text"
-            fullWidth
-            variant="outlined"
-            value={newPerson.name}
-            onChange={(e) => setNewPerson({ ...newPerson, name: e.target.value })}
-            sx={{ mt: 1, mb: 2 }}
-          />
-          <TextField
             margin="dense"
             label="Email Address"
             type="email"
             fullWidth
             variant="outlined"
             value={newPerson.email}
-            onChange={(e) => setNewPerson({ ...newPerson, email: e.target.value })}
-            placeholder="Enter their email address to send an invitation"
+            onChange={(e) => setNewPerson({ email: e.target.value })}
+            placeholder="Enter their email address"
+            sx={{ mt: 1 }}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenAddDialog(false)}>Cancel</Button>
           <Button 
             onClick={handleAddPerson} 
-            disabled={loading || !newPerson.name.trim() || !newPerson.email.trim()}
+            disabled={loading || !newPerson.email.trim()}
             variant="contained"
           >
-            {loading ? 'Adding...' : 'Add Person & Send Invitation'}
+            {loading ? 'Adding...' : 'Add Person'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Share Options Dialog */}
+      <Dialog open={showShareOptions} onClose={() => {
+        setShowShareOptions(false);
+        setAddedPerson(null);
+        setNewPerson({ email: '' });
+        setOpenAddDialog(false);
+        loadData();
+      }} maxWidth="sm" fullWidth>
+        <DialogTitle>Invite {addedPerson?.email}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Share this invitation link with {addedPerson?.email} to invite them to join Love on the Pixel.
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Button
+              variant="outlined"
+              startIcon={<Share />}
+              onClick={() => handleShareInvitation(addedPerson!)}
+              fullWidth
+            >
+              Copy Invitation Link
+            </Button>
+            <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
+              Since email service isn't set up yet, you'll need to share this link manually.
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setShowShareOptions(false);
+            setAddedPerson(null);
+            setNewPerson({ email: '' });
+            setOpenAddDialog(false);
+            loadData();
+          }}>
+            Done
           </Button>
         </DialogActions>
       </Dialog>
