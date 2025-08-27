@@ -12,14 +12,12 @@ import {
   Water, 
   People, 
   Settings,
-  Favorite,
-  Email
+  Favorite
 } from '@mui/icons-material';
 import WavePage from '@/components/WavePage';
 import PersonsPage from '@/components/PersonsPage';
 import SettingsPage from '@/components/SettingsPage';
 import FavoritesPage from '@/components/FavoritesPage';
-import InvitationsPage from '@/components/InvitationsPage';
 
 export default function Dashboard() {
   const [currentTab, setCurrentTab] = useState(0);
@@ -31,10 +29,8 @@ export default function Dashboard() {
       case 1:
         return <PersonsPage />;
       case 2:
-        return <InvitationsPage />;
-      case 3:
         return <FavoritesPage />;
-      case 4:
+      case 3:
         return <SettingsPage />;
       default:
         return <WavePage />;
@@ -93,10 +89,6 @@ export default function Dashboard() {
           <BottomNavigationAction 
             label="Persons" 
             icon={<People />} 
-          />
-          <BottomNavigationAction 
-            label="Invitations" 
-            icon={<Email />} 
           />
           <BottomNavigationAction 
             label="Favorites" 

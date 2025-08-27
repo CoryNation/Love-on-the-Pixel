@@ -18,7 +18,9 @@ import {
   Typography, 
   Card,
   ListItemSecondaryAction,
-  Chip
+  Chip,
+  Tabs,
+  Tab
 } from '@mui/material';
 import { 
   Person, 
@@ -26,16 +28,46 @@ import {
   Favorite,
   Refresh,
   Delete,
-  Email
+  Email,
+  Check,
+  Close
 } from '@mui/icons-material';
 import { personsService, type Person as PersonType } from '@/lib/personsService';
-import { emailInvitationService } from '@/lib/emailInvitationService';
+import { emailInvitationService, type Invitation } from '@/lib/emailInvitationService';
 import { useAuth } from '@/contexts/AuthContext';
 import { AFFIRMATION_THEMES } from '@/lib/affirmationThemes';
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`persons-tabpanel-${index}`}
+      aria-labelledby={`persons-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ p: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
 
 export default function PersonsPage() {
   const { user } = useAuth();
   const [persons, setPersons] = useState<PersonType[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([]);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openSendDialog, setOpenSendDialog] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<PersonType | null>(null);
@@ -43,17 +75,26 @@ export default function PersonsPage() {
   const [message, setMessage] = useState('');
   const [selectedTheme, setSelectedTheme] = useState('love');
   const [loading, setLoading] = useState(false);
+  const [tabValue, setTabValue] = useState(0);
+  const [invitationTabValue, setInvitationTabValue] = useState(1); // Start with Pending tab
 
   useEffect(() => {
-    loadPersons();
+    loadData();
   }, [user?.id]);
 
-  const loadPersons = async () => {
+  const loadData = async () => {
     try {
-      const data = await personsService.getAll();
-      setPersons(data);
+      const [personsData, allInvitations, pending] = await Promise.all([
+        personsService.getAll(),
+        emailInvitationService.getInvitations(),
+        emailInvitationService.getPendingInvitations()
+      ]);
+      
+      setPersons(personsData);
+      setInvitations(allInvitations);
+      setPendingInvitations(pending);
     } catch (error) {
-      console.error('Error loading persons:', error);
+      console.error('Error loading data:', error);
     }
   };
 
@@ -77,7 +118,7 @@ export default function PersonsPage() {
         
         setNewPerson({ name: '', email: '' });
         setOpenAddDialog(false);
-        await loadPersons();
+        await loadData();
         
         alert('Person added and invitation sent successfully!');
       } catch (error) {
@@ -116,7 +157,7 @@ export default function PersonsPage() {
       try {
         // For now, we'll just remove from the persons list
         // In the future, this will also handle connection removal
-        await loadPersons();
+        await loadData();
         alert('Person removed from your list.');
       } catch (error) {
         console.error('Error deleting person:', error);
@@ -125,9 +166,50 @@ export default function PersonsPage() {
     }
   };
 
+  const handleAcceptInvitation = async (invitationId: string) => {
+    try {
+      await emailInvitationService.acceptInvitation(invitationId);
+      await loadData();
+      alert('Invitation accepted! You are now connected.');
+    } catch (error) {
+      console.error('Error accepting invitation:', error);
+      alert('Failed to accept invitation. Please try again.');
+    }
+  };
+
+  const handleDeclineInvitation = async (invitationId: string) => {
+    try {
+      await emailInvitationService.declineInvitation(invitationId);
+      await loadData();
+      alert('Invitation declined.');
+    } catch (error) {
+      console.error('Error declining invitation:', error);
+      alert('Failed to decline invitation. Please try again.');
+    }
+  };
+
   const getConnectionStatusChip = (person: PersonType) => {
     // For now, show "Pending" for all persons since they need to accept invitations
     return <Chip label="Pending Invitation" color="warning" size="small" />;
+  };
+
+  const getStatusChip = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Chip label="Pending" color="warning" size="small" />;
+      case 'accepted':
+        return <Chip label="Accepted" color="success" size="small" />;
+      case 'declined':
+        return <Chip label="Declined" color="error" size="small" />;
+      case 'expired':
+        return <Chip label="Expired" color="default" size="small" />;
+      default:
+        return <Chip label={status} color="default" size="small" />;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
   };
 
   return (
@@ -173,69 +255,204 @@ export default function PersonsPage() {
         </Button>
       </Box>
 
-      {/* Persons List */}
-      <Card sx={{ flex: 1, overflow: 'auto', backgroundColor: 'rgba(255,255,255,0.95)' }}>
-        <List>
-          {persons.length === 0 ? (
-            <Box sx={{ textAlign: 'center', py: 4 }}>
-              <Typography variant="body1" color="text.secondary">
-                No persons added yet. Add someone to start sharing affirmations!
-              </Typography>
-            </Box>
-          ) : (
-            persons.map((person) => (
-              <ListItem
-                key={person.id}
-                sx={{
-                  borderBottom: '1px solid #eee',
-                  '&:last-child': { borderBottom: 'none' }
-                }}
-              >
-                <ListItemAvatar>
-                  <Avatar sx={{ backgroundColor: '#667eea' }}>
-                    <Person />
-                  </Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={person.name}
-                  secondary={
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        {person.email}
-                      </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                        {getConnectionStatusChip(person)}
+      {/* Main Tabs */}
+      <Card sx={{ backgroundColor: 'rgba(255,255,255,0.95)' }}>
+        <Tabs 
+          value={tabValue} 
+          onChange={(e, newValue) => setTabValue(newValue)}
+          sx={{ borderBottom: 1, borderColor: 'divider' }}
+        >
+          <Tab label={`My Persons (${persons.length})`} />
+          <Tab label="Invitations" />
+        </Tabs>
+
+        {/* My Persons Tab */}
+        <TabPanel value={tabValue} index={0}>
+          <List sx={{ maxHeight: '60vh', overflow: 'auto' }}>
+            {persons.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="body1" color="text.secondary">
+                  No persons added yet. Add someone to start sharing affirmations!
+                </Typography>
+              </Box>
+            ) : (
+              persons.map((person) => (
+                <ListItem
+                  key={person.id}
+                  sx={{
+                    borderBottom: '1px solid #eee',
+                    '&:last-child': { borderBottom: 'none' }
+                  }}
+                >
+                  <ListItemAvatar>
+                    <Avatar sx={{ backgroundColor: '#667eea' }}>
+                      <Person />
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={person.name}
+                    secondary={
+                      <Box>
+                        <Typography variant="body2" color="text.secondary">
+                          {person.email}
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                          {getConnectionStatusChip(person)}
+                        </Box>
                       </Box>
+                    }
+                  />
+                  <ListItemSecondaryAction>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <IconButton
+                        edge="end"
+                        onClick={() => {
+                          setSelectedPerson(person);
+                          setOpenSendDialog(true);
+                        }}
+                        sx={{ color: '#667eea' }}
+                        title="Send affirmation"
+                      >
+                        <Favorite />
+                      </IconButton>
+                      <IconButton
+                        edge="end"
+                        onClick={() => handleDeletePerson(person.id)}
+                        sx={{ color: '#ff6b6b' }}
+                        title="Remove person"
+                      >
+                        <Delete />
+                      </IconButton>
                     </Box>
-                  }
-                />
-                <ListItemSecondaryAction>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <IconButton
-                      edge="end"
-                      onClick={() => {
-                        setSelectedPerson(person);
-                        setOpenSendDialog(true);
-                      }}
-                      sx={{ color: '#667eea' }}
-                      title="Send affirmation"
-                    >
-                      <Favorite />
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      onClick={() => handleDeletePerson(person.id)}
-                      sx={{ color: '#ff6b6b' }}
-                      title="Remove person"
-                    >
-                      <Delete />
-                    </IconButton>
-                  </Box>
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))
+                  </ListItemSecondaryAction>
+                </ListItem>
+              ))
+            )}
+          </List>
+        </TabPanel>
+
+        {/* Invitations Tab */}
+        <TabPanel value={tabValue} index={1}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+            <Tabs 
+              value={invitationTabValue} 
+              onChange={(e, newValue) => setInvitationTabValue(newValue)}
+              sx={{ borderBottom: 1, borderColor: 'divider' }}
+            >
+              <Tab label={`Pending (${pendingInvitations.length})`} />
+              <Tab label={`Sent (${invitations.length})`} />
+            </Tabs>
+          </Box>
+
+          {/* Pending Invitations */}
+          {invitationTabValue === 0 && (
+            <List sx={{ maxHeight: '50vh', overflow: 'auto' }}>
+              {pendingInvitations.length === 0 ? (
+                <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+                  No pending invitations. All your invitations have been responded to!
+                </Typography>
+              ) : (
+                pendingInvitations.map((invitation) => (
+                  <ListItem
+                    key={invitation.id}
+                    sx={{
+                      borderBottom: '1px solid #eee',
+                      '&:last-child': { borderBottom: 'none' }
+                    }}
+                  >
+                    <ListItemAvatar>
+                      <Avatar sx={{ backgroundColor: '#667eea' }}>
+                        <Person />
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={invitation.invitee_name}
+                      secondary={
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">
+                            {invitation.invitee_email}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Sent {formatDate(invitation.created_at)}
+                          </Typography>
+                          {invitation.custom_message && (
+                            <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
+                              "{invitation.custom_message}"
+                            </Typography>
+                          )}
+                        </Box>
+                      }
+                    />
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <IconButton
+                        onClick={() => handleAcceptInvitation(invitation.id)}
+                        sx={{ color: '#4caf50' }}
+                        title="Accept invitation"
+                      >
+                        <Check />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => handleDeclineInvitation(invitation.id)}
+                        sx={{ color: '#f44336' }}
+                        title="Decline invitation"
+                      >
+                        <Close />
+                      </IconButton>
+                    </Box>
+                  </ListItem>
+                ))
+              )}
+            </List>
           )}
-        </List>
+
+          {/* Sent Invitations */}
+          {invitationTabValue === 1 && (
+            <List sx={{ maxHeight: '50vh', overflow: 'auto' }}>
+              {invitations.length === 0 ? (
+                <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+                  No invitations sent yet. Send your first invitation to connect with someone!
+                </Typography>
+              ) : (
+                invitations.map((invitation) => (
+                  <ListItem
+                    key={invitation.id}
+                    sx={{
+                      borderBottom: '1px solid #eee',
+                      '&:last-child': { borderBottom: 'none' }
+                    }}
+                  >
+                    <ListItemAvatar>
+                      <Avatar sx={{ backgroundColor: '#667eea' }}>
+                        <Email />
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={invitation.invitee_name}
+                      secondary={
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">
+                            {invitation.invitee_email}
+                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                            {getStatusChip(invitation.status)}
+                            <Typography variant="caption" color="text.secondary">
+                              Sent {formatDate(invitation.created_at)}
+                            </Typography>
+                          </Box>
+                          {invitation.custom_message && (
+                            <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
+                              "{invitation.custom_message}"
+                            </Typography>
+                          )}
+                        </Box>
+                      }
+                    />
+                  </ListItem>
+                ))
+              )}
+            </List>
+          )}
+        </TabPanel>
       </Card>
 
       {/* Add Person Dialog */}

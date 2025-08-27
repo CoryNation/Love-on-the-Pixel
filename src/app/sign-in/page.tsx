@@ -12,6 +12,7 @@ import {
   Alert,
   Link
 } from '@mui/material';
+import { Favorite } from '@mui/icons-material';
 import { authService } from '@/lib/auth';
 
 export default function SignIn() {
@@ -58,7 +59,40 @@ export default function SignIn() {
         }}
       >
         <CardContent sx={{ padding: 4 }}>
-          <Typography variant="h4" sx={{ marginBottom: 3, textAlign: 'center', color: '#2c3e50' }}>
+          {/* App Title and Icon */}
+          <Box sx={{ textAlign: 'center', marginBottom: 3 }}>
+            <Favorite 
+              sx={{ 
+                fontSize: 48, 
+                color: '#667eea', 
+                marginBottom: 1,
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
+              }} 
+            />
+            <Typography 
+              variant="h3" 
+              sx={{ 
+                marginBottom: 1, 
+                color: '#2c3e50',
+                fontWeight: 300,
+                textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}
+            >
+              Love on the Pixel
+            </Typography>
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                color: '#7f8c8d',
+                fontStyle: 'italic',
+                marginBottom: 2
+              }}
+            >
+              Spread love, one pixel at a time 💕
+            </Typography>
+          </Box>
+
+          <Typography variant="h5" sx={{ marginBottom: 3, textAlign: 'center', color: '#2c3e50' }}>
             Sign In
           </Typography>
 
