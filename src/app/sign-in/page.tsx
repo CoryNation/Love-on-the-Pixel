@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Box,
@@ -10,14 +10,15 @@ import {
   Button,
   Typography,
   Alert,
-  Link
+  Link,
+  CircularProgress
 } from '@mui/material';
 import Image from 'next/image';
 import { authService } from '@/lib/auth';
 import { emailInvitationService } from '@/lib/emailInvitationService';
 import { supabase } from '@/lib/supabase';
 
-export default function SignIn() {
+function SignInForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -189,8 +190,29 @@ export default function SignIn() {
               Don&apos;t have an account? Sign up
             </Link>
           </Box>
-        </CardContent>
-      </Card>
-    </Box>
+                 </CardContent>
+       </Card>
+     </Box>
+   );
+ }
+
+export default function SignIn() {
+  return (
+    <Suspense fallback={
+      <Box
+        sx={{
+          minHeight: '100vh',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 2
+        }}
+      >
+        <CircularProgress sx={{ color: 'white' }} />
+      </Box>
+    }>
+      <SignInForm />
+    </Suspense>
   );
-}
+ }
