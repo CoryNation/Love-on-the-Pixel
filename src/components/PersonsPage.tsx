@@ -20,7 +20,8 @@ import {
   ListItemSecondaryAction,
   Chip,
   Tabs,
-  Tab
+  Tab,
+  Alert
 } from '@mui/material';
 import { 
   Person, 
@@ -34,7 +35,7 @@ import {
   Share
 } from '@mui/icons-material';
 import { personsService, type Person as PersonType } from '@/lib/personsService';
-import { emailInvitationService, type Invitation } from '@/lib/emailInvitationService';
+import { newInvitationService, type Invitation } from '@/lib/newInvitationService';
 import { useAuth } from '@/contexts/AuthContext';
 import { AFFIRMATION_THEMES } from '@/lib/affirmationThemes';
 
@@ -55,7 +56,7 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`persons-tab-${index}`}
       {...other}
     >
-      {value === index && (
+      {value === index &&
         <Box sx={{ p: 3 }}>
           {children}
         </Box>
@@ -69,17 +70,17 @@ export default function PersonsPage() {
   const [persons, setPersons] = useState<PersonType[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [tabValue, setTabValue] = useState(0);
+  const [invitationTabValue, setInvitationTabValue] = useState(0); // Start with Received tab
+  const [showShareOptions, setShowShareOptions] = useState(false);
+  const [addedPerson, setAddedPerson] = useState<{ email: string; shareUrl: string } | null>(null);
+  const [newPerson, setNewPerson] = useState({ email: '' });
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openSendDialog, setOpenSendDialog] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<PersonType | null>(null);
-  const [newPerson, setNewPerson] = useState({ email: '' });
-  const [showShareOptions, setShowShareOptions] = useState(false);
-  const [addedPerson, setAddedPerson] = useState<PersonType | null>(null);
   const [message, setMessage] = useState('');
   const [selectedTheme, setSelectedTheme] = useState('love');
-  const [loading, setLoading] = useState(false);
-  const [tabValue, setTabValue] = useState(0);
-  const [invitationTabValue, setInvitationTabValue] = useState(1); // Start with Pending tab
 
   useEffect(() => {
     loadData();
@@ -89,8 +90,8 @@ export default function PersonsPage() {
     try {
       const [personsData, allInvitations, pending] = await Promise.all([
         personsService.getAll(),
-        emailInvitationService.getInvitations(),
-        emailInvitationService.getPendingInvitations()
+        newInvitationService.getSentInvitations(),
+        newInvitationService.getPendingInvitations()
       ]);
       
       setPersons(personsData);
@@ -106,26 +107,13 @@ export default function PersonsPage() {
       try {
         setLoading(true);
         
-        // Create the person in the persons table with email as name for now
-        const createdPerson = await personsService.create({
-          name: newPerson.email.split('@')[0], // Use email prefix as temporary name
-          email: newPerson.email
-        });
+        // This now creates invitation AND adds to persons list
+        const { invitation, shareUrl } = await newInvitationService.addPerson(newPerson.email);
         
-        // Create an invitation for this person
-        console.log('Creating invitation for:', newPerson.email);
-        const invitation = await emailInvitationService.createInvitation({
-          invitee_name: newPerson.email.split('@')[0],
-          invitee_email: newPerson.email
-        });
-        console.log('Invitation created:', invitation);
-        
-        setAddedPerson(createdPerson);
+        setAddedPerson({ email: newPerson.email, shareUrl });
         setShowShareOptions(true);
         
-        // Reload data to show the new invitation
         await loadData();
-        
       } catch (error) {
         console.error('Error adding person:', error);
         alert('Failed to add person. Please try again.');
@@ -140,14 +128,16 @@ export default function PersonsPage() {
       try {
         setLoading(true);
         
-        // Create the affirmation - this will be stored and shown when the person accepts the invitation
-        // For now, we'll use a simple approach - just show a success message
-        alert('Affirmation sent! It will be available when this person accepts your invitation.');
+        // Send affirmation immediately - no waiting for acceptance
+        await newInvitationService.sendAffirmation(
+          selectedPerson.email, 
+          message, 
+          selectedTheme
+        );
         
+        alert('Affirmation sent! It will appear in their Wellspring when they join.');
         setMessage('');
-        setSelectedTheme('love');
         setOpenSendDialog(false);
-        
       } catch (error) {
         console.error('Error sending affirmation:', error);
         alert('Failed to send affirmation. Please try again.');
@@ -159,49 +149,17 @@ export default function PersonsPage() {
 
   const handleShareInvitation = async (person: PersonType) => {
     try {
-      // Generate invitation link - use the actual domain instead of Vercel preview
-      const baseUrl = process.env.NODE_ENV === 'production' 
-        ? 'https://love-on-the-pixel.vercel.app' 
-        : window.location.origin;
-      const invitationLink = `${baseUrl}/sign-up?inviter=${user?.id}&invitee=${person.email}`;
-      
-      // Copy to clipboard
-      await navigator.clipboard.writeText(invitationLink);
-      alert('Invitation link copied to clipboard! Share this link with your person to invite them to join.');
+      const shareUrl = `${window.location.origin}/sign-up?inviter=${user?.id}&invitee=${person.email}`;
+      await newInvitationService.shareInvitation(shareUrl, person.email);
     } catch (error) {
       console.error('Error sharing invitation:', error);
-      // Fallback: show the link in an alert if clipboard fails
-      const baseUrl = process.env.NODE_ENV === 'production' 
-        ? 'https://love-on-the-pixel.vercel.app' 
-        : window.location.origin;
-      const invitationLink = `${baseUrl}/sign-up?inviter=${user?.id}&invitee=${person.email}`;
-      alert(`Invitation link: ${invitationLink}\n\nCopy this link and share it with ${person.email}`);
     }
   };
 
   const handleDeletePerson = async (id: string) => {
     if (confirm('Are you sure you want to delete this person?')) {
       try {
-        // Delete the person from the database
         await personsService.delete(id);
-        
-        // Also delete any pending invitations for this person
-        const personToDelete = persons.find(p => p.id === id);
-        if (personToDelete?.email) {
-          try {
-            const pendingInvitations = invitations.filter(inv => 
-              inv.invitee_email === personToDelete.email && inv.status === 'pending'
-            );
-            for (const invitation of pendingInvitations) {
-              await emailInvitationService.declineInvitation(invitation.id);
-            }
-          } catch (invitationError) {
-            console.error('Error deleting invitations:', invitationError);
-            // Continue with person deletion even if invitation deletion fails
-          }
-        }
-        
-        // Reload data to reflect changes
         await loadData();
       } catch (error) {
         console.error('Error deleting person:', error);
@@ -212,9 +170,8 @@ export default function PersonsPage() {
 
   const handleAcceptInvitation = async (invitationId: string) => {
     try {
-      await emailInvitationService.acceptInvitation(invitationId);
+      await newInvitationService.acceptInvitation(invitationId);
       await loadData();
-      alert('Invitation accepted! You are now connected.');
     } catch (error) {
       console.error('Error accepting invitation:', error);
       alert('Failed to accept invitation. Please try again.');
@@ -223,32 +180,24 @@ export default function PersonsPage() {
 
   const handleDeclineInvitation = async (invitationId: string) => {
     try {
-      await emailInvitationService.declineInvitation(invitationId);
+      await newInvitationService.declineInvitation(invitationId);
       await loadData();
-      alert('Invitation declined.');
     } catch (error) {
       console.error('Error declining invitation:', error);
       alert('Failed to decline invitation. Please try again.');
     }
   };
 
-  const getConnectionStatusChip = (person: PersonType) => {
-    // For now, show "Pending" for all persons since they need to accept invitations
-    return <Chip label="Pending Invitation" color="warning" size="small" />;
-  };
-
   const getStatusChip = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Chip label="Pending" color="warning" size="small" />;
+        return <Chip label="Pending Invitation" size="small" color="warning" />;
       case 'accepted':
-        return <Chip label="Accepted" color="success" size="small" />;
+        return <Chip label="Connected" size="small" color="success" />;
       case 'declined':
-        return <Chip label="Declined" color="error" size="small" />;
-      case 'expired':
-        return <Chip label="Expired" color="default" size="small" />;
+        return <Chip label="Declined" size="small" color="error" />;
       default:
-        return <Chip label={status} color="default" size="small" />;
+        return <Chip label="Unknown" size="small" />;
     }
   };
 
@@ -267,20 +216,8 @@ export default function PersonsPage() {
       }}
     >
       {/* Header */}
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: 3 
-      }}>
-        <Typography
-          variant="h4"
-          sx={{
-            color: 'white',
-            fontWeight: 300,
-            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-          }}
-        >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h4" sx={{ color: 'white', fontWeight: 300 }}>
           Persons
         </Typography>
         <Button
@@ -288,10 +225,10 @@ export default function PersonsPage() {
           startIcon={<PersonAdd />}
           onClick={() => setOpenAddDialog(true)}
           sx={{
-            backgroundColor: 'rgba(255,255,255,0.2)',
-            color: 'white',
+            background: 'rgba(255, 255, 255, 0.2)',
+            backdropFilter: 'blur(10px)',
             '&:hover': {
-              backgroundColor: 'rgba(255,255,255,0.3)'
+              background: 'rgba(255, 255, 255, 0.3)'
             }
           }}
         >
@@ -299,26 +236,41 @@ export default function PersonsPage() {
         </Button>
       </Box>
 
-      {/* Main Tabs */}
-      <Card sx={{ backgroundColor: 'rgba(255,255,255,0.95)' }}>
-        <Tabs 
-          value={tabValue} 
+      {/* Main Content */}
+      <Card
+        sx={{
+          flex: 1,
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: 3,
+          overflow: 'hidden'
+        }}
+      >
+        <Tabs
+          value={tabValue}
           onChange={(e, newValue) => setTabValue(newValue)}
-          sx={{ borderBottom: 1, borderColor: 'divider' }}
+          sx={{
+            borderBottom: 1,
+            borderColor: 'divider',
+            '& .MuiTab-root': {
+              color: '#95a5a6',
+              '&.Mui-selected': {
+                color: '#667eea'
+              }
+            }
+          }}
         >
-          <Tab label={`My Persons (${persons.length})`} />
+          <Tab label="My Persons" />
           <Tab label="Invitations" />
         </Tabs>
 
         {/* My Persons Tab */}
         <TabPanel value={tabValue} index={0}>
-          <List sx={{ maxHeight: '60vh', overflow: 'auto' }}>
+          <List sx={{ maxHeight: '50vh', overflow: 'auto' }}>
             {persons.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="body1" color="text.secondary">
-                  No persons added yet. Add someone to start sharing affirmations!
-                </Typography>
-              </Box>
+              <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+                No persons added yet. Add your first person to start connecting!
+              </Typography>
             ) : (
               persons.map((person) => (
                 <ListItem
@@ -341,43 +293,40 @@ export default function PersonsPage() {
                           {person.email}
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                          {getConnectionStatusChip(person)}
+                          {getStatusChip('pending')}
                         </Box>
                       </Box>
                     }
                   />
                   <ListItemSecondaryAction>
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button
-                        size="small"
-                        variant="contained"
+                      <IconButton
                         onClick={() => {
                           setSelectedPerson(person);
                           setOpenSendDialog(true);
                         }}
                         sx={{ 
+                          color: '#ff69b4',
                           backgroundColor: '#ff69b4',
-                          color: 'white',
                           '&:hover': {
                             backgroundColor: '#ff1493'
                           }
                         }}
+                        variant="contained"
                       >
-                        Send {String.fromCodePoint(0x2764)}
-                      </Button>
+                        Send
+                      </IconButton>
                       <IconButton
-                        edge="end"
                         onClick={() => handleShareInvitation(person)}
                         sx={{ color: '#667eea' }}
-                        title="Share invitation link"
+                        title="Share invitation"
                       >
                         <Share />
                       </IconButton>
                       <IconButton
-                        edge="end"
                         onClick={() => handleDeletePerson(person.id)}
-                        sx={{ color: '#ff6b6b' }}
-                        title="Remove person"
+                        sx={{ color: '#e74c3c' }}
+                        title="Delete person"
                       >
                         <Delete />
                       </IconButton>
@@ -392,13 +341,20 @@ export default function PersonsPage() {
         {/* Invitations Tab */}
         <TabPanel value={tabValue} index={1}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-            <Tabs 
-              value={invitationTabValue} 
+            <Tabs
+              value={invitationTabValue}
               onChange={(e, newValue) => setInvitationTabValue(newValue)}
-              sx={{ borderBottom: 1, borderColor: 'divider' }}
+              sx={{
+                '& .MuiTab-root': {
+                  color: '#95a5a6',
+                  '&.Mui-selected': {
+                    color: '#667eea'
+                  }
+                }
+              }}
             >
-              <Tab label={`Received (${pendingInvitations.length})`} />
-              <Tab label={`Sent (${invitations.length})`} />
+              <Tab label="Received" />
+              <Tab label="Sent" />
             </Tabs>
           </Box>
 
@@ -424,20 +380,15 @@ export default function PersonsPage() {
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
-                      primary={invitation.invitee_name}
+                      primary={invitation.inviter_name || invitation.inviter_email}
                       secondary={
                         <Box>
                           <Typography variant="body2" color="text.secondary">
-                            {invitation.invitee_email}
+                            {invitation.inviter_email}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             Sent {formatDate(invitation.created_at)}
                           </Typography>
-                          {invitation.custom_message && (
-                            <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
-                              "{invitation.custom_message}"
-                            </Typography>
-                          )}
                         </Box>
                       }
                     />
@@ -485,7 +436,7 @@ export default function PersonsPage() {
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
-                      primary={invitation.invitee_name}
+                      primary={invitation.invitee_email}
                       secondary={
                         <Box>
                           <Typography variant="body2" color="text.secondary">
@@ -497,11 +448,6 @@ export default function PersonsPage() {
                               Sent {formatDate(invitation.created_at)}
                             </Typography>
                           </Box>
-                          {invitation.custom_message && (
-                            <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
-                              "{invitation.custom_message}"
-                            </Typography>
-                          )}
                         </Box>
                       }
                     />
@@ -562,7 +508,7 @@ export default function PersonsPage() {
             <Button
               variant="outlined"
               startIcon={<Share />}
-              onClick={() => handleShareInvitation(addedPerson!)}
+              onClick={() => addedPerson && newInvitationService.shareInvitation(addedPerson.shareUrl, addedPerson.email)}
               fullWidth
             >
               Copy Invitation Link
@@ -609,10 +555,9 @@ export default function PersonsPage() {
                 label={`${theme.emoji} ${theme.name}`}
                 onClick={() => setSelectedTheme(key)}
                 sx={{ 
-                  cursor: 'pointer',
                   backgroundColor: selectedTheme === key ? theme.color : 'transparent',
-                  color: selectedTheme === key ? 'white' : theme.color,
-                  border: `2px solid ${theme.color}`,
+                  color: selectedTheme === key ? 'white' : 'inherit',
+                  border: `1px solid ${theme.color}`,
                   '&:hover': {
                     backgroundColor: theme.color,
                     color: 'white'
@@ -625,9 +570,15 @@ export default function PersonsPage() {
         <DialogActions>
           <Button onClick={() => setOpenSendDialog(false)}>Cancel</Button>
           <Button 
-            onClick={handleSendAffirmation} 
+            onClick={handleSendAffirmation}
             disabled={loading || !message.trim()}
             variant="contained"
+            sx={{
+              backgroundColor: '#ff69b4',
+              '&:hover': {
+                backgroundColor: '#ff1493'
+              }
+            }}
           >
             {loading ? 'Sending...' : 'Send Affirmation'}
           </Button>

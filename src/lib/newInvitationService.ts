@@ -150,5 +150,26 @@ export const newInvitationService = {
       // Final fallback: Show link
       prompt('Copy this invitation link:', shareUrl);
     }
+  },
+
+  // Get sent invitations
+  async getSentInvitations(): Promise<Invitation[]> {
+    const { data, error } = await supabase
+      .from('my_sent_invitations')
+      .select('*');
+
+    if (error) throw new Error(`Failed to fetch sent invitations: ${error.message}`);
+    return data || [];
+  },
+
+  // Decline invitation
+  async declineInvitation(invitationId: string): Promise<void> {
+    const { error } = await supabase
+      .from('invitations')
+      .update({ status: 'declined' })
+      .eq('id', invitationId)
+      .eq('invitee_email', (await supabase.auth.getUser()).data.user?.email);
+
+    if (error) throw new Error(`Failed to decline invitation: ${error.message}`);
   }
 };

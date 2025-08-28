@@ -54,29 +54,26 @@ function SignUpForm() {
       
       
       // If this was an invitation sign-up, accept the invitation
-      if (inviterId && signUpResult?.user?.id) {
-        try {
-          // Find the invitation by inviter ID and invitee email
-          const { data: invitations } = await supabase
-            .from('invitations')
-            .select('id')
-            .eq('inviter_id', inviterId)
-            .eq('invitee_email', email)
-            .eq('status', 'pending')
-            .limit(1);
+// In sign-in and sign-up pages, replace the old invitation acceptance logic with:
+if (inviterId && inviteeEmail && email === inviteeEmail) {
+  try {
+    // Find the invitation
+    const { data: invitations } = await supabase
+      .from('invitations')
+      .select('id')
+      .eq('inviter_id', inviterId)
+      .eq('invitee_email', email)
+      .eq('status', 'pending')
+      .limit(1);
 
-          if (invitations && invitations.length > 0) {
-            await emailInvitationService.acceptInvitation(invitations[0].id);
-            console.log('Invitation accepted successfully during sign-up');
-          } else {
-            console.log('No pending invitation found for this email and inviter');
-          }
-          
-        } catch (invitationError) {
-          console.error('Error accepting invitation:', invitationError);
-          // Don't fail the sign-up if invitation acceptance fails
-        }
-      }
+    if (invitations && invitations.length > 0) {
+      await newInvitationService.acceptInvitation(invitations[0].id);
+      console.log('Invitation accepted successfully');
+    }
+  } catch (error) {
+    console.error('Error accepting invitation:', error);
+  }
+}
       
       // After successful sign-up, redirect to dashboard
       // Note: In Supabase, users might need to confirm their email first
