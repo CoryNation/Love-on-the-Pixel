@@ -80,16 +80,21 @@ export const newInvitationService = {
   async acceptInvitation(invitationId: string): Promise<void> {
     console.log('Accepting invitation:', invitationId);
     
-    const { error } = await supabase.rpc('accept_invitation_simple', {
-      p_invitation_id: invitationId
-    });
+    try {
+      const { error } = await supabase.rpc('accept_invitation_simple', {
+        p_invitation_id: invitationId
+      });
 
-    if (error) {
-      console.error('Error accepting invitation:', error);
-      throw new Error(`Failed to accept invitation: ${error.message}`);
+      if (error) {
+        console.error('RPC error:', error);
+        throw new Error(`Failed to accept invitation: ${error.message}`);
+      }
+      
+      console.log('Invitation accepted successfully');
+    } catch (error) {
+      console.error('Error in acceptInvitation:', error);
+      throw error;
     }
-    
-    console.log('Invitation accepted successfully');
   },
 
   // Get pending invitations for current user
