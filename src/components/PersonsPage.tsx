@@ -56,7 +56,7 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`persons-tab-${index}`}
       {...other}
     >
-      {value === index &&
+      {value === index && (
         <Box sx={{ p: 3 }}>
           {children}
         </Box>
@@ -72,7 +72,7 @@ export default function PersonsPage() {
   const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(false);
   const [tabValue, setTabValue] = useState(0);
-  const [invitationTabValue, setInvitationTabValue] = useState(0); // Start with Received tab
+  const [invitationTabValue, setInvitationTabValue] = useState(0);
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [addedPerson, setAddedPerson] = useState<{ email: string; shareUrl: string } | null>(null);
   const [newPerson, setNewPerson] = useState({ email: '' });
@@ -107,7 +107,6 @@ export default function PersonsPage() {
       try {
         setLoading(true);
         
-        // This now creates invitation AND adds to persons list
         const { invitation, shareUrl } = await newInvitationService.addPerson(newPerson.email);
         
         setAddedPerson({ email: newPerson.email, shareUrl });
@@ -128,7 +127,6 @@ export default function PersonsPage() {
       try {
         setLoading(true);
         
-        // Send affirmation immediately - no waiting for acceptance
         await newInvitationService.sendAffirmation(
           selectedPerson.email, 
           message, 
@@ -300,22 +298,23 @@ export default function PersonsPage() {
                   />
                   <ListItemSecondaryAction>
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                      <IconButton
+                      <Button
                         onClick={() => {
                           setSelectedPerson(person);
                           setOpenSendDialog(true);
                         }}
                         sx={{ 
-                          color: '#ff69b4',
+                          color: 'white',
                           backgroundColor: '#ff69b4',
                           '&:hover': {
                             backgroundColor: '#ff1493'
                           }
                         }}
                         variant="contained"
+                        size="small"
                       >
                         Send
-                      </IconButton>
+                      </Button>
                       <IconButton
                         onClick={() => handleShareInvitation(person)}
                         sx={{ color: '#667eea' }}
