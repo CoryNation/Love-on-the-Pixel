@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { authService } from '@/lib/auth';
 import { emailInvitationService } from '@/lib/emailInvitationService';
+import { supabase } from './supabase';
 
 interface AuthContextType {
   user: User | null;

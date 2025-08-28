@@ -71,18 +71,25 @@ export const newInvitationService = {
         created_by: user.id,
         sender_email: user.email!,
         recipient_email: recipientEmail,
-        is_pending: true, // Will be linked to connection when accepted
+        is_pending: true,
         status: 'pending'
       }]);
   },
 
   // Accept invitation and create bidirectional connection
   async acceptInvitation(invitationId: string): Promise<void> {
+    console.log('Accepting invitation:', invitationId);
+    
     const { error } = await supabase.rpc('accept_invitation_simple', {
       p_invitation_id: invitationId
     });
 
-    if (error) throw new Error(`Failed to accept invitation: ${error.message}`);
+    if (error) {
+      console.error('Error accepting invitation:', error);
+      throw new Error(`Failed to accept invitation: ${error.message}`);
+    }
+    
+    console.log('Invitation accepted successfully');
   },
 
   // Get pending invitations for current user
@@ -92,6 +99,16 @@ export const newInvitationService = {
       .select('*');
 
     if (error) throw new Error(`Failed to fetch invitations: ${error.message}`);
+    return data || [];
+  },
+
+  // Get sent invitations
+  async getSentInvitations(): Promise<Invitation[]> {
+    const { data, error } = await supabase
+      .from('my_sent_invitations')
+      .select('*');
+
+    if (error) throw new Error(`Failed to fetch sent invitations: ${error.message}`);
     return data || [];
   },
 
@@ -105,23 +122,15 @@ export const newInvitationService = {
     return data || [];
   },
 
-  // Remove connection (bidirectional)
-  async removeConnection(connectedUserId: string): Promise<void> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
+  // Decline invitation
+  async declineInvitation(invitationId: string): Promise<void> {
+    const { error } = await supabase
+      .from('invitations')
+      .update({ status: 'declined' })
+      .eq('id', invitationId)
+      .eq('invitee_email', (await supabase.auth.getUser()).data.user?.email);
 
-    // Remove both directions of connection
-    await supabase
-      .from('user_connections')
-      .delete()
-      .or(`and(user_id.eq.${user.id},connected_user_id.eq.${connectedUserId}),and(user_id.eq.${connectedUserId},connected_user_id.eq.${user.id})`);
-
-    // Remove from persons list
-    await supabase
-      .from('persons')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('email', (await supabase.from('auth.users').select('email').eq('id', connectedUserId).single()).data?.email);
+    if (error) throw new Error(`Failed to decline invitation: ${error.message}`);
   },
 
   // Share invitation (with mobile support)
@@ -150,26 +159,5 @@ export const newInvitationService = {
       // Final fallback: Show link
       prompt('Copy this invitation link:', shareUrl);
     }
-  },
-
-  // Get sent invitations
-  async getSentInvitations(): Promise<Invitation[]> {
-    const { data, error } = await supabase
-      .from('my_sent_invitations')
-      .select('*');
-
-    if (error) throw new Error(`Failed to fetch sent invitations: ${error.message}`);
-    return data || [];
-  },
-
-  // Decline invitation
-  async declineInvitation(invitationId: string): Promise<void> {
-    const { error } = await supabase
-      .from('invitations')
-      .update({ status: 'declined' })
-      .eq('id', invitationId)
-      .eq('invitee_email', (await supabase.auth.getUser()).data.user?.email);
-
-    if (error) throw new Error(`Failed to decline invitation: ${error.message}`);
   }
 };
