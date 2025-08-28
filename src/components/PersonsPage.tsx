@@ -112,8 +112,19 @@ export default function PersonsPage() {
           email: newPerson.email
         });
         
+        // Create an invitation for this person
+        console.log('Creating invitation for:', newPerson.email);
+        const invitation = await emailInvitationService.createInvitation({
+          invitee_name: newPerson.email.split('@')[0],
+          invitee_email: newPerson.email
+        });
+        console.log('Invitation created:', invitation);
+        
         setAddedPerson(createdPerson);
         setShowShareOptions(true);
+        
+        // Reload data to show the new invitation
+        await loadData();
         
       } catch (error) {
         console.error('Error adding person:', error);

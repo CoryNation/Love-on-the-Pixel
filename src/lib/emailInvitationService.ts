@@ -114,6 +114,8 @@ export const emailInvitationService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
+    console.log('Accepting invitation:', invitationId, 'for user:', user.email);
+
     // First, get the invitation details
     const { data: invitation, error: fetchError } = await supabase
       .from('invitations')
@@ -127,8 +129,11 @@ export const emailInvitationService = {
       throw new Error('Invitation not found or already processed');
     }
 
+    console.log('Found invitation:', invitation);
+
     // Verify the invitation is for the current user
     if (invitation.invitee_email !== user.email) {
+      console.error('Email mismatch:', invitation.invitee_email, 'vs', user.email);
       throw new Error('This invitation is not for you');
     }
 

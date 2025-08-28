@@ -38,24 +38,28 @@ function SignInForm() {
     try {
       await authService.signIn(email, password);
       
-      // If this was an invitation sign-in, accept the invitation
-      if (inviterId && inviteeEmail && email === inviteeEmail) {
-        try {
-          // Find the invitation by inviter ID and invitee email
-          const { data: invitations } = await supabase
-            .from('invitations')
-            .select('id')
-            .eq('inviter_id', inviterId)
-            .eq('invitee_email', email)
-            .eq('status', 'pending')
-            .limit(1);
+             // If this was an invitation sign-in, accept the invitation
+       if (inviterId && inviteeEmail && email === inviteeEmail) {
+         try {
+           console.log('Processing invitation sign-in:', { inviterId, inviteeEmail, email });
+           
+           // Find the invitation by inviter ID and invitee email
+           const { data: invitations, error } = await supabase
+             .from('invitations')
+             .select('id')
+             .eq('inviter_id', inviterId)
+             .eq('invitee_email', email)
+             .eq('status', 'pending')
+             .limit(1);
 
-          if (invitations && invitations.length > 0) {
-            await emailInvitationService.acceptInvitation(invitations[0].id);
-            console.log('Invitation accepted successfully during sign-in');
-          } else {
-            console.log('No pending invitation found for this email and inviter');
-          }
+           console.log('Found invitations:', invitations, 'Error:', error);
+
+           if (invitations && invitations.length > 0) {
+             await emailInvitationService.acceptInvitation(invitations[0].id);
+             console.log('Invitation accepted successfully during sign-in');
+           } else {
+             console.log('No pending invitation found for this email and inviter');
+           }
           
         } catch (invitationError) {
           console.error('Error accepting invitation:', invitationError);
