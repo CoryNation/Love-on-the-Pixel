@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Box,
   Card,
@@ -14,6 +14,8 @@ import {
 } from '@mui/material';
 import Image from 'next/image';
 import { authService } from '@/lib/auth';
+import { emailInvitationService } from '@/lib/emailInvitationService';
+import { supabase } from '@/lib/supabase';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -21,6 +23,11 @@ export default function SignIn() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // Get invitation parameters from URL
+  const inviterId = searchParams.get('inviter');
+  const inviteeEmail = searchParams.get('invitee');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +36,32 @@ export default function SignIn() {
 
     try {
       await authService.signIn(email, password);
+      
+      // If this was an invitation sign-in, accept the invitation
+      if (inviterId && inviteeEmail && email === inviteeEmail) {
+        try {
+          // Find the invitation by inviter ID and invitee email
+          const { data: invitations } = await supabase
+            .from('invitations')
+            .select('id')
+            .eq('inviter_id', inviterId)
+            .eq('invitee_email', email)
+            .eq('status', 'pending')
+            .limit(1);
+
+          if (invitations && invitations.length > 0) {
+            await emailInvitationService.acceptInvitation(invitations[0].id);
+            console.log('Invitation accepted successfully during sign-in');
+          } else {
+            console.log('No pending invitation found for this email and inviter');
+          }
+          
+        } catch (invitationError) {
+          console.error('Error accepting invitation:', invitationError);
+          // Don't fail the sign-in if invitation acceptance fails
+        }
+      }
+      
       router.push('/');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign in';
@@ -101,6 +134,12 @@ export default function SignIn() {
           <Typography variant="h5" sx={{ marginBottom: 3, textAlign: 'center', color: '#2c3e50' }}>
             Sign In
           </Typography>
+          
+          {inviterId && inviteeEmail && (
+            <Alert severity="info" sx={{ marginBottom: 2 }}>
+              You have a pending invitation! Sign in to accept it.
+            </Alert>
+          )}
 
           {error && (
             <Alert severity="error" sx={{ marginBottom: 2 }}>

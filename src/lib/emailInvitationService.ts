@@ -114,15 +114,56 @@ export const emailInvitationService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    const { error } = await supabase
-      .rpc('accept_invitation', {
-        p_invitation_id: invitationId,
-        p_accepter_id: user.id
-      });
+    // First, get the invitation details
+    const { data: invitation, error: fetchError } = await supabase
+      .from('invitations')
+      .select('*')
+      .eq('id', invitationId)
+      .eq('status', 'pending')
+      .single();
 
-    if (error) {
-      console.error('Error accepting invitation:', error);
-      throw new Error('Failed to accept invitation');
+    if (fetchError || !invitation) {
+      console.error('Error fetching invitation:', fetchError);
+      throw new Error('Invitation not found or already processed');
+    }
+
+    // Verify the invitation is for the current user
+    if (invitation.invitee_email !== user.email) {
+      throw new Error('This invitation is not for you');
+    }
+
+    // Create bidirectional connection
+    const { error: connectionError } = await supabase
+      .from('user_connections')
+      .insert([
+        {
+          user_id: invitation.inviter_id,
+          connected_user_id: user.id
+        },
+        {
+          user_id: user.id,
+          connected_user_id: invitation.inviter_id
+        }
+      ]);
+
+    if (connectionError) {
+      console.error('Error creating connections:', connectionError);
+      throw new Error('Failed to create connection');
+    }
+
+    // Update invitation status
+    const { error: updateError } = await supabase
+      .from('invitations')
+      .update({ 
+        status: 'accepted',
+        accepted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', invitationId);
+
+    if (updateError) {
+      console.error('Error updating invitation:', updateError);
+      throw new Error('Failed to update invitation status');
     }
   },
 

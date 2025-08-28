@@ -67,6 +67,9 @@ function SignUpForm() {
 
           if (invitations && invitations.length > 0) {
             await emailInvitationService.acceptInvitation(invitations[0].id);
+            console.log('Invitation accepted successfully during sign-up');
+          } else {
+            console.log('No pending invitation found for this email and inviter');
           }
           
         } catch (invitationError) {

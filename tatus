@@ -1,0 +1,5 @@
+[33m96631c6[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Fix invitation system: remove email service message, fix user_profiles query, and add auto-accept invitations on login
+[33med16d38[m Fix invitation system: correct tab labels, fix invitation links, and fix pending invitations query
+[33mb228f8d[m Simplify add person form, remove confirmation dialog, and fix share functionality
+[33mb1a8919[m Fix person deletion and update send affirmation button styling
+[33mbb7ef3d[m name change to wellspring
