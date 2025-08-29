@@ -15,11 +15,10 @@ import {
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { emailInvitationService } from '@/lib/emailInvitationService';
+import { newInvitationService } from '@/lib/newInvitationService';
 import { supabase } from '@/lib/supabase';
 
 function SignUpForm() {
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -29,8 +28,9 @@ function SignUpForm() {
   const searchParams = useSearchParams();
   const { signUp } = useAuth();
   
-  // Get inviter ID from URL if this is an invitation sign-up
+  // Get invitation parameters from URL
   const inviterId = searchParams.get('inviter');
+  const inviteeEmail = searchParams.get('invitee');
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,34 +49,51 @@ function SignUpForm() {
       setLoading(true);
       setError(null);
       
-  
+      console.log('Starting sign-up process:', { email, inviterId, inviteeEmail });
+      
       const signUpResult = await signUp(email, password);
       
+      console.log('Sign-up completed, checking for invitation...');
       
       // If this was an invitation sign-up, accept the invitation
-// In sign-in and sign-up pages, replace the old invitation acceptance logic with:
-if (inviterId && inviteeEmail && email === inviteeEmail) {
-  try {
-    // Find the invitation
-    const { data: invitations } = await supabase
-      .from('invitations')
-      .select('id')
-      .eq('inviter_id', inviterId)
-      .eq('invitee_email', email)
-      .eq('status', 'pending')
-      .limit(1);
+      if (inviterId && inviteeEmail && email === inviteeEmail) {
+        try {
+          console.log('Processing invitation sign-up:', { inviterId, inviteeEmail, email });
+          
+          // Find the invitation
+          const { data: invitations, error } = await supabase
+            .from('invitations')
+            .select('id')
+            .eq('inviter_id', inviterId)
+            .eq('invitee_email', email)
+            .eq('status', 'pending')
+            .limit(1);
 
-    if (invitations && invitations.length > 0) {
-      await newInvitationService.acceptInvitation(invitations[0].id);
-      console.log('Invitation accepted successfully');
-    }
-  } catch (error) {
-    console.error('Error accepting invitation:', error);
-  }
-}
+          console.log('Found invitations:', invitations, 'Error:', error);
+
+          if (invitations && invitations.length > 0) {
+            console.log('Accepting invitation:', invitations[0].id);
+            await newInvitationService.acceptInvitation(invitations[0].id);
+            console.log('Invitation accepted successfully');
+          } else {
+            console.log('No pending invitation found');
+          }
+        } catch (error) {
+          console.error('Error accepting invitation:', error);
+          // Don't throw here - the sign-up was successful even if invitation acceptance failed
+        }
+      } else {
+        console.log('Not an invitation sign-up or email mismatch:', { 
+          inviterId, 
+          inviteeEmail, 
+          email, 
+          isInvitation: !!(inviterId && inviteeEmail),
+          emailMatches: email === inviteeEmail 
+        });
+      }
       
       // After successful sign-up, redirect to dashboard
-      // Note: In Supabase, users might need to confirm their email first
+      console.log('Redirecting to dashboard...');
       router.push('/dashboard');
     } catch (err: unknown) {
       console.error('Sign up error:', err);
@@ -164,6 +181,12 @@ if (inviterId && inviteeEmail && email === inviteeEmail) {
             Create Account
           </Typography>
 
+          {inviterId && inviteeEmail && (
+            <Alert severity="info" sx={{ marginBottom: 2 }}>
+              You have a pending invitation! Create your account to accept it.
+            </Alert>
+          )}
+
           {error && (
             <Alert severity="error" sx={{ marginBottom: 2 }}>
               {error}
@@ -247,11 +270,11 @@ if (inviterId && inviteeEmail && email === inviteeEmail) {
               </Link>
             </Typography>
           </Box>
-                 </CardContent>
-       </Card>
-     </Box>
-   );
- }
+        </CardContent>
+      </Card>
+    </Box>
+  );
+}
 
 export default function SignUp() {
   return (
@@ -272,4 +295,4 @@ export default function SignUp() {
       <SignUpForm />
     </Suspense>
   );
- }
+}

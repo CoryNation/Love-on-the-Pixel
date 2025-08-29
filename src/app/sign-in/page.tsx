@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Box,
@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import Image from 'next/image';
 import { authService } from '@/lib/auth';
-import { emailInvitationService } from '@/lib/emailInvitationService';
+import { newInvitationService } from '@/lib/newInvitationService';
 import { supabase } from '@/lib/supabase';
 
 function SignInForm() {
@@ -38,27 +38,30 @@ function SignInForm() {
     try {
       await authService.signIn(email, password);
       
-             // If this was an invitation sign-in, accept the invitation
-// In sign-in and sign-up pages, replace the old invitation acceptance logic with:
-if (inviterId && inviteeEmail && email === inviteeEmail) {
-  try {
-    // Find the invitation
-    const { data: invitations } = await supabase
-      .from('invitations')
-      .select('id')
-      .eq('inviter_id', inviterId)
-      .eq('invitee_email', email)
-      .eq('status', 'pending')
-      .limit(1);
+      // If this was an invitation sign-in, accept the invitation
+      if (inviterId && inviteeEmail && email === inviteeEmail) {
+        try {
+          console.log('Processing invitation sign-in:', { inviterId, inviteeEmail, email });
+          
+          // Find the invitation
+          const { data: invitations, error } = await supabase
+            .from('invitations')
+            .select('id')
+            .eq('inviter_id', inviterId)
+            .eq('invitee_email', email)
+            .eq('status', 'pending')
+            .limit(1);
 
-    if (invitations && invitations.length > 0) {
-      await newInvitationService.acceptInvitation(invitations[0].id);
-      console.log('Invitation accepted successfully');
-    }
-  } catch (error) {
-    console.error('Error accepting invitation:', error);
-  }
-}
+          console.log('Found invitations:', invitations, 'Error:', error);
+
+          if (invitations && invitations.length > 0) {
+            await newInvitationService.acceptInvitation(invitations[0].id);
+            console.log('Invitation accepted successfully');
+          }
+        } catch (error) {
+          console.error('Error accepting invitation:', error);
+        }
+      }
       
       router.push('/');
     } catch (err: unknown) {
@@ -187,11 +190,11 @@ if (inviterId && inviteeEmail && email === inviteeEmail) {
               Don&apos;t have an account? Sign up
             </Link>
           </Box>
-                 </CardContent>
-       </Card>
-     </Box>
-   );
- }
+        </CardContent>
+      </Card>
+    </Box>
+  );
+}
 
 export default function SignIn() {
   return (
@@ -212,4 +215,4 @@ export default function SignIn() {
       <SignInForm />
     </Suspense>
   );
- }
+}
