@@ -35,7 +35,7 @@ import {
   Share
 } from '@mui/icons-material';
 import { personsService, type Person as PersonType } from '@/lib/personsService';
-import { newInvitationService, type Invitation } from '@/lib/newInvitationService';
+import { newInvitationService, type Invitation, type Connection } from '@/lib/newInvitationService';
 import { useAuth } from '@/contexts/AuthContext';
 import { AFFIRMATION_THEMES } from '@/lib/affirmationThemes';
 
@@ -81,22 +81,35 @@ export default function PersonsPage() {
   const [selectedPerson, setSelectedPerson] = useState<PersonType | null>(null);
   const [message, setMessage] = useState('');
   const [selectedTheme, setSelectedTheme] = useState('love');
+  const [connections, setConnections] = useState<Connection[]>([]);
 
   useEffect(() => {
     loadData();
   }, [user?.id]);
 
+  // Update the loadData function to be more robust
   const loadData = async () => {
     try {
-      const [personsData, allInvitations, pending] = await Promise.all([
+      console.log('Loading data for user:', user?.id);
+      
+      const [personsData, allInvitations, pending, connectionsData] = await Promise.all([
         personsService.getAll(),
         newInvitationService.getSentInvitations(),
-        newInvitationService.getPendingInvitations()
+        newInvitationService.getPendingInvitations(),
+        newInvitationService.getConnections()
       ]);
+      
+      console.log('Loaded data:', {
+        persons: personsData.length,
+        invitations: allInvitations.length,
+        pending: pending.length,
+        connections: connectionsData.length
+      });
       
       setPersons(personsData);
       setInvitations(allInvitations);
       setPendingInvitations(pending);
+      setConnections(connectionsData);
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -166,10 +179,14 @@ export default function PersonsPage() {
     }
   };
 
+  // Update the handleAcceptInvitation function
   const handleAcceptInvitation = async (invitationId: string) => {
     try {
+      console.log('Accepting invitation:', invitationId);
       await newInvitationService.acceptInvitation(invitationId);
+      console.log('Invitation accepted, reloading data...');
       await loadData();
+      console.log('Data reloaded after accepting invitation');
     } catch (error) {
       console.error('Error accepting invitation:', error);
       alert('Failed to accept invitation. Please try again.');
@@ -186,7 +203,51 @@ export default function PersonsPage() {
     }
   };
 
-  const getStatusChip = (status: string) => {
+  // Update the getConnectionStatus function
+  const getConnectionStatus = (personEmail: string): string => {
+    console.log('Checking status for:', personEmail, {
+      connections: connections.map(c => c.connected_user_email),
+      invitations: invitations.map(i => i.invitee_email),
+      pending: pendingInvitations.map(p => p.inviter_email)
+    });
+    
+    // Check if there's an active connection
+    const hasConnection = connections.some(conn => 
+      conn.connected_user_email === personEmail
+    );
+    
+    if (hasConnection) {
+      console.log('Found connection for:', personEmail);
+      return 'accepted';
+    }
+    
+    // Check if there's a pending invitation sent TO this person
+    const hasPendingInvitationSent = invitations.some(inv => 
+      inv.invitee_email === personEmail && inv.status === 'pending'
+    );
+    
+    if (hasPendingInvitationSent) {
+      console.log('Found pending invitation sent to:', personEmail);
+      return 'pending';
+    }
+    
+    // Check if there's a pending invitation received FROM this person
+    const hasPendingInvitationReceived = pendingInvitations.some(inv => 
+      inv.inviter_email === personEmail
+    );
+    
+    if (hasPendingInvitationReceived) {
+      console.log('Found pending invitation received from:', personEmail);
+      return 'pending';
+    }
+    
+    console.log('No connection or invitation found for:', personEmail);
+    return 'unknown';
+  };
+
+  const getStatusChip = (personEmail: string) => {
+    const status = getConnectionStatus(personEmail);
+    
     switch (status) {
       case 'pending':
         return <Chip label="Pending Invitation" size="small" color="warning" />;
@@ -291,7 +352,7 @@ export default function PersonsPage() {
                           {person.email}
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                          {getStatusChip('pending')}
+                          {getStatusChip(person.email || '')}
                         </Box>
                       </Box>
                     }
@@ -442,7 +503,7 @@ export default function PersonsPage() {
                             {invitation.invitee_email}
                           </Typography>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                            {getStatusChip(invitation.status)}
+                            {getStatusChip(invitation.invitee_email)}
                             <Typography variant="caption" color="text.secondary">
                               Sent {formatDate(invitation.created_at)}
                             </Typography>
