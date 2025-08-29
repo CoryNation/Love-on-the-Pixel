@@ -58,10 +58,21 @@ export const newInvitationService = {
     return { invitation, shareUrl };
   },
 
-  // Send affirmation immediately (before connection acceptance)
+  // Send affirmation with proper connection checking
   async sendAffirmation(recipientEmail: string, message: string, theme: string): Promise<void> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
+
+    // Check if there's an active connection
+    const { data: connection } = await supabase
+      .from('user_connections')
+      .select('*')
+      .or(`and(user_id.eq.${user.id},connected_user_id.eq.(select id from auth.users where email = '${recipientEmail}')),and(user_id.eq.(select id from auth.users where email = '${recipientEmail}'),connected_user_id.eq.${user.id})`)
+      .single();
+
+    // If connected, send as delivered. If not connected, send as pending
+    const isConnected = !!connection;
+    const recipientId = isConnected ? connection.connected_user_id : null;
 
     await supabase
       .from('affirmations')
@@ -71,8 +82,9 @@ export const newInvitationService = {
         created_by: user.id,
         sender_email: user.email!,
         recipient_email: recipientEmail,
-        is_pending: true,
-        status: 'pending'
+        recipient_id: recipientId,
+        is_pending: !isConnected,
+        status: isConnected ? 'delivered' : 'pending'
       }]);
   },
 
@@ -125,6 +137,29 @@ export const newInvitationService = {
 
     if (error) throw new Error(`Failed to fetch connections: ${error.message}`);
     return data || [];
+  },
+
+  // Remove bidirectional connection
+  async removeConnection(personEmail: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    // Get the other user's ID
+    const { data: otherUser } = await supabase
+      .from('auth.users')
+      .select('id')
+      .eq('email', personEmail)
+      .single();
+
+    if (!otherUser) throw new Error('User not found');
+
+    // Delete both directions of the connection
+    const { error } = await supabase
+      .from('user_connections')
+      .delete()
+      .or(`and(user_id.eq.${user.id},connected_user_id.eq.${otherUser.id}),and(user_id.eq.${otherUser.id},connected_user_id.eq.${user.id})`);
+
+    if (error) throw new Error(`Failed to remove connection: ${error.message}`);
   },
 
   // Decline invitation

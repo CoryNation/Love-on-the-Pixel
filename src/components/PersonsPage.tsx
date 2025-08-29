@@ -136,7 +136,7 @@ export default function PersonsPage() {
   };
 
   const handleSendAffirmation = async () => {
-    if (message.trim() && selectedPerson) {
+    if (message.trim() && selectedPerson && selectedPerson.email) {
       try {
         setLoading(true);
         
@@ -146,7 +146,15 @@ export default function PersonsPage() {
           selectedTheme
         );
         
-        alert('Affirmation sent! It will appear in their Wellspring when they join.');
+        // Check if connected to show appropriate message
+        const isConnected = connections.some(c => c.connected_user_email === selectedPerson.email);
+        
+        if (isConnected) {
+          alert('Affirmation sent! It will appear in their Wellspring immediately.');
+        } else {
+          alert('Affirmation sent! It will appear in their Wellspring when they join.');
+        }
+        
         setMessage('');
         setOpenSendDialog(false);
       } catch (error) {
@@ -160,6 +168,9 @@ export default function PersonsPage() {
 
   const handleShareInvitation = async (person: PersonType) => {
     try {
+      if (!person.email) {
+        throw new Error('Person email is required');
+      }
       const shareUrl = `${window.location.origin}/sign-up?inviter=${user?.id}&invitee=${person.email}`;
       await newInvitationService.shareInvitation(shareUrl, person.email);
     } catch (error) {
@@ -170,7 +181,20 @@ export default function PersonsPage() {
   const handleDeletePerson = async (id: string) => {
     if (confirm('Are you sure you want to delete this person?')) {
       try {
+        // Get the person's email before deleting
+        const person = persons.find(p => p.id === id);
+        if (!person) {
+          throw new Error('Person not found');
+        }
+
+        // Delete from persons table
         await personsService.delete(id);
+        
+        // Remove bidirectional connection
+        if (person.email) {
+          await newInvitationService.removeConnection(person.email);
+        }
+        
         await loadData();
       } catch (error) {
         console.error('Error deleting person:', error);
