@@ -21,18 +21,21 @@ import {
   Chip,
   Tabs,
   Tab,
-  Alert
+  Menu,
+  MenuItem,
+  Alert,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import { 
   Person, 
   PersonAdd,
-  Favorite,
-  Refresh,
   Delete,
   Email,
   Check,
   Close,
-  Share
+  Share,
+  MoreVert
 } from '@mui/icons-material';
 import { personsService, type Person as PersonType } from '@/lib/personsService';
 import { newInvitationService, type Invitation, type Connection } from '@/lib/newInvitationService';
@@ -82,6 +85,14 @@ export default function PersonsPage() {
   const [message, setMessage] = useState('');
   const [selectedTheme, setSelectedTheme] = useState('love');
   const [connections, setConnections] = useState<Connection[]>([]);
+  
+  // Mobile menu state
+  const [mobileMenuAnchor, setMobileMenuAnchor] = useState<null | HTMLElement>(null);
+  const [selectedPersonForMenu, setSelectedPersonForMenu] = useState<PersonType | null>(null);
+  
+  // Responsive design
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     loadData();
@@ -229,19 +240,12 @@ export default function PersonsPage() {
 
   // Update the getConnectionStatus function
   const getConnectionStatus = (personEmail: string): string => {
-    console.log('Checking status for:', personEmail, {
-      connections: connections.map(c => c.connected_user_email),
-      invitations: invitations.map(i => i.invitee_email),
-      pending: pendingInvitations.map(p => p.inviter_email)
-    });
-    
     // Check if there's an active connection
     const hasConnection = connections.some(conn => 
       conn.connected_user_email === personEmail
     );
     
     if (hasConnection) {
-      console.log('Found connection for:', personEmail);
       return 'accepted';
     }
     
@@ -251,7 +255,6 @@ export default function PersonsPage() {
     );
     
     if (hasPendingInvitationSent) {
-      console.log('Found pending invitation sent to:', personEmail);
       return 'pending';
     }
     
@@ -261,11 +264,9 @@ export default function PersonsPage() {
     );
     
     if (hasPendingInvitationReceived) {
-      console.log('Found pending invitation received from:', personEmail);
       return 'pending';
     }
     
-    console.log('No connection or invitation found for:', personEmail);
     return 'unknown';
   };
 
@@ -286,6 +287,31 @@ export default function PersonsPage() {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
+  };
+
+  // Mobile menu handlers
+  const handleMobileMenuOpen = (event: React.MouseEvent<HTMLElement>, person: PersonType) => {
+    setMobileMenuAnchor(event.currentTarget);
+    setSelectedPersonForMenu(person);
+  };
+
+  const handleMobileMenuClose = () => {
+    setMobileMenuAnchor(null);
+    setSelectedPersonForMenu(null);
+  };
+
+  const handleMobileMenuShare = () => {
+    if (selectedPersonForMenu) {
+      handleShareInvitation(selectedPersonForMenu);
+    }
+    handleMobileMenuClose();
+  };
+
+  const handleMobileMenuDelete = () => {
+    if (selectedPersonForMenu) {
+      handleDeletePerson(selectedPersonForMenu.id);
+    }
+    handleMobileMenuClose();
   };
 
   return (
@@ -382,7 +408,7 @@ export default function PersonsPage() {
                     }
                   />
                   <ListItemSecondaryAction>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                       <Button
                         onClick={() => {
                           setSelectedPerson(person);
@@ -400,20 +426,32 @@ export default function PersonsPage() {
                       >
                         Send
                       </Button>
-                      <IconButton
-                        onClick={() => handleShareInvitation(person)}
-                        sx={{ color: '#667eea' }}
-                        title="Share invitation"
-                      >
-                        <Share />
-                      </IconButton>
-                      <IconButton
-                        onClick={() => handleDeletePerson(person.id)}
-                        sx={{ color: '#e74c3c' }}
-                        title="Delete person"
-                      >
-                        <Delete />
-                      </IconButton>
+                      {isMobile ? (
+                        <IconButton
+                          onClick={(event) => handleMobileMenuOpen(event, person)}
+                          sx={{ color: '#667eea' }}
+                          title="More options"
+                        >
+                          <MoreVert />
+                        </IconButton>
+                      ) : (
+                        <>
+                          <IconButton
+                            onClick={() => handleShareInvitation(person)}
+                            sx={{ color: '#667eea' }}
+                            title="Share invitation"
+                          >
+                            <Share />
+                          </IconButton>
+                          <IconButton
+                            onClick={() => handleDeletePerson(person.id)}
+                            sx={{ color: '#e74c3c' }}
+                            title="Delete person"
+                          >
+                            <Delete />
+                          </IconButton>
+                        </>
+                      )}
                     </Box>
                   </ListItemSecondaryAction>
                 </ListItem>
@@ -633,14 +671,14 @@ export default function PersonsPage() {
             Theme:
           </Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-            {Object.entries(AFFIRMATION_THEMES).map(([key, theme]) => (
+            {AFFIRMATION_THEMES.map((theme) => (
               <Chip
-                key={key}
+                key={theme.id}
                 label={`${theme.emoji} ${theme.name}`}
-                onClick={() => setSelectedTheme(key)}
+                onClick={() => setSelectedTheme(theme.id)}
                 sx={{ 
-                  backgroundColor: selectedTheme === key ? theme.color : 'transparent',
-                  color: selectedTheme === key ? 'white' : 'inherit',
+                  backgroundColor: selectedTheme === theme.id ? theme.color : 'transparent',
+                  color: selectedTheme === theme.id ? 'white' : 'inherit',
                   border: `1px solid ${theme.color}`,
                   '&:hover': {
                     backgroundColor: theme.color,
@@ -668,6 +706,30 @@ export default function PersonsPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Mobile Menu */}
+      <Menu
+        anchorEl={mobileMenuAnchor}
+        open={Boolean(mobileMenuAnchor)}
+        onClose={handleMobileMenuClose}
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        <MenuItem onClick={handleMobileMenuShare}>
+          <Share sx={{ mr: 1 }} />
+          Share Invitation
+        </MenuItem>
+        <MenuItem onClick={handleMobileMenuDelete} sx={{ color: '#e74c3c' }}>
+          <Delete sx={{ mr: 1 }} />
+          Delete Person
+        </MenuItem>
+      </Menu>
     </Box>
   );
 }

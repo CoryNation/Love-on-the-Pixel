@@ -17,7 +17,8 @@ import {
   Favorite, 
   Share
 } from '@mui/icons-material';
-import { affirmationsService, type Affirmation } from '@/lib/affirmations';
+import { bidirectionalConnectionsService, type Affirmation } from '@/lib/bidirectional-connections';
+import { AFFIRMATION_THEMES, getThemeColor, getThemeEmoji, getThemeById } from '@/lib/affirmationThemes';
 
 export default function FavoritesPage() {
   const [affirmations, setAffirmations] = useState<Affirmation[]>([]);
@@ -26,13 +27,21 @@ export default function FavoritesPage() {
 
   useEffect(() => {
     loadFavorites();
+    
+    // Make refreshFavorites available globally for other components
+    if (typeof window !== 'undefined') {
+      (window as any).refreshFavorites = loadFavorites;
+    }
   }, []);
 
   const loadFavorites = async () => {
     try {
+      console.log('Loading favorites...');
       setLoading(true);
-      const allAffirmations = await affirmationsService.getAll();
+      const allAffirmations = await bidirectionalConnectionsService.getAllAffirmations();
+      console.log('All affirmations:', allAffirmations);
       const favorites = allAffirmations.filter(aff => aff.is_favorite);
+      console.log('Favorites found:', favorites);
       setAffirmations(favorites);
     } catch (err) {
       setError('Failed to load favorites. Please try again.');
@@ -47,7 +56,10 @@ export default function FavoritesPage() {
       setAffirmations(prev => 
         prev.filter(aff => aff.id !== id)
       );
-      await affirmationsService.toggleFavorite(id, false);
+      await bidirectionalConnectionsService.toggleFavorite(id, false);
+      
+      // Refresh the list to ensure it's up to date
+      await loadFavorites();
     } catch (err) {
       console.error('Error updating favorite:', err);
       loadFavorites();
@@ -67,25 +79,7 @@ export default function FavoritesPage() {
     }
   };
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'love': return '#ff6b9d';
-      case 'encouragement': return '#4ecdc4';
-      case 'appreciation': return '#45b7d1';
-      case 'gratitude': return '#96ceb4';
-      default: return '#96ceb4';
-    }
-  };
 
-  const getCategoryEmoji = (category: string) => {
-    switch (category) {
-      case 'love': return '💕';
-      case 'encouragement': return '💪';
-      case 'appreciation': return '🙏';
-      case 'gratitude': return '💝';
-      default: return '💝';
-    }
-  };
 
   if (loading) {
     return (
@@ -195,10 +189,10 @@ export default function FavoritesPage() {
               {/* Category Badge */}
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 2 }}>
                 <Chip
-                  icon={<span>{getCategoryEmoji(affirmation.category)}</span>}
-                  label={affirmation.category}
+                  icon={<span>{getThemeEmoji(affirmation.category)}</span>}
+                  label={getThemeById(affirmation.category)?.name || affirmation.category}
                   sx={{
-                    backgroundColor: getCategoryColor(affirmation.category),
+                    backgroundColor: getThemeColor(affirmation.category),
                     color: 'white',
                     fontWeight: 600,
                     '& .MuiChip-icon': { color: 'white' }

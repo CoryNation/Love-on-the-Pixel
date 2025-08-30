@@ -69,15 +69,19 @@ export default function SettingsPage() {
     }
   };
 
-  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setEditForm(prev => ({ ...prev, photo_url: result }));
-      };
-      reader.readAsDataURL(file);
+      try {
+        setEditLoading(true);
+        const photoUrl = await userProfileService.uploadProfilePhoto(file);
+        setEditForm(prev => ({ ...prev, photo_url: photoUrl }));
+      } catch (error) {
+        console.error('Error uploading photo:', error);
+        alert('Failed to upload photo. Please try again.');
+      } finally {
+        setEditLoading(false);
+      }
     }
   };
 
@@ -204,7 +208,7 @@ export default function SettingsPage() {
       </Box>
 
       {/* Settings List */}
-      <Box sx={{ flex: 1 }}>
+      <Box sx={{ flex: 1, marginBottom: 2 }}>
         <List sx={{ 
           background: 'rgba(255, 255, 255, 0.95)', 
           borderRadius: 2,
@@ -241,23 +245,41 @@ export default function SettingsPage() {
         </List>
       </Box>
 
-      {/* Sign Out Button */}
-      <Button
-        variant="outlined"
-        startIcon={<Logout />}
-        onClick={handleSignOut}
-        sx={{
-          marginTop: 2,
-          color: 'white',
-          borderColor: 'white',
-          '&:hover': {
-            borderColor: 'white',
-            backgroundColor: 'rgba(255,255,255,0.1)'
-          }
-        }}
-      >
-        Sign Out
-      </Button>
+      {/* Sign Out Section */}
+      <Box sx={{ 
+        background: 'rgba(255, 255, 255, 0.95)', 
+        borderRadius: 2,
+        padding: 2,
+        marginBottom: 8 // Add bottom margin to account for bottom navigation
+      }}>
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            color: '#2c3e50',
+            fontWeight: 600,
+            marginBottom: 2,
+            textAlign: 'center'
+          }}
+        >
+          Sign Out
+        </Typography>
+        <Button
+          variant="outlined"
+          startIcon={<Logout />}
+          onClick={handleSignOut}
+          fullWidth
+          sx={{
+            color: '#e74c3c',
+            borderColor: '#e74c3c',
+            '&:hover': {
+              borderColor: '#c0392b',
+              backgroundColor: 'rgba(231, 76, 60, 0.1)'
+            }
+          }}
+        >
+          Sign Out
+        </Button>
+      </Box>
 
       {/* Edit Profile Dialog */}
       <Dialog 

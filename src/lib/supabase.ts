@@ -36,7 +36,6 @@ export interface NewAffirmation {
 
 export interface UserProfile {
   id: string;
-  email: string;
   full_name?: string;
   photo_url?: string;
   created_at: string;

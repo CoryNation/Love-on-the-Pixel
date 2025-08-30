@@ -37,6 +37,18 @@ export default function Dashboard() {
     }
   };
 
+  // Refresh favorites when switching to favorites tab
+  const handleTabChange = (event: any, newValue: number) => {
+    setCurrentTab(newValue);
+    
+    // If switching to favorites tab, refresh the favorites
+    if (newValue === 2 && typeof window !== 'undefined' && (window as any).refreshFavorites) {
+      setTimeout(() => {
+        (window as any).refreshFavorites();
+      }, 100);
+    }
+  };
+
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Main Content */}
@@ -64,7 +76,7 @@ export default function Dashboard() {
       >
         <BottomNavigation
           value={currentTab}
-          onChange={(event, newValue) => setCurrentTab(newValue)}
+          onChange={handleTabChange}
           sx={{
             '& .MuiBottomNavigationAction-root': {
               color: '#95a5a6',

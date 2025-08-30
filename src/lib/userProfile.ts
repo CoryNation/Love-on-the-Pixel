@@ -27,14 +27,11 @@ export const userProfileService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    // Remove email from the profile data since it's not in the table schema
-    const { email, ...profileWithoutEmail } = profile;
-
     const { data, error } = await supabase
       .from('user_profiles')
       .upsert({
         id: user.id,
-        ...profileWithoutEmail,
+        ...profile,
         updated_at: new Date().toISOString()
       })
       .select()
@@ -79,13 +76,10 @@ export const userProfileService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    // Remove email from the updates since it's not in the table schema
-    const { email, ...updatesWithoutEmail } = updates;
-
     const { data, error } = await supabase
       .from('user_profiles')
       .update({
-        ...updatesWithoutEmail,
+        ...updates,
         updated_at: new Date().toISOString()
       })
       .eq('id', user.id)
@@ -116,19 +110,5 @@ export const userProfileService = {
     return data;
   },
 
-  // Get user profile by email
-  async getProfileByEmail(email: string): Promise<UserProfile | null> {
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('email', email)
-      .single();
 
-    if (error) {
-      console.error('Error fetching user profile by email:', error);
-      return null;
-    }
-
-    return data;
-  }
 };

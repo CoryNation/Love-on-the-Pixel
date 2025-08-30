@@ -51,6 +51,7 @@ export default function WavePage() {
     category: 'love'
   });
   const [editLoading, setEditLoading] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState<string | null>(null);
 
   const loadInitialAffirmation = useCallback(async () => {
     try {
@@ -71,14 +72,15 @@ export default function WavePage() {
         console.log('Selected affirmation to display:', affirmation);
         setCurrentAffirmation(affirmation);
         
-        // Load sender profile if available
-        if (affirmation.sender_id) {
-          try {
-            const profile = await userProfileService.getProfileById(affirmation.sender_id);
-            setSenderProfile(profile);
-          } catch (err) {
-            console.error('Error loading sender profile:', err);
-          }
+        // Use sender profile information from the affirmation data
+        if (affirmation.sender_name || affirmation.sender_photo_url) {
+          setSenderProfile({
+            id: affirmation.sender_id,
+            full_name: affirmation.sender_name || '',
+            photo_url: affirmation.sender_photo_url || '',
+            created_at: '',
+            updated_at: ''
+          });
         }
         
         // Mark as read if it wasn't already
@@ -125,14 +127,15 @@ export default function WavePage() {
     
     setCurrentAffirmation(nextAffirmation);
     
-    // Load sender profile
-    if (nextAffirmation.sender_id) {
-      try {
-        const profile = await userProfileService.getProfileById(nextAffirmation.sender_id);
-        setSenderProfile(profile);
-      } catch (err) {
-        console.error('Error loading sender profile:', err);
-      }
+    // Update sender profile for the new affirmation
+    if (nextAffirmation.sender_name || nextAffirmation.sender_photo_url) {
+      setSenderProfile({
+        id: nextAffirmation.sender_id,
+        full_name: nextAffirmation.sender_name || '',
+        photo_url: nextAffirmation.sender_photo_url || '',
+        created_at: '',
+        updated_at: ''
+      });
     }
     
     // Mark as read
@@ -150,14 +153,15 @@ export default function WavePage() {
     
     setCurrentAffirmation(prevAffirmation);
     
-    // Load sender profile
-    if (prevAffirmation.sender_id) {
-      try {
-        const profile = await userProfileService.getProfileById(prevAffirmation.sender_id);
-        setSenderProfile(profile);
-      } catch (err) {
-        console.error('Error loading sender profile:', err);
-      }
+    // Update sender profile for the new affirmation
+    if (prevAffirmation.sender_name || prevAffirmation.sender_photo_url) {
+      setSenderProfile({
+        id: prevAffirmation.sender_id,
+        full_name: prevAffirmation.sender_name || '',
+        photo_url: prevAffirmation.sender_photo_url || '',
+        created_at: '',
+        updated_at: ''
+      });
     }
     
     // Mark as read
@@ -168,21 +172,44 @@ export default function WavePage() {
 
   const handleToggleFavorite = async (affirmation: Affirmation) => {
     try {
+      console.log('Toggling favorite for affirmation:', affirmation.id, 'Current state:', affirmation.is_favorite);
+      setFavoriteLoading(affirmation.id);
       await bidirectionalConnectionsService.toggleFavorite(affirmation.id, !affirmation.is_favorite);
       
-      // Update local state
-      const updatedAffirmations = receivedAffirmations.map(aff => 
+      // Update received affirmations state
+      const updatedReceivedAffirmations = receivedAffirmations.map(aff => 
         aff.id === affirmation.id 
           ? { ...aff, is_favorite: !aff.is_favorite }
           : aff
       );
-      setReceivedAffirmations(updatedAffirmations);
+      setReceivedAffirmations(updatedReceivedAffirmations);
       
+      // Update sent affirmations state
+      const updatedSentAffirmations = sentAffirmations.map(aff => 
+        aff.id === affirmation.id 
+          ? { ...aff, is_favorite: !aff.is_favorite }
+          : aff
+      );
+      setSentAffirmations(updatedSentAffirmations);
+      
+      // Update current affirmation if it's the one being favorited
       if (currentAffirmation?.id === affirmation.id) {
         setCurrentAffirmation({ ...affirmation, is_favorite: !affirmation.is_favorite });
       }
+      
+      console.log('Updated favorite state. New state:', !affirmation.is_favorite);
+      
+      // Refresh favorites page if it exists
+      if (typeof window !== 'undefined' && (window as any).refreshFavorites) {
+        setTimeout(() => {
+          console.log('Refreshing favorites page...');
+          (window as any).refreshFavorites();
+        }, 200);
+      }
     } catch (error) {
       console.error('Error toggling favorite:', error);
+    } finally {
+      setFavoriteLoading(null);
     }
   };
 
@@ -409,92 +436,153 @@ export default function WavePage() {
         // Received Affirmations View
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           {currentAffirmation ? (
-            <Card sx={{ 
+            <Box sx={{ 
               flex: 1, 
               display: 'flex', 
-              flexDirection: 'column',
-              backgroundColor: 'rgba(255,255,255,0.95)',
-              position: 'relative',
-              overflow: 'hidden'
+              justifyContent: 'center', 
+              alignItems: 'flex-start',
+              padding: 2,
+              paddingTop: 4
             }}>
-              <CardContent sx={{ 
-                flex: 1, 
-                display: 'flex', 
-                flexDirection: 'column',
-                padding: 4,
-                textAlign: 'center'
+              <Card sx={{ 
+                backgroundColor: 'rgba(255,255,255,0.95)',
+                maxWidth: '500px',
+                width: '100%',
+                borderRadius: 0,
+                boxShadow: '0 12px 40px rgba(0,0,0,0.15), 0 4px 20px rgba(0,0,0,0.1)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                position: 'relative',
+                overflow: 'hidden',
+                transform: 'translateY(-20px)'
               }}>
-                {/* Sender Info */}
-                <Box sx={{ marginBottom: 3 }}>
-                  <Avatar
-                    src={senderProfile?.photo_url}
-                    sx={{ 
-                      width: 60, 
-                      height: 60, 
-                      margin: '0 auto 1rem',
-                      backgroundColor: '#667eea'
-                    }}
-                  >
-                    {senderProfile?.full_name?.charAt(0) || '?'}
-                  </Avatar>
-                  <Typography variant="h6" color="text.secondary">
-                    From {senderProfile?.full_name || 'Someone special'}
-                  </Typography>
-                </Box>
-
-                {/* Affirmation Content */}
-                <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                                        <Typography variant="h3" sx={{ marginBottom: 2, fontSize: '2.5rem' }}>
-                     {getThemeEmoji(currentAffirmation.category)}
-                   </Typography>
-                   <Typography 
-                     variant="h5" 
-                     sx={{ 
-                       marginBottom: 3,
-                       lineHeight: 1.4,
-                       fontStyle: 'italic',
-                       color: getThemeColor(currentAffirmation.category)
-                     }}
-                   >
-                     "{currentAffirmation.message}"
-                   </Typography>
-                   <Chip 
-                     label={getThemeById(currentAffirmation.category)?.name || currentAffirmation.category}
-                     color="primary"
-                     variant="outlined"
-                   />
-                </Box>
-
-                {/* Action Buttons */}
-                <Box sx={{ 
+                {/* Notecard-style background pattern */}
+                <Box sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '40px',
+                  background: 'linear-gradient(90deg, transparent 0%, transparent 40px, #f0f0f0 40px, #f0f0f0 42px, transparent 42px)',
+                  backgroundSize: '42px 100%',
+                  opacity: 0.3
+                }} />
+                
+                <CardContent sx={{ 
                   display: 'flex', 
-                  justifyContent: 'center', 
-                  gap: 2, 
-                  marginTop: 3 
+                  flexDirection: 'column',
+                  padding: 4,
+                  textAlign: 'center',
+                  minHeight: '400px'
                 }}>
-                  <IconButton
-                    onClick={handlePreviousAffirmation}
-                    sx={{ color: '#667eea' }}
-                  >
-                    ←
-                  </IconButton>
-                  
-                  <IconButton
-                    onClick={() => handleToggleFavorite(currentAffirmation)}
-                    sx={{ color: currentAffirmation.is_favorite ? '#e74c3c' : '#667eea' }}
-                  >
-                    {currentAffirmation.is_favorite ? <Favorite /> : <FavoriteBorder />}
-                  </IconButton>
-                  
-                  <IconButton
-                    onClick={handleNextAffirmation}
-                    sx={{ color: '#667eea' }}
-                  >
-                    →
-                  </IconButton>
-                </Box>
-              </CardContent>
-            </Card>
+                  {/* Sender Info */}
+                  <Box sx={{ marginBottom: 3 }}>
+                    <Avatar
+                      src={senderProfile?.photo_url}
+                      sx={{ 
+                        width: 60, 
+                        height: 60, 
+                        margin: '0 auto 1rem',
+                        backgroundColor: '#667eea',
+                        border: '3px solid white',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                      }}
+                    >
+                      {senderProfile?.full_name?.charAt(0)?.toUpperCase() || '?'}
+                    </Avatar>
+                    <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 500 }}>
+                      From {senderProfile?.full_name || 'Someone special'}
+                    </Typography>
+                    {!senderProfile?.full_name && (
+                      <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                        (Sender hasn't set their name yet)
+                      </Typography>
+                    )}
+                  </Box>
+
+                  {/* Affirmation Content */}
+                  <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <Typography variant="h3" sx={{ marginBottom: 2, fontSize: '3rem' }}>
+                      {getThemeEmoji(currentAffirmation.category)}
+                    </Typography>
+                    <Typography 
+                      variant="h5" 
+                      sx={{ 
+                        marginBottom: 3,
+                        lineHeight: 1.6,
+                        fontStyle: 'italic',
+                        color: getThemeColor(currentAffirmation.category),
+                        fontWeight: 400,
+                        padding: '0 1rem'
+                      }}
+                    >
+                      "{currentAffirmation.message}"
+                    </Typography>
+                    <Chip 
+                      label={getThemeById(currentAffirmation.category)?.name || currentAffirmation.category}
+                      color="primary"
+                      variant="outlined"
+                      sx={{
+                        borderColor: getThemeColor(currentAffirmation.category),
+                        color: getThemeColor(currentAffirmation.category),
+                        fontWeight: 500
+                      }}
+                    />
+                  </Box>
+
+                  {/* Action Buttons */}
+                  <Box sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    gap: 2, 
+                    marginTop: 3 
+                  }}>
+                    <IconButton
+                      onClick={handlePreviousAffirmation}
+                      sx={{ 
+                        color: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        '&:hover': {
+                          backgroundColor: 'rgba(102, 126, 234, 0.2)'
+                        }
+                      }}
+                    >
+                      ←
+                    </IconButton>
+                    
+                    <IconButton
+                      onClick={() => handleToggleFavorite(currentAffirmation)}
+                      disabled={favoriteLoading === currentAffirmation.id}
+                      sx={{ 
+                        color: currentAffirmation.is_favorite ? '#e74c3c' : '#667eea',
+                        backgroundColor: currentAffirmation.is_favorite ? 'rgba(231, 76, 60, 0.1)' : 'rgba(102, 126, 234, 0.1)',
+                        '&:hover': {
+                          backgroundColor: currentAffirmation.is_favorite ? 'rgba(231, 76, 60, 0.2)' : 'rgba(102, 126, 234, 0.2)'
+                        }
+                      }}
+                    >
+                      {favoriteLoading === currentAffirmation.id ? (
+                        <CircularProgress size={20} color="inherit" />
+                      ) : (
+                        currentAffirmation.is_favorite ? <Favorite /> : <FavoriteBorder />
+                      )}
+                    </IconButton>
+                    
+                    <IconButton
+                      onClick={handleNextAffirmation}
+                      sx={{ 
+                        color: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        '&:hover': {
+                          backgroundColor: 'rgba(102, 126, 234, 0.2)'
+                        }
+                      }}
+                    >
+                      →
+                    </IconButton>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Box>
           ) : (
             <Card sx={{ 
               flex: 1, 
@@ -549,9 +637,14 @@ export default function WavePage() {
                       <IconButton
                         size="small"
                         onClick={() => handleToggleFavorite(affirmation)}
+                        disabled={favoriteLoading === affirmation.id}
                         sx={{ color: affirmation.is_favorite ? '#e74c3c' : '#667eea' }}
                       >
-                        {affirmation.is_favorite ? <Favorite /> : <FavoriteBorder />}
+                        {favoriteLoading === affirmation.id ? (
+                          <CircularProgress size={16} color="inherit" />
+                        ) : (
+                          affirmation.is_favorite ? <Favorite /> : <FavoriteBorder />
+                        )}
                       </IconButton>
                       <IconButton
                         size="small"
@@ -596,14 +689,21 @@ export default function WavePage() {
             Theme:
           </Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-            {Object.entries(AFFIRMATION_THEMES).map(([key, theme]) => (
+            {AFFIRMATION_THEMES.map((theme) => (
               <Chip
-                key={key}
-                label={theme.name}
-                onClick={() => setEditForm({ ...editForm, category: key })}
-                color={editForm.category === key ? 'primary' : 'default'}
-                variant={editForm.category === key ? 'filled' : 'outlined'}
-                sx={{ cursor: 'pointer' }}
+                key={theme.id}
+                label={`${theme.emoji} ${theme.name}`}
+                onClick={() => setEditForm({ ...editForm, category: theme.id })}
+                sx={{ 
+                  backgroundColor: editForm.category === theme.id ? theme.color : 'transparent',
+                  color: editForm.category === theme.id ? 'white' : 'inherit',
+                  border: `1px solid ${theme.color}`,
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: theme.color,
+                    color: 'white'
+                  }
+                }}
               />
             ))}
           </Box>

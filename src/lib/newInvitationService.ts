@@ -60,32 +60,108 @@ export const newInvitationService = {
 
   // Send affirmation with proper connection checking
   async sendAffirmation(recipientEmail: string, message: string, theme: string): Promise<void> {
+    console.log('=== AFFIRMATION SENDING DEBUG ===');
+    console.log('Inputs:', { recipientEmail, message, theme });
+    
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
+    
+    console.log('Current user:', { id: user.id, email: user.email });
 
-    // Check if there's an active connection
-    const { data: connection } = await supabase
-      .from('user_connections')
-      .select('*')
-      .or(`and(user_id.eq.${user.id},connected_user_id.eq.(select id from auth.users where email = '${recipientEmail}')),and(user_id.eq.(select id from auth.users where email = '${recipientEmail}'),connected_user_id.eq.${user.id})`)
-      .single();
+    // Check if there's an active connection by getting connections and checking email
+    console.log('Checking for connection with:', recipientEmail);
+    
+    // Get all connections for the current user
+    const { data: connections, error: connectionsError } = await supabase
+      .from('my_connections')
+      .select('*');
 
-    // If connected, send as delivered. If not connected, send as pending
-    const isConnected = !!connection;
-    const recipientId = isConnected ? connection.connected_user_id : null;
+    if (connectionsError) {
+      console.error('Error fetching connections:', connectionsError);
+      throw new Error(`Failed to fetch connections: ${connectionsError.message}`);
+    }
 
-    await supabase
-      .from('affirmations')
-      .insert([{
-        message,
-        theme,
-        created_by: user.id,
-        sender_email: user.email!,
-        recipient_email: recipientEmail,
+    console.log('All connections:', connections);
+
+    // Check if the recipient email is in our connections (same logic as PersonsPage.tsx)
+    const isConnected = connections?.some(conn => conn.connected_user_email === recipientEmail);
+    
+    console.log('Connection status:', { isConnected, recipientEmail });
+
+    if (isConnected) {
+      // Find the connection to get the recipient's user ID
+      const connection = connections.find(conn => conn.connected_user_email === recipientEmail);
+      const recipientId = connection?.connected_user_id;
+      
+      console.log('Found connection:', connection);
+      
+      // Insert into affirmations_clean for connected users
+      console.log('Inserting into affirmations_clean...');
+      
+      const affirmationData = {
+        sender_id: user.id,
         recipient_id: recipientId,
-        is_pending: !isConnected,
-        status: isConnected ? 'delivered' : 'pending'
-      }]);
+        message,
+        category: theme,
+        status: 'delivered'
+      };
+      
+      console.log('Affirmation data to insert:', affirmationData);
+
+      const { data: insertResult, error: insertError } = await supabase
+        .from('affirmations_clean')
+        .insert([affirmationData])
+        .select();
+
+      console.log('Insert result:', { insertResult, insertError });
+      
+      if (insertError) {
+        console.error('INSERT ERROR DETAILS:', {
+          message: insertError.message,
+          details: insertError.details,
+          hint: insertError.hint,
+          code: insertError.code
+        });
+        throw new Error(`Failed to insert affirmation: ${insertError.message}`);
+      }
+      
+      console.log('=== AFFIRMATION SENT SUCCESSFULLY ===');
+      console.log('Inserted affirmation:', insertResult);
+    } else {
+      // Insert into affirmations table for pending affirmations
+      console.log('No connection found, treating as pending...');
+      console.log('Inserting into affirmations (pending)...');
+      
+      const affirmationData = {
+        message,
+        category: theme,
+        created_by: user.id,
+        recipient_email: recipientEmail,
+        status: 'pending'
+      };
+      
+      console.log('Affirmation data to insert:', affirmationData);
+
+      const { data: insertResult, error: insertError } = await supabase
+        .from('affirmations')
+        .insert([affirmationData])
+        .select();
+
+      console.log('Insert result:', { insertResult, insertError });
+      
+      if (insertError) {
+        console.error('INSERT ERROR DETAILS:', {
+          message: insertError.message,
+          details: insertError.details,
+          hint: insertError.hint,
+          code: insertError.code
+        });
+        throw new Error(`Failed to insert affirmation: ${insertError.message}`);
+      }
+      
+      console.log('=== AFFIRMATION SENT SUCCESSFULLY (PENDING) ===');
+      console.log('Inserted affirmation:', insertResult);
+    }
   },
 
   // Accept invitation and create bidirectional connection
