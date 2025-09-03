@@ -26,12 +26,12 @@ export default function TreasuredPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadFavorites();
+    loadTreasured();
     
-    // Make refreshFavorites available globally for other components with debouncing
+    // Make refreshTreasured available globally for other components with debouncing
     if (typeof window !== 'undefined') {
       let refreshTimeout: NodeJS.Timeout;
-              (window as any).refreshTreasured = () => {
+      (window as any).refreshTreasured = () => {
         // Debounce refresh calls to prevent excessive API requests
         clearTimeout(refreshTimeout);
         refreshTimeout = setTimeout(() => {
@@ -50,7 +50,7 @@ export default function TreasuredPage() {
       setAffirmations(treasured);
     } catch (err) {
       setError('Failed to load treasured items. Please try again.');
-      console.error('Error loading favorites:', err);
+      console.error('Error loading treasured items:', err);
     } finally {
       setLoading(false);
     }
@@ -66,7 +66,7 @@ export default function TreasuredPage() {
       // Refresh the list to ensure it's up to date
       await loadTreasured();
     } catch (err) {
-      console.error('Error updating favorite:', err);
+      console.error('Error updating treasured item:', err);
       loadTreasured();
     }
   };
@@ -246,7 +246,7 @@ export default function TreasuredPage() {
                   fontStyle: 'italic'
                 }}
               >
-                Favorited on {new Date(affirmation.updated_at).toLocaleDateString()}
+                                 Treasured on {new Date(affirmation.updated_at).toLocaleDateString()}
               </Typography>
             </CardContent>
           </Card>

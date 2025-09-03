@@ -37,7 +37,7 @@ export default function Dashboard() {
     }
   };
 
-  // Refresh favorites when switching to favorites tab
+  // Refresh treasured items when switching to treasured tab
   const handleTabChange = (event: any, newValue: number) => {
     setCurrentTab(newValue);
     
