@@ -28,9 +28,16 @@ export default function FavoritesPage() {
   useEffect(() => {
     loadFavorites();
     
-    // Make refreshFavorites available globally for other components
+    // Make refreshFavorites available globally for other components with debouncing
     if (typeof window !== 'undefined') {
-      (window as any).refreshFavorites = loadFavorites;
+      let refreshTimeout: NodeJS.Timeout;
+      (window as any).refreshFavorites = () => {
+        // Debounce refresh calls to prevent excessive API requests
+        clearTimeout(refreshTimeout);
+        refreshTimeout = setTimeout(() => {
+          loadFavorites();
+        }, 100);
+      };
     }
   }, []);
 

@@ -102,7 +102,7 @@ export default function Dashboard() {
           />
           <BottomNavigationAction 
             label="Treasured" 
-            icon={<Favorite />} 
+            icon={<span style={{ fontSize: '1.2rem' }}>💎</span>} 
           />
           <BottomNavigationAction 
             label="Settings" 

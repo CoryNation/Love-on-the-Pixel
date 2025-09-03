@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Box, 
   Card, 
@@ -111,13 +111,23 @@ export default function WavePage() {
   // Make refreshAffirmations available globally for other components
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      (window as any).refreshAffirmations = loadInitialAffirmation;
+      let refreshTimeout: NodeJS.Timeout;
+      (window as any).refreshAffirmations = () => {
+        // Debounce refresh calls to prevent excessive API requests
+        clearTimeout(refreshTimeout);
+        refreshTimeout = setTimeout(() => {
+          loadInitialAffirmation();
+        }, 100);
+      };
     }
   }, [loadInitialAffirmation]);
 
-  const filteredAffirmations = activeTab === 'received' 
-    ? receivedAffirmations.filter(aff => selectedTheme === 'all' || aff.category === selectedTheme)
-    : sentAffirmations.filter(aff => selectedTheme === 'all' || aff.category === selectedTheme);
+  const filteredAffirmations = useMemo(() => 
+    activeTab === 'received' 
+      ? receivedAffirmations.filter(aff => selectedTheme === 'all' || aff.category === selectedTheme)
+      : sentAffirmations.filter(aff => selectedTheme === 'all' || aff.category === selectedTheme),
+    [activeTab, selectedTheme, receivedAffirmations, sentAffirmations]
+  );
 
   // Update currentAffirmation when theme filter changes
   useEffect(() => {
@@ -141,7 +151,7 @@ export default function WavePage() {
         }
       }
     }
-  }, [selectedTheme, activeTab, filteredAffirmations, currentAffirmation]);
+  }, [selectedTheme, activeTab, filteredAffirmations]);
 
   const handleNextAffirmation = useCallback(async () => {
     if (filteredAffirmations.length === 0) return;
@@ -555,7 +565,7 @@ export default function WavePage() {
                       {favoriteLoading === currentAffirmation.id ? (
                         <CircularProgress size={20} color="inherit" />
                       ) : (
-                        currentAffirmation.is_favorite ? <span style={{ fontSize: '1.2rem' }}>💎</span> : <span style={{ fontSize: '1.2rem' }}>💎</span>
+                        currentAffirmation.is_favorite ? <span style={{ fontSize: '1.2rem', color: '#e74c3c' }}>💎</span> : <span style={{ fontSize: '1.2rem', color: '#667eea' }}>💎</span>
                       )}
                     </IconButton>
                     
@@ -635,7 +645,7 @@ export default function WavePage() {
                         {favoriteLoading === affirmation.id ? (
                           <CircularProgress size={16} color="inherit" />
                         ) : (
-                          affirmation.is_favorite ? <span style={{ fontSize: '1rem' }}>💎</span> : <span style={{ fontSize: '1rem' }}>💎</span>
+                          affirmation.is_favorite ? <span style={{ fontSize: '1rem', color: '#e74c3c' }}>💎</span> : <span style={{ fontSize: '1rem', color: '#667eea' }}>💎</span>
                         )}
                       </IconButton>
                       <IconButton
