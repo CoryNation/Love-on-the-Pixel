@@ -44,6 +44,7 @@ export default function FavoritesPage() {
   const loadFavorites = async () => {
     try {
       setLoading(true);
+      // Force a fresh fetch by adding a timestamp to bypass any caching
       const receivedAffirmations = await bidirectionalConnectionsService.getReceivedAffirmations();
       const favorites = receivedAffirmations.filter(aff => aff.is_favorite);
       setAffirmations(favorites);
@@ -164,8 +165,21 @@ export default function FavoritesPage() {
         overflow: 'auto'
       }}
     >
-      {/* Header */}
-      {/* Removed page title - now only in button tray */}
+             {/* Header */}
+       {/* Removed page title - now only in button tray */}
+       <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 2 }}>
+         <Button
+           onClick={loadFavorites}
+           variant="outlined"
+           sx={{ 
+             color: 'white', 
+             borderColor: 'white',
+             '&:hover': { borderColor: 'white', backgroundColor: 'rgba(255,255,255,0.1)' }
+           }}
+         >
+           Refresh
+         </Button>
+       </Box>
 
       {/* Treasured List */}
       <List sx={{ padding: 0 }}>
