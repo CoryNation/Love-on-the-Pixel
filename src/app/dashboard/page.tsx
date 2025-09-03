@@ -43,9 +43,7 @@ export default function Dashboard() {
     
     // If switching to favorites tab, refresh the favorites
     if (newValue === 2 && typeof window !== 'undefined' && (window as any).refreshFavorites) {
-      setTimeout(() => {
-        (window as any).refreshFavorites();
-      }, 100);
+      (window as any).refreshFavorites();
     }
   };
 

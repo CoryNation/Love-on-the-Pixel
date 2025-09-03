@@ -90,10 +90,7 @@ export default function SettingsPage() {
 
     try {
       setEditLoading(true);
-      console.log('Attempting to update profile with:', {
-        full_name: editForm.full_name.trim(),
-        photo_url: editForm.photo_url
-      });
+
       
       await userProfileService.upsertProfile({
         full_name: editForm.full_name.trim(),

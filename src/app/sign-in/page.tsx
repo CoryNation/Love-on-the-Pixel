@@ -41,8 +41,6 @@ function SignInForm() {
       // If this was an invitation sign-in, accept the invitation
       if (inviterId && inviteeEmail && email === inviteeEmail) {
         try {
-          console.log('Processing invitation sign-in:', { inviterId, inviteeEmail, email });
-          
           // Find the invitation
           const { data: invitations, error } = await supabase
             .from('invitations')
@@ -52,11 +50,8 @@ function SignInForm() {
             .eq('status', 'pending')
             .limit(1);
 
-          console.log('Found invitations:', invitations, 'Error:', error);
-
           if (invitations && invitations.length > 0) {
             await newInvitationService.acceptInvitation(invitations[0].id);
-            console.log('Invitation accepted successfully');
           }
         } catch (error) {
           console.error('Error accepting invitation:', error);

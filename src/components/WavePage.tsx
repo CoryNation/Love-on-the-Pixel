@@ -57,11 +57,11 @@ export default function WavePage() {
     try {
       setLoading(true);
       
-      console.log('Loading affirmations for user:', user?.id);
+
       
       // Load received affirmations for the main view
       const receivedAffirmations = await bidirectionalConnectionsService.getReceivedAffirmations();
-      console.log('Received affirmations:', receivedAffirmations);
+
       setReceivedAffirmations(receivedAffirmations);
       
       if (receivedAffirmations.length > 0) {
@@ -69,7 +69,7 @@ export default function WavePage() {
         const unread = receivedAffirmations.filter(aff => aff.status === 'delivered');
         const affirmation = unread.length > 0 ? unread[0] : receivedAffirmations[0];
         
-        console.log('Selected affirmation to display:', affirmation);
+
         setCurrentAffirmation(affirmation);
         
         // Use sender profile information from the affirmation data
@@ -83,18 +83,15 @@ export default function WavePage() {
           });
         }
         
-        // Mark as read if it wasn't already
+                // Mark as read if it wasn't already
         if (affirmation.status === 'delivered') {
           await bidirectionalConnectionsService.markAffirmationAsRead(affirmation.id);
         }
-      } else {
-        console.log('No received affirmations found');
       }
       
       // Load sent affirmations for the sent tab
       if (user?.id) {
         const sent = await bidirectionalConnectionsService.getSentAffirmations();
-        console.log('Sent affirmations:', sent);
         setSentAffirmations(sent);
       }
     } catch (err) {
@@ -172,7 +169,7 @@ export default function WavePage() {
 
   const handleToggleFavorite = async (affirmation: Affirmation) => {
     try {
-      console.log('Toggling favorite for affirmation:', affirmation.id, 'Current state:', affirmation.is_favorite);
+
       setFavoriteLoading(affirmation.id);
       await bidirectionalConnectionsService.toggleFavorite(affirmation.id, !affirmation.is_favorite);
       
@@ -197,15 +194,10 @@ export default function WavePage() {
         setCurrentAffirmation({ ...affirmation, is_favorite: !affirmation.is_favorite });
       }
       
-      console.log('Updated favorite state. New state:', !affirmation.is_favorite);
-      
-      // Refresh favorites page if it exists
-      if (typeof window !== 'undefined' && (window as any).refreshFavorites) {
-        setTimeout(() => {
-          console.log('Refreshing favorites page...');
+              // Refresh favorites page if it exists
+        if (typeof window !== 'undefined' && (window as any).refreshFavorites) {
           (window as any).refreshFavorites();
-        }, 200);
-      }
+        }
     } catch (error) {
       console.error('Error toggling favorite:', error);
     } finally {
@@ -230,8 +222,6 @@ export default function WavePage() {
       
       // Note: The new service doesn't have an update method, so we'll need to implement it
       // For now, we'll just close the dialog
-      console.log('Edit functionality needs to be implemented in the service');
-      
       setEditDialogOpen(false);
       setEditingAffirmation(null);
       
@@ -250,8 +240,6 @@ export default function WavePage() {
     try {
       // Note: The new service doesn't have a delete method, so we'll need to implement it
       // For now, we'll just remove it from local state
-      console.log('Delete functionality needs to be implemented in the service');
-      
       const updatedAffirmations = receivedAffirmations.filter(aff => aff.id !== affirmation.id);
       setReceivedAffirmations(updatedAffirmations);
       

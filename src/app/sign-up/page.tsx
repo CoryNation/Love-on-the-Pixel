@@ -49,17 +49,11 @@ function SignUpForm() {
       setLoading(true);
       setError(null);
       
-      console.log('Starting sign-up process:', { email, inviterId, inviteeEmail });
-      
       const signUpResult = await signUp(email, password);
-      
-      console.log('Sign-up completed, checking for invitation...');
       
       // If this was an invitation sign-up, accept the invitation
       if (inviterId && inviteeEmail && email === inviteeEmail) {
         try {
-          console.log('Processing invitation sign-up:', { inviterId, inviteeEmail, email });
-          
           // Find the invitation
           const { data: invitations, error } = await supabase
             .from('invitations')
@@ -69,31 +63,16 @@ function SignUpForm() {
             .eq('status', 'pending')
             .limit(1);
 
-          console.log('Found invitations:', invitations, 'Error:', error);
-
           if (invitations && invitations.length > 0) {
-            console.log('Accepting invitation:', invitations[0].id);
             await newInvitationService.acceptInvitation(invitations[0].id);
-            console.log('Invitation accepted successfully');
-          } else {
-            console.log('No pending invitation found');
           }
         } catch (error) {
           console.error('Error accepting invitation:', error);
           // Don't throw here - the sign-up was successful even if invitation acceptance failed
         }
-      } else {
-        console.log('Not an invitation sign-up or email mismatch:', { 
-          inviterId, 
-          inviteeEmail, 
-          email, 
-          isInvitation: !!(inviterId && inviteeEmail),
-          emailMatches: email === inviteeEmail 
-        });
       }
       
       // After successful sign-up, redirect to dashboard
-      console.log('Redirecting to dashboard...');
       router.push('/dashboard');
     } catch (err: unknown) {
       console.error('Sign up error:', err);

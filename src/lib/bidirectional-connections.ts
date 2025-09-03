@@ -345,7 +345,7 @@ export const bidirectionalConnectionsService = {
           .update({ status: 'processed' })
           .eq('id', pending.id);
 
-        console.log(`Processed pending affirmation ${pending.id} for user ${userId}`);
+  
       } catch (error) {
         console.error(`Error processing pending affirmation ${pending.id}:`, error);
       }

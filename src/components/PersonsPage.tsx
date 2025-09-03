@@ -101,21 +101,12 @@ export default function PersonsPage() {
   // Update the loadData function to be more robust
   const loadData = async () => {
     try {
-      console.log('Loading data for user:', user?.id);
-      
       const [personsData, allInvitations, pending, connectionsData] = await Promise.all([
         personsService.getAll(),
         newInvitationService.getSentInvitations(),
         newInvitationService.getPendingInvitations(),
         newInvitationService.getConnections()
       ]);
-      
-      console.log('Loaded data:', {
-        persons: personsData.length,
-        invitations: allInvitations.length,
-        pending: pending.length,
-        connections: connectionsData.length
-      });
       
       setPersons(personsData);
       setInvitations(allInvitations);
@@ -217,11 +208,8 @@ export default function PersonsPage() {
   // Update the handleAcceptInvitation function
   const handleAcceptInvitation = async (invitationId: string) => {
     try {
-      console.log('Accepting invitation:', invitationId);
       await newInvitationService.acceptInvitation(invitationId);
-      console.log('Invitation accepted, reloading data...');
       await loadData();
-      console.log('Data reloaded after accepting invitation');
     } catch (error) {
       console.error('Error accepting invitation:', error);
       alert('Failed to accept invitation. Please try again.');

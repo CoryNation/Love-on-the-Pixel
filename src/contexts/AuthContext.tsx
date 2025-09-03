@@ -29,9 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       for (const invitation of pendingInvitations) {
         try {
-          console.log('Auto-accepting invitation:', invitation.id);
           await newInvitationService.acceptInvitation(invitation.id);
-          console.log('Successfully auto-accepted invitation:', invitation.id);
         } catch (error) {
           console.error('Failed to auto-accept invitation', invitation.id, ':', error);
           // Continue with other invitations even if one fails
@@ -51,10 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(user);
       // Auto-accept pending invitations when user logs in
       if (user) {
-        // Delay to ensure user is fully loaded
-        setTimeout(() => {
-          autoAcceptPendingInvitations().catch(console.error);
-        }, 1000);
+        autoAcceptPendingInvitations().catch(console.error);
       }
     });
 

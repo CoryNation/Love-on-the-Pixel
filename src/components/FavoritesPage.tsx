@@ -36,12 +36,9 @@ export default function FavoritesPage() {
 
   const loadFavorites = async () => {
     try {
-      console.log('Loading favorites...');
       setLoading(true);
       const allAffirmations = await bidirectionalConnectionsService.getAllAffirmations();
-      console.log('All affirmations:', allAffirmations);
       const favorites = allAffirmations.filter(aff => aff.is_favorite);
-      console.log('Favorites found:', favorites);
       setAffirmations(favorites);
     } catch (err) {
       setError('Failed to load favorites. Please try again.');
@@ -74,7 +71,7 @@ export default function FavoritesPage() {
           text: affirmation.message,
         });
       } catch (error) {
-        console.log('Error sharing:', error);
+        console.error('Error sharing:', error);
       }
     }
   };

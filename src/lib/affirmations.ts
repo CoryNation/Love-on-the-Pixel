@@ -28,8 +28,6 @@ export const affirmationsService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    console.log('Getting sent affirmations for user:', user.id);
-
     const { data, error } = await supabase
       .from('affirmations')
       .select('*')
@@ -41,7 +39,6 @@ export const affirmationsService = {
       throw error;
     }
 
-    console.log('Sent affirmations:', data);
     return data || [];
   },
 
@@ -49,8 +46,6 @@ export const affirmationsService = {
   async getReceived(): Promise<Affirmation[]> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
-
-    console.log('Getting received affirmations for user:', user.id);
 
     const { data, error } = await supabase
       .from('affirmations')
@@ -64,8 +59,6 @@ export const affirmationsService = {
       throw error;
     }
 
-    console.log('Received affirmations:', data);
-    console.log('Query conditions: recipient_id =', user.id, 'status = delivered');
     return data || [];
   },
 

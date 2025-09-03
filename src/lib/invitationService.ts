@@ -13,8 +13,6 @@ export const invitationService = {
   async acceptInvitation(data: InvitationAcceptanceData): Promise<void> {
     const { inviterId, inviteeId, inviteeName, inviteeEmail } = data;
 
-    console.log('Accepting invitation:', { inviterId, inviteeId, inviteeName, inviteeEmail });
-
     // Get inviter's profile (don't fail if not found)
     const { data: inviterProfile, error: inviterError } = await supabase
       .from('user_profiles')
@@ -44,7 +42,6 @@ export const invitationService = {
         inviteeId, 
         'accepted'
       );
-      console.log('Bidirectional connection created successfully');
     } catch (error) {
       console.error('Error creating bidirectional connection:', error);
       throw new Error('Failed to create bidirectional connection');
@@ -68,8 +65,6 @@ export const invitationService = {
       }
     ];
 
-    console.log('Creating persons entries:', connections);
-
     // Insert both connections into persons table
     const { error: insertError } = await supabase
       .from('persons')
@@ -83,7 +78,6 @@ export const invitationService = {
     // Process any pending affirmations for this user
     try {
       await bidirectionalConnectionsService.processPendingAffirmationsForUser(inviteeId, inviteeEmail);
-      console.log('Processed pending affirmations for user:', inviteeId);
     } catch (error) {
       console.error('Error processing pending affirmations:', error);
       // Don't throw here as the connection was already created
@@ -103,8 +97,6 @@ export const invitationService = {
       console.error('Error updating invitation status:', updateError);
       // Don't throw here as the connection was already created
     }
-
-    console.log('Invitation accepted and bidirectional connections created successfully');
   },
 
   // Get pending invitations for a user
