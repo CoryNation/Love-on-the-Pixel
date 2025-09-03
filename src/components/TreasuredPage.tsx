@@ -46,7 +46,8 @@ export default function TreasuredPage() {
     try {
       setLoading(true);
       // Force a fresh fetch by adding a timestamp to bypass any caching
-      const receivedAffirmations = await bidirectionalConnectionsService.getReceivedAffirmations();
+      // Limit to prevent timeout issues
+      const receivedAffirmations = await bidirectionalConnectionsService.getReceivedAffirmations(200);
       const treasured = receivedAffirmations.filter(aff => aff.is_favorite);
       setAffirmations(treasured);
     } catch (err) {

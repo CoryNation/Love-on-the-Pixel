@@ -59,8 +59,8 @@ export default function WavePage() {
     try {
       setLoading(true);
       
-      // Load received affirmations for the main view
-      const receivedAffirmations = await bidirectionalConnectionsService.getReceivedAffirmations();
+      // Load received affirmations for the main view (limit to prevent timeout)
+      const receivedAffirmations = await bidirectionalConnectionsService.getReceivedAffirmations(100);
       setReceivedAffirmations(receivedAffirmations);
       
       if (receivedAffirmations.length > 0) {
@@ -89,7 +89,7 @@ export default function WavePage() {
       
       // Only load sent affirmations if we're on the sent tab or need them
       if (user?.id && activeTab === 'sent') {
-        const sent = await bidirectionalConnectionsService.getSentAffirmations();
+        const sent = await bidirectionalConnectionsService.getSentAffirmations(50);
         setSentAffirmations(sent);
       }
     } catch (err) {
@@ -104,10 +104,13 @@ export default function WavePage() {
     if (user?.id && sentAffirmations.length === 0) {
       try {
         setSentLoading(true);
-        const sent = await bidirectionalConnectionsService.getSentAffirmations();
+        // Add limit to prevent timeout issues
+        const sent = await bidirectionalConnectionsService.getSentAffirmations(50); // Limit to 50 most recent
         setSentAffirmations(sent);
       } catch (err) {
         console.error('Error loading sent affirmations:', err);
+        // Set empty array to prevent infinite loading state
+        setSentAffirmations([]);
       } finally {
         setSentLoading(false);
       }
@@ -627,75 +630,84 @@ export default function WavePage() {
           )}
         </Box>
       ) : (
-                 // Sent Affirmations View
-         <Card sx={{ 
-           flex: 1, 
-           backgroundColor: 'rgba(255,255,255,0.95)',
-           overflow: 'auto'
-         }}>
-           {sentLoading ? (
-             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-               <CircularProgress />
-             </Box>
-           ) : (
-             <List>
-               {filteredAffirmations.map((affirmation) => (
-              <Card key={affirmation.id} sx={{ margin: 1, boxShadow: 'none', border: '1px solid #eee' }}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <Box sx={{ flex: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 1 }}>
-                        <Typography variant="h6" sx={{ marginRight: 1 }}>
-                          {getThemeEmoji(affirmation.category)}
+        // Sent Affirmations View
+        <Card sx={{ 
+          flex: 1, 
+          backgroundColor: 'rgba(255,255,255,0.95)',
+          overflow: 'auto'
+        }}>
+          {sentLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+              <CircularProgress />
+            </Box>
+          ) : filteredAffirmations.length === 0 ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px', flexDirection: 'column', gap: 2 }}>
+              <Typography variant="h6" color="text.secondary">
+                No sent affirmations yet
+              </Typography>
+              <Typography variant="body2" color="text.secondary" textAlign="center">
+                Start sending love notes to see them here!
+              </Typography>
+            </Box>
+          ) : (
+            <List>
+              {filteredAffirmations.map((affirmation) => (
+                <Card key={affirmation.id} sx={{ margin: 1, boxShadow: 'none', border: '1px solid #eee' }}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <Box sx={{ flex: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 1 }}>
+                          <Typography variant="h6" sx={{ marginRight: 1 }}>
+                            {getThemeEmoji(affirmation.category)}
+                          </Typography>
+                          <Typography variant="subtitle1" color="text.secondary">
+                            To {affirmation.recipient_name || 'Someone special'}
+                          </Typography>
+                        </Box>
+                        <Typography variant="body1" sx={{ marginBottom: 1, fontStyle: 'italic' }}>
+                          "{affirmation.message}"
                         </Typography>
-                        <Typography variant="subtitle1" color="text.secondary">
-                          To {affirmation.recipient_name || 'Someone special'}
-                        </Typography>
+                        <Chip 
+                          label={getThemeById(affirmation.category)?.name || affirmation.category}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                        />
                       </Box>
-                      <Typography variant="body1" sx={{ marginBottom: 1, fontStyle: 'italic' }}>
-                        "{affirmation.message}"
-                      </Typography>
-                                             <Chip 
-                         label={getThemeById(affirmation.category)?.name || affirmation.category}
-                         size="small"
-                         color="primary"
-                         variant="outlined"
-                       />
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleToggleFavorite(affirmation)}
+                          disabled={favoriteLoading === affirmation.id}
+                          sx={{ color: affirmation.is_favorite ? '#e74c3c' : '#667eea' }}
+                        >
+                          {favoriteLoading === affirmation.id ? (
+                            <CircularProgress size={16} color="inherit" />
+                          ) : (
+                            affirmation.is_favorite ? <DiamondIcon sx={{ fontSize: '1rem', color: '#e74c3c' }} /> : <DiamondIcon sx={{ fontSize: '1rem', color: '#667eea' }} />
+                          )}
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleEditAffirmation(affirmation)}
+                          sx={{ color: '#667eea' }}
+                        >
+                          <Edit />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDeleteAffirmation(affirmation)}
+                          sx={{ color: '#ff6b6b' }}
+                        >
+                          <Delete />
+                        </IconButton>
+                      </Box>
                     </Box>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleToggleFavorite(affirmation)}
-                        disabled={favoriteLoading === affirmation.id}
-                        sx={{ color: affirmation.is_favorite ? '#e74c3c' : '#667eea' }}
-                      >
-                        {favoriteLoading === affirmation.id ? (
-                          <CircularProgress size={16} color="inherit" />
-                        ) : (
-                                                     affirmation.is_favorite ? <DiamondIcon sx={{ fontSize: '1rem', color: '#e74c3c' }} /> : <DiamondIcon sx={{ fontSize: '1rem', color: '#667eea' }} />
-                        )}
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleEditAffirmation(affirmation)}
-                        sx={{ color: '#667eea' }}
-                      >
-                        <Edit />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteAffirmation(affirmation)}
-                        sx={{ color: '#ff6b6b' }}
-                      >
-                        <Delete />
-                      </IconButton>
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-            ))}
-          </List>
-            )}
+                  </CardContent>
+                </Card>
+              ))}
+            </List>
+          )}
         </Card>
       )}
 

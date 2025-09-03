@@ -227,15 +227,22 @@ export const bidirectionalConnectionsService = {
   },
 
   // Get affirmations sent by current user
-  async getSentAffirmations(): Promise<Affirmation[]> {
+  async getSentAffirmations(limit?: number): Promise<Affirmation[]> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('affirmations_with_users')
       .select('*')
       .eq('sender_id', user.id)
       .order('created_at', { ascending: false });
+
+    // Add limit if specified to prevent timeout issues
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching sent affirmations:', error);
@@ -246,15 +253,24 @@ export const bidirectionalConnectionsService = {
   },
 
   // Get affirmations received by current user
-  async getReceivedAffirmations(): Promise<Affirmation[]> {
+  async getReceivedAffirmations(limit?: number): Promise<Affirmation[]> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('affirmations_with_users')
       .select('*')
       .eq('recipient_id', user.id)
       .order('created_at', { ascending: false });
+
+    // Add limit if specified to prevent timeout issues
+    if (limit) {
+      query = query.limit(limit);
+      // For received affirmations, prioritize unread ones
+      query = query.order('status', { ascending: true }).order('created_at', { ascending: false });
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching received affirmations:', error);
