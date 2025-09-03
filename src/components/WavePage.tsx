@@ -586,7 +586,7 @@ export default function WavePage() {
                       {favoriteLoading === currentAffirmation.id ? (
                         <CircularProgress size={20} color="inherit" />
                       ) : (
-                        currentAffirmation.is_favorite ? <span style={{ fontSize: '1.2rem', color: '#e74c3c' }}>◆</span> : <span style={{ fontSize: '1.2rem', color: '#667eea' }}>◆</span>
+                                                 currentAffirmation.is_favorite ? <span style={{ fontSize: '1.2rem', color: '#e74c3c' }}>&#xead5;</span> : <span style={{ fontSize: '1.2rem', color: '#667eea' }}>&#xead5;</span>
                       )}
                     </IconButton>
                     
@@ -671,7 +671,7 @@ export default function WavePage() {
                         {favoriteLoading === affirmation.id ? (
                           <CircularProgress size={16} color="inherit" />
                         ) : (
-                                                     affirmation.is_favorite ? <span style={{ fontSize: '1rem', color: '#e74c3c' }}>◆</span> : <span style={{ fontSize: '1rem', color: '#667eea' }}>◆</span>
+                                                     affirmation.is_favorite ? <span style={{ fontSize: '1rem', color: '#e74c3c' }}>&#xead5;</span> : <span style={{ fontSize: '1rem', color: '#667eea' }}>&#xead5;</span>
                         )}
                       </IconButton>
                       <IconButton

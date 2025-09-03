@@ -102,7 +102,7 @@ export default function Dashboard() {
           />
           <BottomNavigationAction 
             label="Treasured" 
-            icon={<span style={{ fontSize: '1.2rem', color: '#667eea' }}>◆</span>} 
+            icon={<span style={{ fontSize: '1.2rem', color: '#667eea' }}>&#xead5;</span>} 
           />
           <BottomNavigationAction 
             label="Settings" 
