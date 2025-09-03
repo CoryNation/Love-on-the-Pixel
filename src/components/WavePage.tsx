@@ -115,12 +115,40 @@ export default function WavePage() {
     }
   }, [loadInitialAffirmation]);
 
+  const filteredAffirmations = activeTab === 'received' 
+    ? receivedAffirmations.filter(aff => selectedTheme === 'all' || aff.category === selectedTheme)
+    : sentAffirmations.filter(aff => selectedTheme === 'all' || aff.category === selectedTheme);
+
+  // Update currentAffirmation when theme filter changes
+  useEffect(() => {
+    if (activeTab === 'received' && filteredAffirmations.length > 0) {
+      // If current affirmation is not in filtered results, set to first filtered affirmation
+      const isCurrentInFiltered = currentAffirmation && filteredAffirmations.some(aff => aff.id === currentAffirmation.id);
+      if (!isCurrentInFiltered) {
+        const unread = filteredAffirmations.filter(aff => aff.status === 'delivered');
+        const affirmation = unread.length > 0 ? unread[0] : filteredAffirmations[0];
+        setCurrentAffirmation(affirmation);
+        
+        // Update sender profile for the new affirmation
+        if (affirmation.sender_name || affirmation.sender_photo_url) {
+          setSenderProfile({
+            id: affirmation.sender_id,
+            full_name: affirmation.sender_name || '',
+            photo_url: affirmation.sender_photo_url || '',
+            created_at: '',
+            updated_at: ''
+          });
+        }
+      }
+    }
+  }, [selectedTheme, activeTab, filteredAffirmations, currentAffirmation]);
+
   const handleNextAffirmation = useCallback(async () => {
-    if (receivedAffirmations.length === 0) return;
+    if (filteredAffirmations.length === 0) return;
     
-    const currentIndex = receivedAffirmations.findIndex(aff => aff.id === currentAffirmation?.id);
-    const nextIndex = (currentIndex + 1) % receivedAffirmations.length;
-    const nextAffirmation = receivedAffirmations[nextIndex];
+    const currentIndex = filteredAffirmations.findIndex(aff => aff.id === currentAffirmation?.id);
+    const nextIndex = (currentIndex + 1) % filteredAffirmations.length;
+    const nextAffirmation = filteredAffirmations[nextIndex];
     
     setCurrentAffirmation(nextAffirmation);
     
@@ -139,14 +167,14 @@ export default function WavePage() {
     if (nextAffirmation.status === 'delivered') {
       await bidirectionalConnectionsService.markAffirmationAsRead(nextAffirmation.id);
     }
-  }, [receivedAffirmations, currentAffirmation]);
+  }, [filteredAffirmations, currentAffirmation]);
 
   const handlePreviousAffirmation = useCallback(async () => {
-    if (receivedAffirmations.length === 0) return;
+    if (filteredAffirmations.length === 0) return;
     
-    const currentIndex = receivedAffirmations.findIndex(aff => aff.id === currentAffirmation?.id);
-    const prevIndex = currentIndex === 0 ? receivedAffirmations.length - 1 : currentIndex - 1;
-    const prevAffirmation = receivedAffirmations[prevIndex];
+    const currentIndex = filteredAffirmations.findIndex(aff => aff.id === currentAffirmation?.id);
+    const prevIndex = currentIndex === 0 ? filteredAffirmations.length - 1 : currentIndex - 1;
+    const prevAffirmation = filteredAffirmations[prevIndex];
     
     setCurrentAffirmation(prevAffirmation);
     
@@ -165,7 +193,7 @@ export default function WavePage() {
     if (prevAffirmation.status === 'delivered') {
       await bidirectionalConnectionsService.markAffirmationAsRead(prevAffirmation.id);
     }
-  }, [receivedAffirmations, currentAffirmation]);
+  }, [filteredAffirmations, currentAffirmation]);
 
   const handleToggleFavorite = async (affirmation: Affirmation) => {
     try {
@@ -251,10 +279,6 @@ export default function WavePage() {
     }
   };
 
-  const filteredAffirmations = activeTab === 'received' 
-    ? receivedAffirmations.filter(aff => selectedTheme === 'all' || aff.category === selectedTheme)
-    : sentAffirmations.filter(aff => selectedTheme === 'all' || aff.category === selectedTheme);
-
   if (loading) {
     return (
       <Box
@@ -308,27 +332,7 @@ export default function WavePage() {
         marginBottom: 3 
       }}>
         <Box sx={{ textAlign: 'center' }}>
-          <Typography
-            variant="h4"
-            sx={{
-              color: 'white',
-              fontWeight: 300,
-              textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-              marginBottom: 0.5
-            }}
-          >
-            Wellspring
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              color: 'rgba(255,255,255,0.8)',
-              fontStyle: 'italic',
-              textShadow: '0 1px 2px rgba(0,0,0,0.3)'
-            }}
-          >
-            A flow of love from your persons
-          </Typography>
+          {/* Removed page title and catchphrase - now only in button tray */}
         </Box>
         
         {/* Tab Buttons */}
@@ -551,7 +555,7 @@ export default function WavePage() {
                       {favoriteLoading === currentAffirmation.id ? (
                         <CircularProgress size={20} color="inherit" />
                       ) : (
-                        currentAffirmation.is_favorite ? <Favorite /> : <FavoriteBorder />
+                        currentAffirmation.is_favorite ? <span style={{ fontSize: '1.2rem' }}>💎</span> : <span style={{ fontSize: '1.2rem' }}>💎</span>
                       )}
                     </IconButton>
                     
@@ -631,7 +635,7 @@ export default function WavePage() {
                         {favoriteLoading === affirmation.id ? (
                           <CircularProgress size={16} color="inherit" />
                         ) : (
-                          affirmation.is_favorite ? <Favorite /> : <FavoriteBorder />
+                          affirmation.is_favorite ? <span style={{ fontSize: '1rem' }}>💎</span> : <span style={{ fontSize: '1rem' }}>💎</span>
                         )}
                       </IconButton>
                       <IconButton

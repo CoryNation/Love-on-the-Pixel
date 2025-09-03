@@ -158,19 +158,9 @@ export default function FavoritesPage() {
       }}
     >
       {/* Header */}
-      <Typography 
-        variant="h4" 
-        sx={{ 
-          color: 'white', 
-          fontWeight: 300,
-          textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-          marginBottom: 3
-        }}
-      >
-        Favorites
-      </Typography>
+      {/* Removed page title - now only in button tray */}
 
-      {/* Favorites List */}
+      {/* Treasured List */}
       <List sx={{ padding: 0 }}>
                  {affirmations.map((affirmation) => (
           <Card
@@ -208,7 +198,7 @@ export default function FavoritesPage() {
                     sx={{ color: '#e74c3c' }}
                     size="small"
                   >
-                    <Favorite />
+                    <span style={{ fontSize: '1rem' }}>💎</span>
                   </IconButton>
                 </Box>
               </Box>

@@ -153,17 +153,7 @@ export default function SettingsPage() {
     >
       {/* Header */}
       <Box sx={{ marginBottom: 3, textAlign: 'center' }}>
-        <Typography
-          variant="h4"
-          sx={{
-            color: 'white',
-            fontWeight: 300,
-            textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-            marginBottom: 2
-          }}
-        >
-          Settings
-        </Typography>
+        {/* Removed page title - now only in button tray */}
         
         {/* Profile Section */}
         <Box sx={{ 

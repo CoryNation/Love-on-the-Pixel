@@ -93,7 +93,7 @@ export default function Dashboard() {
           showLabels
         >
           <BottomNavigationAction 
-            label="Wellspring" 
+            label="Pixels" 
             icon={<Water />} 
           />
           <BottomNavigationAction 
@@ -101,7 +101,7 @@ export default function Dashboard() {
             icon={<People />} 
           />
           <BottomNavigationAction 
-            label="Favorites" 
+            label="Treasured" 
             icon={<Favorite />} 
           />
           <BottomNavigationAction 

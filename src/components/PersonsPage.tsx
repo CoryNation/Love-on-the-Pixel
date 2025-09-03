@@ -313,10 +313,7 @@ export default function PersonsPage() {
       }}
     >
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4" sx={{ color: 'white', fontWeight: 300 }}>
-          Persons
-        </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2 }}>
         <Button
           variant="contained"
           startIcon={<PersonAdd />}
