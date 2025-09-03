@@ -194,6 +194,7 @@ function SignUpForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              inputProps={{ autocomplete: 'new-password' }}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2
@@ -208,6 +209,7 @@ function SignUpForm() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
+              inputProps={{ autocomplete: 'new-password' }}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2

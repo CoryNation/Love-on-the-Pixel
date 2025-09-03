@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [user]);
+  }, []); // Remove user dependency to prevent infinite loop
 
   const handleSignIn = async (email: string, password: string) => {
     await authService.signIn(email, password);

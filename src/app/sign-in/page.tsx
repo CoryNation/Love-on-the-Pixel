@@ -162,6 +162,7 @@ function SignInForm() {
               onChange={(e) => setPassword(e.target.value)}
               sx={{ marginBottom: 3 }}
               required
+              inputProps={{ autocomplete: 'current-password' }}
             />
 
             <Button

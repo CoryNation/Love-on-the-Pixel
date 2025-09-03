@@ -44,8 +44,8 @@ export default function FavoritesPage() {
   const loadFavorites = async () => {
     try {
       setLoading(true);
-      const allAffirmations = await bidirectionalConnectionsService.getAllAffirmations();
-      const favorites = allAffirmations.filter(aff => aff.is_favorite);
+      const receivedAffirmations = await bidirectionalConnectionsService.getReceivedAffirmations();
+      const favorites = receivedAffirmations.filter(aff => aff.is_favorite);
       setAffirmations(favorites);
     } catch (err) {
       setError('Failed to load favorites. Please try again.');
