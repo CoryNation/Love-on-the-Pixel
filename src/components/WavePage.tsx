@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   Box, 
   Card, 
@@ -17,7 +17,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField
+  TextField,
+  Fab
 } from '@mui/material';
 import { 
   Favorite, 
@@ -25,7 +26,9 @@ import {
   Share, 
   Edit,
   Delete,
-  Person
+  Person,
+  NavigateBefore,
+  NavigateNext
 } from '@mui/icons-material';
 import DiamondIcon from '@mui/icons-material/Diamond';
 import { bidirectionalConnectionsService, type Affirmation } from '@/lib/bidirectional-connections';
@@ -54,6 +57,35 @@ export default function WavePage() {
   const [editLoading, setEditLoading] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState<string | null>(null);
   const [sentLoading, setSentLoading] = useState(false);
+
+  // Swipe functionality refs
+  const cardRef = useRef<HTMLDivElement>(null);
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
+
+  // Swipe handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    const swipeThreshold = 50;
+    const diff = touchStartX.current - touchEndX.current;
+    
+    if (Math.abs(diff) > swipeThreshold) {
+      if (diff > 0) {
+        // Swipe left - next affirmation
+        handleNextAffirmation();
+      } else {
+        // Swipe right - previous affirmation
+        handlePreviousAffirmation();
+      }
+    }
+  };
 
   const loadInitialAffirmation = useCallback(async () => {
     try {
@@ -471,17 +503,23 @@ export default function WavePage() {
               padding: 2,
               paddingTop: 4
             }}>
-              <Card sx={{ 
-                backgroundColor: 'rgba(255,255,255,0.95)',
-                maxWidth: '500px',
-                width: '100%',
-                borderRadius: 0,
-                boxShadow: '0 12px 40px rgba(0,0,0,0.15), 0 4px 20px rgba(0,0,0,0.1)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                position: 'relative',
-                overflow: 'hidden',
-                transform: 'translateY(-20px)'
-              }}>
+              <Card 
+                ref={cardRef}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                sx={{ 
+                  backgroundColor: 'rgba(255,255,255,0.95)',
+                  maxWidth: '500px',
+                  width: '100%',
+                  borderRadius: 0,
+                  boxShadow: '0 12px 40px rgba(0,0,0,0.15), 0 4px 20px rgba(0,0,0,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  transform: 'translateY(-20px)'
+                }}
+              >
                 {/* Notecard-style background pattern */}
                 <Box sx={{
                   position: 'absolute',
@@ -528,8 +566,19 @@ export default function WavePage() {
 
                   {/* Affirmation Content */}
                   <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <Typography variant="h3" sx={{ marginBottom: 2, fontSize: '3rem' }}>
+                    <Typography variant="h3" sx={{ marginBottom: 1, fontSize: '3rem' }}>
                       {getThemeEmoji(currentAffirmation.category)}
+                    </Typography>
+                    <Typography 
+                      variant="subtitle1" 
+                      sx={{ 
+                        marginBottom: 3,
+                        color: getThemeColor(currentAffirmation.category),
+                        fontWeight: 500,
+                        textAlign: 'center'
+                      }}
+                    >
+                      {getThemeById(currentAffirmation.category)?.name || currentAffirmation.category}
                     </Typography>
                     <Typography 
                       variant="h5" 
@@ -544,37 +593,31 @@ export default function WavePage() {
                     >
                       "{currentAffirmation.message}"
                     </Typography>
-                    <Chip 
-                      label={getThemeById(currentAffirmation.category)?.name || currentAffirmation.category}
-                      color="primary"
-                      variant="outlined"
-                      sx={{
-                        borderColor: getThemeColor(currentAffirmation.category),
-                        color: getThemeColor(currentAffirmation.category),
-                        fontWeight: 500
-                      }}
-                    />
                   </Box>
 
                   {/* Action Buttons */}
                   <Box sx={{ 
                     display: 'flex', 
-                    justifyContent: 'center', 
-                    gap: 2, 
-                    marginTop: 3 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginTop: 3,
+                    padding: '0 16px'
                   }}>
-                    <IconButton
+                    <Fab
                       onClick={handlePreviousAffirmation}
+                      aria-label="Previous affirmation"
                       sx={{ 
-                        color: '#667eea',
+                        width: 80,
+                        height: 80,
                         backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        color: '#667eea',
                         '&:hover': {
                           backgroundColor: 'rgba(102, 126, 234, 0.2)'
                         }
                       }}
                     >
-                      ←
-                    </IconButton>
+                      <NavigateBefore sx={{ fontSize: 28 }} />
+                    </Fab>
                     
                     <IconButton
                       onClick={() => handleToggleFavorite(currentAffirmation)}
@@ -590,22 +633,25 @@ export default function WavePage() {
                       {favoriteLoading === currentAffirmation.id ? (
                         <CircularProgress size={20} color="inherit" />
                       ) : (
-                                                 currentAffirmation.is_favorite ? <DiamondIcon sx={{ fontSize: '1.2rem', color: '#e74c3c' }} /> : <DiamondIcon sx={{ fontSize: '1.2rem', color: '#667eea' }} />
+                        currentAffirmation.is_favorite ? <DiamondIcon sx={{ fontSize: '1.2rem', color: '#e74c3c' }} /> : <DiamondIcon sx={{ fontSize: '1.2rem', color: '#667eea' }} />
                       )}
                     </IconButton>
                     
-                    <IconButton
+                    <Fab
                       onClick={handleNextAffirmation}
+                      aria-label="Next affirmation"
                       sx={{ 
-                        color: '#667eea',
+                        width: 80,
+                        height: 80,
                         backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        color: '#667eea',
                         '&:hover': {
                           backgroundColor: 'rgba(102, 126, 234, 0.2)'
                         }
                       }}
                     >
-                      →
-                    </IconButton>
+                      <NavigateNext sx={{ fontSize: 28 }} />
+                    </Fab>
                   </Box>
                 </CardContent>
               </Card>
