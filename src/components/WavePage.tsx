@@ -623,6 +623,8 @@ export default function WavePage() {
                       onClick={() => handleToggleFavorite(currentAffirmation)}
                       disabled={favoriteLoading === currentAffirmation.id}
                       sx={{ 
+                        width: 80,
+                        height: 80,
                         color: currentAffirmation.is_favorite ? '#e74c3c' : '#667eea',
                         backgroundColor: currentAffirmation.is_favorite ? 'rgba(231, 76, 60, 0.1)' : 'rgba(102, 126, 234, 0.1)',
                         '&:hover': {
@@ -631,9 +633,11 @@ export default function WavePage() {
                       }}
                     >
                       {favoriteLoading === currentAffirmation.id ? (
-                        <CircularProgress size={20} color="inherit" />
+                        <CircularProgress size={28} color="inherit" />
                       ) : (
-                        currentAffirmation.is_favorite ? <DiamondIcon sx={{ fontSize: '1.2rem', color: '#e74c3c' }} /> : <DiamondIcon sx={{ fontSize: '1.2rem', color: '#667eea' }} />
+                        currentAffirmation.is_favorite ? 
+                          <DiamondIcon sx={{ fontSize: '28px', color: '#e74c3c' }} /> : 
+                          <DiamondIcon sx={{ fontSize: '28px', color: '#667eea' }} />
                       )}
                     </IconButton>
                     
