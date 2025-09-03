@@ -27,6 +27,7 @@ import {
   Delete,
   Person
 } from '@mui/icons-material';
+import DiamondIcon from '@mui/icons-material/Diamond';
 import { bidirectionalConnectionsService, type Affirmation } from '@/lib/bidirectional-connections';
 import { userProfileService, type UserProfile } from '@/lib/userProfile';
 import { useAuth } from '@/contexts/AuthContext';
@@ -586,7 +587,7 @@ export default function WavePage() {
                       {favoriteLoading === currentAffirmation.id ? (
                         <CircularProgress size={20} color="inherit" />
                       ) : (
-                                                 currentAffirmation.is_favorite ? <span style={{ fontSize: '1.2rem', color: '#e74c3c' }}>💎</span> : <span style={{ fontSize: '1.2rem', color: '#667eea' }}>💎</span>
+                                                 currentAffirmation.is_favorite ? <DiamondIcon sx={{ fontSize: '1.2rem', color: '#e74c3c' }} /> : <DiamondIcon sx={{ fontSize: '1.2rem', color: '#667eea' }} />
                       )}
                     </IconButton>
                     
@@ -671,7 +672,7 @@ export default function WavePage() {
                         {favoriteLoading === affirmation.id ? (
                           <CircularProgress size={16} color="inherit" />
                         ) : (
-                                                     affirmation.is_favorite ? <span style={{ fontSize: '1rem', color: '#e74c3c' }}>💎</span> : <span style={{ fontSize: '1rem', color: '#667eea' }}>💎</span>
+                                                     affirmation.is_favorite ? <DiamondIcon sx={{ fontSize: '1rem', color: '#e74c3c' }} /> : <DiamondIcon sx={{ fontSize: '1rem', color: '#667eea' }} />
                         )}
                       </IconButton>
                       <IconButton

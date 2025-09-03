@@ -14,6 +14,7 @@ import {
   Settings,
   Favorite
 } from '@mui/icons-material';
+import DiamondIcon from '@mui/icons-material/Diamond';
 import WavePage from '@/components/WavePage';
 import PersonsPage from '@/components/PersonsPage';
 import SettingsPage from '@/components/SettingsPage';
@@ -102,7 +103,7 @@ export default function Dashboard() {
           />
           <BottomNavigationAction 
             label="Treasured" 
-            icon={<span style={{ fontSize: '1.2rem', color: '#667eea' }}>💎</span>} 
+            icon={<DiamondIcon sx={{ color: '#667eea' }} />} 
           />
           <BottomNavigationAction 
             label="Settings" 

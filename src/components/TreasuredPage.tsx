@@ -17,6 +17,7 @@ import {
   Favorite, 
   Share
 } from '@mui/icons-material';
+import DiamondIcon from '@mui/icons-material/Diamond';
 import { bidirectionalConnectionsService, type Affirmation } from '@/lib/bidirectional-connections';
 import { AFFIRMATION_THEMES, getThemeColor, getThemeEmoji, getThemeById } from '@/lib/affirmationThemes';
 
@@ -219,7 +220,7 @@ export default function TreasuredPage() {
                     sx={{ color: '#e74c3c' }}
                     size="small"
                   >
-                                         <span style={{ fontSize: '1rem', color: '#e74c3c' }}>💎</span>
+                                         <DiamondIcon sx={{ fontSize: '1rem', color: '#e74c3c' }} />
                   </IconButton>
                 </Box>
               </Box>
