@@ -41,6 +41,8 @@ import { personsService, type Person as PersonType } from '@/lib/personsService'
 import { newInvitationService, type Invitation, type Connection } from '@/lib/newInvitationService';
 import { useAuth } from '@/contexts/AuthContext';
 import { AFFIRMATION_THEMES } from '@/lib/affirmationThemes';
+import { useNotifications } from '@/contexts/NotificationContext';
+import NotificationBadge from '@/components/NotificationBadge';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -70,6 +72,7 @@ function TabPanel(props: TabPanelProps) {
 
 export default function PersonsPage() {
   const { user } = useAuth();
+  const { hasPendingInvitations, refreshNotifications } = useNotifications();
   const [persons, setPersons] = useState<PersonType[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([]);
@@ -112,6 +115,9 @@ export default function PersonsPage() {
       setInvitations(allInvitations);
       setPendingInvitations(pending);
       setConnections(connectionsData);
+      
+      // Refresh notifications after loading data
+      await refreshNotifications();
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -210,6 +216,8 @@ export default function PersonsPage() {
     try {
       await newInvitationService.acceptInvitation(invitationId);
       await loadData();
+      // Refresh notifications after accepting invitation
+      await refreshNotifications();
     } catch (error) {
       console.error('Error accepting invitation:', error);
       alert('Failed to accept invitation. Please try again.');
@@ -220,6 +228,8 @@ export default function PersonsPage() {
     try {
       await newInvitationService.declineInvitation(invitationId);
       await loadData();
+      // Refresh notifications after declining invitation
+      await refreshNotifications();
     } catch (error) {
       console.error('Error declining invitation:', error);
       alert('Failed to decline invitation. Please try again.');
@@ -355,7 +365,18 @@ export default function PersonsPage() {
           }}
         >
           <Tab label="My Persons" />
-          <Tab label="Invitations" />
+          <Tab 
+            label={
+              <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                Invitations
+                <NotificationBadge 
+                  hasNotifications={hasPendingInvitations} 
+                  size={8}
+                  position="top-right"
+                />
+              </Box>
+            } 
+          />
         </Tabs>
 
         {/* My Persons Tab */}
@@ -460,7 +481,18 @@ export default function PersonsPage() {
                 }
               }}
             >
-              <Tab label="Received" />
+              <Tab 
+                label={
+                  <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    Received
+                    <NotificationBadge 
+                      hasNotifications={hasPendingInvitations} 
+                      size={6}
+                      position="top-right"
+                    />
+                  </Box>
+                } 
+              />
               <Tab label="Sent" />
             </Tabs>
           </Box>
@@ -669,6 +701,7 @@ export default function PersonsPage() {
                     backgroundColor: theme.color,
                     color: 'white'
                   }
+ 
                 }}
               />
             ))}

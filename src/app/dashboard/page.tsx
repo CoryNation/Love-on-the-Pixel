@@ -19,9 +19,12 @@ import WavePage from '@/components/WavePage';
 import PersonsPage from '@/components/PersonsPage';
 import SettingsPage from '@/components/SettingsPage';
 import TreasuredPage from '@/components/TreasuredPage';
+import { NotificationProvider, useNotifications } from '@/contexts/NotificationContext';
+import NotificationBadge from '@/components/NotificationBadge';
 
-export default function Dashboard() {
+function DashboardContent() {
   const [currentTab, setCurrentTab] = useState(0);
+  const { hasPendingInvitations } = useNotifications();
 
   const renderContent = () => {
     switch (currentTab) {
@@ -99,7 +102,16 @@ export default function Dashboard() {
           />
           <BottomNavigationAction 
             label="Persons" 
-            icon={<People />} 
+            icon={
+              <Box sx={{ position: 'relative' }}>
+                <People />
+                <NotificationBadge 
+                  hasNotifications={hasPendingInvitations} 
+                  size={10}
+                  position="top-right"
+                />
+              </Box>
+            } 
           />
           <BottomNavigationAction 
             label="Treasured" 
@@ -113,4 +125,8 @@ export default function Dashboard() {
       </Paper>
     </Box>
   );
+}
+
+export default function Dashboard() {
+  return <DashboardContent />;
 }
