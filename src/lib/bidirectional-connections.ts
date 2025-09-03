@@ -212,18 +212,17 @@ export const bidirectionalConnectionsService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    const { data, error } = await supabase
-      .from('affirmations_with_users')
-      .select('*')
-      .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
-      .order('created_at', { ascending: false });
+    // Use direct queries instead of the problematic view
+    const [sentData, receivedData] = await Promise.all([
+      this.getSentAffirmations(100),
+      this.getReceivedAffirmations(100)
+    ]);
 
-    if (error) {
-      console.error('Error fetching affirmations:', error);
-      throw error;
-    }
-
-    return data || [];
+    // Combine and sort by creation date
+    const allAffirmations = [...sentData, ...receivedData];
+    return allAffirmations.sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
   },
 
   // Get affirmations sent by current user
@@ -231,19 +230,54 @@ export const bidirectionalConnectionsService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    // Use the fast function instead of the problematic view
+    // Use direct, optimized query instead of problematic functions
     const { data, error } = await supabase
-      .rpc('get_sent_affirmations_fast', {
-        p_user_id: user.id,
-        p_limit: limit || 50
-      });
+      .from('affirmations_clean')
+      .select(`
+        id,
+        sender_id,
+        recipient_id,
+        message,
+        category,
+        status,
+        is_favorite,
+        created_at,
+        updated_at
+      `)
+      .eq('sender_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(limit || 50);
 
     if (error) {
       console.error('Error fetching sent affirmations:', error);
       throw error;
     }
 
-    return data || [];
+    // Get user profiles efficiently in a single query
+    const userIds = [...new Set([
+      ...(data?.map(a => a.sender_id) || []),
+      ...(data?.map(a => a.recipient_id) || [])
+    ])];
+
+    let profiles: any[] = [];
+    if (userIds.length > 0) {
+      const { data: profilesData } = await supabase
+        .from('user_profiles')
+        .select('id, full_name, photo_url')
+        .in('id', userIds);
+      profiles = profilesData || [];
+    }
+
+    // Merge data efficiently
+    const profilesMap = new Map(profiles.map(p => [p.id, p]));
+    
+    return (data || []).map(affirmation => ({
+      ...affirmation,
+      sender_name: profilesMap.get(affirmation.sender_id)?.full_name || 'Unknown',
+      sender_photo_url: profilesMap.get(affirmation.sender_id)?.photo_url || '',
+      recipient_name: profilesMap.get(affirmation.recipient_id)?.full_name || 'Unknown',
+      recipient_photo_url: profilesMap.get(affirmation.recipient_id)?.photo_url || ''
+    }));
   },
 
   // Get affirmations received by current user
@@ -251,19 +285,52 @@ export const bidirectionalConnectionsService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    // Use the fast function instead of the problematic view
+    // Use direct, optimized query instead of problematic functions
     const { data, error } = await supabase
-      .rpc('get_received_affirmations_fast', {
-        p_user_id: user.id,
-        p_limit: limit || 100
-      });
+      .from('affirmations_clean')
+      .select(`
+        id,
+        sender_id,
+        recipient_id,
+        message,
+        category,
+        status,
+        is_favorite,
+        created_at,
+        updated_at
+      `)
+      .eq('recipient_id', user.id)
+      .order('status', { ascending: true })
+      .order('created_at', { ascending: false })
+      .limit(limit || 100);
 
     if (error) {
       console.error('Error fetching received affirmations:', error);
       throw error;
     }
 
-    return data || [];
+    // Get user profiles efficiently in a single query
+    const userIds = [...new Set(data?.map(a => a.sender_id) || [])];
+    
+    let profiles: any[] = [];
+    if (userIds.length > 0) {
+      const { data: profilesData } = await supabase
+        .from('user_profiles')
+        .select('id, full_name, photo_url')
+        .in('id', userIds);
+      profiles = profilesData || [];
+    }
+
+    // Merge data efficiently
+    const profilesMap = new Map(profiles.map(p => [p.id, p]));
+    
+    return (data || []).map(affirmation => ({
+      ...affirmation,
+      sender_name: profilesMap.get(affirmation.sender_id)?.full_name || 'Unknown',
+      sender_photo_url: profilesMap.get(affirmation.sender_id)?.photo_url || '',
+      recipient_name: 'You',
+      recipient_photo_url: ''
+    }));
   },
 
   // Create a new affirmation (affirmations persist regardless of connections)
