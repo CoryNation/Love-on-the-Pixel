@@ -1,0 +1,282 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Switch,
+  FormControlLabel,
+  FormGroup,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  Radio,
+  Divider,
+  Alert,
+  Button,
+  CircularProgress
+} from '@mui/material';
+import { Notifications, NotificationsOff, Favorite, FavoriteBorder, Mail, MailOutline } from '@mui/icons-material';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
+
+interface NotificationPreferences {
+  notifications_enabled: boolean;
+  invitation_received: boolean;
+  affirmation_received: boolean;
+  affirmation_treasured: boolean;
+  frequency: 'every_time' | 'once_daily';
+}
+
+export default function NotificationSettingsPage() {
+  const { user } = useAuth();
+  const [preferences, setPreferences] = useState<NotificationPreferences>({
+    notifications_enabled: true,
+    invitation_received: true,
+    affirmation_received: true,
+    affirmation_treasured: false,
+    frequency: 'every_time'
+  });
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      loadNotificationPreferences();
+    }
+  }, [user]);
+
+  const loadNotificationPreferences = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('user_notification_settings')
+        .select('*')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+        throw error;
+      }
+
+      if (data) {
+        setPreferences({
+          notifications_enabled: data.notifications_enabled ?? true,
+          invitation_received: data.invitation_received ?? true,
+          affirmation_received: data.affirmation_received ?? true,
+          affirmation_treasured: data.affirmation_treasured ?? false,
+          frequency: data.frequency ?? 'every_time'
+        });
+      }
+    } catch (err) {
+      console.error('Error loading notification preferences:', err);
+      setError('Failed to load notification preferences');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveNotificationPreferences = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+      setSuccess(null);
+
+      const { error } = await supabase
+        .from('user_notification_settings')
+        .upsert({
+          user_id: user?.id,
+          notifications_enabled: preferences.notifications_enabled,
+          invitation_received: preferences.invitation_received,
+          affirmation_received: preferences.affirmation_received,
+          affirmation_treasured: preferences.affirmation_treasured,
+          frequency: preferences.frequency,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      setSuccess('Notification preferences saved successfully!');
+      
+      // Request notification permission if enabling
+      if (preferences.notifications_enabled) {
+        await requestNotificationPermission();
+      }
+    } catch (err) {
+      console.error('Error saving notification preferences:', err);
+      setError('Failed to save notification preferences');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const requestNotificationPermission = async () => {
+    if ('Notification' in window) {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        setError('Please enable notifications in your browser settings to receive push notifications');
+      }
+    }
+  };
+
+  const handlePreferenceChange = (key: keyof NotificationPreferences, value: any) => {
+    setPreferences(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ padding: 2, maxWidth: '600px', margin: '0 auto' }}>
+      <Typography variant="h4" sx={{ marginBottom: 3, textAlign: 'center' }}>
+        Notification Settings
+      </Typography>
+
+      {error && (
+        <Alert severity="error" sx={{ marginBottom: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      {success && (
+        <Alert severity="success" sx={{ marginBottom: 2 }}>
+          {success}
+        </Alert>
+      )}
+
+      <Card sx={{ marginBottom: 3 }}>
+        <CardContent>
+          <FormGroup>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={preferences.notifications_enabled}
+                  onChange={(e) => handlePreferenceChange('notifications_enabled', e.target.checked)}
+                  color="primary"
+                />
+              }
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {preferences.notifications_enabled ? <Notifications color="primary" /> : <NotificationsOff />}
+                  <Typography variant="h6">Enable Push Notifications</Typography>
+                </Box>
+              }
+            />
+          </FormGroup>
+        </CardContent>
+      </Card>
+
+      <Card sx={{ marginBottom: 3, opacity: preferences.notifications_enabled ? 1 : 0.5 }}>
+        <CardContent>
+          <Typography variant="h6" sx={{ marginBottom: 2 }}>
+            Notification Types
+          </Typography>
+          
+          <FormGroup>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={preferences.invitation_received}
+                  onChange={(e) => handlePreferenceChange('invitation_received', e.target.checked)}
+                  disabled={!preferences.notifications_enabled}
+                />
+              }
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Mail color="primary" />
+                  <Typography>When invitation is received</Typography>
+                </Box>
+              }
+            />
+
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={preferences.affirmation_received}
+                  onChange={(e) => handlePreferenceChange('affirmation_received', e.target.checked)}
+                  disabled={!preferences.notifications_enabled}
+                />
+              }
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <MailOutline color="primary" />
+                  <Typography>When affirmation card is received</Typography>
+                </Box>
+              }
+            />
+
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={preferences.affirmation_treasured}
+                  onChange={(e) => handlePreferenceChange('affirmation_treasured', e.target.checked)}
+                  disabled={!preferences.notifications_enabled}
+                />
+              }
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Favorite color="primary" />
+                  <Typography>When an affirmation card is Treasured</Typography>
+                </Box>
+              }
+            />
+          </FormGroup>
+        </CardContent>
+      </Card>
+
+      <Card sx={{ marginBottom: 3, opacity: preferences.notifications_enabled ? 1 : 0.5 }}>
+        <CardContent>
+          <FormControl component="fieldset" disabled={!preferences.notifications_enabled}>
+            <FormLabel component="legend">
+              <Typography variant="h6">Notification Frequency</Typography>
+            </FormLabel>
+            <RadioGroup
+              value={preferences.frequency}
+              onChange={(e) => handlePreferenceChange('frequency', e.target.value)}
+            >
+              <FormControlLabel
+                value="every_time"
+                control={<Radio />}
+                label="Notify every time"
+              />
+              <FormControlLabel
+                value="once_daily"
+                control={<Radio />}
+                label="Notify 1 time per day"
+              />
+            </RadioGroup>
+          </FormControl>
+        </CardContent>
+      </Card>
+
+      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+        <Button
+          variant="contained"
+          onClick={saveNotificationPreferences}
+          disabled={saving}
+          sx={{ minWidth: '120px' }}
+        >
+          {saving ? <CircularProgress size={20} /> : 'Save Settings'}
+        </Button>
+      </Box>
+
+      {!preferences.notifications_enabled && (
+        <Alert severity="info" sx={{ marginTop: 2 }}>
+          Notifications are currently disabled. Enable them above to receive push notifications.
+        </Alert>
+      )}
+    </Box>
+  );
+}
