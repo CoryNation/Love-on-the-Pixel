@@ -35,12 +35,9 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // Only check once when user logs in or changes
+    // No automatic polling - let users refresh when they want updates
     checkPendingInvitations();
-    
-    // Set up an interval to check for new invitations every 30 seconds
-    const interval = setInterval(checkPendingInvitations, 30000);
-    
-    return () => clearInterval(interval);
   }, [user?.id]);
 
   return (

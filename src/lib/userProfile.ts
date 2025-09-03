@@ -8,9 +8,10 @@ export const userProfileService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
+    // Only select the columns we actually need
     const { data, error } = await supabase
       .from('user_profiles')
-      .select('*')
+      .select('id, full_name, photo_url, created_at, updated_at')
       .eq('id', user.id)
       .single();
 
@@ -98,7 +99,7 @@ export const userProfileService = {
   async getProfileById(userId: string): Promise<UserProfile | null> {
     const { data, error } = await supabase
       .from('user_profiles')
-      .select('*')
+      .select('id, full_name, photo_url, created_at, updated_at')
       .eq('id', userId)
       .single();
 
