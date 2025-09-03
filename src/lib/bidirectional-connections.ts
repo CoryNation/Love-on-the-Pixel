@@ -231,18 +231,12 @@ export const bidirectionalConnectionsService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    let query = supabase
-      .from('affirmations_with_users')
-      .select('*')
-      .eq('sender_id', user.id)
-      .order('created_at', { ascending: false });
-
-    // Add limit if specified to prevent timeout issues
-    if (limit) {
-      query = query.limit(limit);
-    }
-
-    const { data, error } = await query;
+    // Use the fast function instead of the problematic view
+    const { data, error } = await supabase
+      .rpc('get_sent_affirmations_fast', {
+        p_user_id: user.id,
+        p_limit: limit || 50
+      });
 
     if (error) {
       console.error('Error fetching sent affirmations:', error);
@@ -257,20 +251,12 @@ export const bidirectionalConnectionsService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    let query = supabase
-      .from('affirmations_with_users')
-      .select('*')
-      .eq('recipient_id', user.id)
-      .order('created_at', { ascending: false });
-
-    // Add limit if specified to prevent timeout issues
-    if (limit) {
-      query = query.limit(limit);
-      // For received affirmations, prioritize unread ones
-      query = query.order('status', { ascending: true }).order('created_at', { ascending: false });
-    }
-
-    const { data, error } = await query;
+    // Use the fast function instead of the problematic view
+    const { data, error } = await supabase
+      .rpc('get_received_affirmations_fast', {
+        p_user_id: user.id,
+        p_limit: limit || 100
+      });
 
     if (error) {
       console.error('Error fetching received affirmations:', error);
