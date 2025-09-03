@@ -115,7 +115,7 @@ function DashboardContent() {
           />
           <BottomNavigationAction 
             label="Treasured" 
-            icon={<DiamondIcon sx={{ color: '#667eea' }} />} 
+            icon={<DiamondIcon />} 
           />
           <BottomNavigationAction 
             label="Settings" 
