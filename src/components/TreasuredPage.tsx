@@ -219,7 +219,7 @@ export default function TreasuredPage() {
                     sx={{ color: '#e74c3c' }}
                     size="small"
                   >
-                    <span style={{ fontSize: '1rem', color: '#e74c3c' }}>&#xead5;</span>
+                                         <span style={{ fontSize: '1rem', color: '#e74c3c' }}>💎</span>
                   </IconButton>
                 </Box>
               </Box>
