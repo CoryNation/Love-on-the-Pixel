@@ -52,16 +52,14 @@ export default function WavePage() {
   });
   const [editLoading, setEditLoading] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState<string | null>(null);
+  const [sentLoading, setSentLoading] = useState(false);
 
   const loadInitialAffirmation = useCallback(async () => {
     try {
       setLoading(true);
       
-
-      
       // Load received affirmations for the main view
       const receivedAffirmations = await bidirectionalConnectionsService.getReceivedAffirmations();
-
       setReceivedAffirmations(receivedAffirmations);
       
       if (receivedAffirmations.length > 0) {
@@ -69,7 +67,6 @@ export default function WavePage() {
         const unread = receivedAffirmations.filter(aff => aff.status === 'delivered');
         const affirmation = unread.length > 0 ? unread[0] : receivedAffirmations[0];
         
-
         setCurrentAffirmation(affirmation);
         
         // Use sender profile information from the affirmation data
@@ -83,14 +80,14 @@ export default function WavePage() {
           });
         }
         
-                // Mark as read if it wasn't already
+        // Mark as read if it wasn't already
         if (affirmation.status === 'delivered') {
           await bidirectionalConnectionsService.markAffirmationAsRead(affirmation.id);
         }
       }
       
-      // Load sent affirmations for the sent tab
-      if (user?.id) {
+      // Only load sent affirmations if we're on the sent tab or need them
+      if (user?.id && activeTab === 'sent') {
         const sent = await bidirectionalConnectionsService.getSentAffirmations();
         setSentAffirmations(sent);
       }
@@ -100,7 +97,21 @@ export default function WavePage() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, activeTab]);
+
+  const loadSentAffirmations = useCallback(async () => {
+    if (user?.id && sentAffirmations.length === 0) {
+      try {
+        setSentLoading(true);
+        const sent = await bidirectionalConnectionsService.getSentAffirmations();
+        setSentAffirmations(sent);
+      } catch (err) {
+        console.error('Error loading sent affirmations:', err);
+      } finally {
+        setSentLoading(false);
+      }
+    }
+  }, [user?.id, sentAffirmations.length]);
 
   useEffect(() => {
     if (user?.id) {
@@ -116,11 +127,18 @@ export default function WavePage() {
         // Debounce refresh calls to prevent excessive API requests
         clearTimeout(refreshTimeout);
         refreshTimeout = setTimeout(() => {
-          loadInitialAffirmation();
+          // Only refresh received affirmations by default
+          if (activeTab === 'received') {
+            loadInitialAffirmation();
+          } else {
+            // If on sent tab, refresh both
+            loadInitialAffirmation();
+            loadSentAffirmations();
+          }
         }, 100);
       };
     }
-  }, [loadInitialAffirmation]);
+  }, [loadInitialAffirmation, loadSentAffirmations, activeTab]);
 
   const filteredAffirmations = useMemo(() => 
     activeTab === 'received' 
@@ -345,37 +363,40 @@ export default function WavePage() {
           {/* Removed page title and catchphrase - now only in button tray */}
         </Box>
         
-        {/* Tab Buttons */}
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant={activeTab === 'received' ? 'contained' : 'outlined'}
-            onClick={() => setActiveTab('received')}
-            sx={{
-              color: activeTab === 'received' ? 'white' : 'white',
-              borderColor: 'white',
-              '&:hover': {
-                borderColor: 'white',
-                backgroundColor: activeTab === 'received' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'
-              }
-            }}
-          >
-            Received
-          </Button>
-          <Button
-            variant={activeTab === 'sent' ? 'contained' : 'outlined'}
-            onClick={() => setActiveTab('sent')}
-            sx={{
-              color: activeTab === 'sent' ? 'white' : 'white',
-              borderColor: 'white',
-              '&:hover': {
-                borderColor: 'white',
-                backgroundColor: activeTab === 'sent' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'
-              }
-            }}
-          >
-            Sent
-          </Button>
-        </Box>
+                 {/* Tab Buttons */}
+         <Box sx={{ display: 'flex', gap: 1 }}>
+           <Button
+             variant={activeTab === 'received' ? 'contained' : 'outlined'}
+             onClick={() => setActiveTab('received')}
+             sx={{
+               color: activeTab === 'received' ? 'white' : 'white',
+               borderColor: 'white',
+               '&:hover': {
+                 borderColor: 'white',
+                 backgroundColor: activeTab === 'received' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'
+               }
+             }}
+           >
+             Received
+           </Button>
+           <Button
+             variant={activeTab === 'sent' ? 'contained' : 'outlined'}
+             onClick={() => {
+               setActiveTab('sent');
+               loadSentAffirmations();
+             }}
+             sx={{
+               color: activeTab === 'sent' ? 'white' : 'white',
+               borderColor: 'white',
+               '&:hover': {
+                 borderColor: 'white',
+                 backgroundColor: activeTab === 'sent' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'
+               }
+             }}
+           >
+             Sent
+           </Button>
+         </Box>
       </Box>
 
       {/* Theme Filter */}
@@ -605,14 +626,19 @@ export default function WavePage() {
           )}
         </Box>
       ) : (
-        // Sent Affirmations View
-        <Card sx={{ 
-          flex: 1, 
-          backgroundColor: 'rgba(255,255,255,0.95)',
-          overflow: 'auto'
-        }}>
-          <List>
-            {filteredAffirmations.map((affirmation) => (
+                 // Sent Affirmations View
+         <Card sx={{ 
+           flex: 1, 
+           backgroundColor: 'rgba(255,255,255,0.95)',
+           overflow: 'auto'
+         }}>
+           {sentLoading ? (
+             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+               <CircularProgress />
+             </Box>
+           ) : (
+             <List>
+               {filteredAffirmations.map((affirmation) => (
               <Card key={affirmation.id} sx={{ margin: 1, boxShadow: 'none', border: '1px solid #eee' }}>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -668,6 +694,7 @@ export default function WavePage() {
               </Card>
             ))}
           </List>
+            )}
         </Card>
       )}
 
