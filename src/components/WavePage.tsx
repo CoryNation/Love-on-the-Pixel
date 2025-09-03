@@ -169,7 +169,7 @@ export default function WavePage() {
         }
       }
     }
-  }, [selectedTheme, activeTab, filteredAffirmations, currentAffirmation]);
+  }, [selectedTheme, activeTab, filteredAffirmations]);
 
   const handleNextAffirmation = useCallback(async () => {
     if (filteredAffirmations.length === 0) return;
@@ -250,9 +250,9 @@ export default function WavePage() {
         setCurrentAffirmation({ ...affirmation, is_favorite: !affirmation.is_favorite });
       }
       
-              // Refresh favorites page if it exists
-        if (typeof window !== 'undefined' && (window as any).refreshFavorites) {
-          (window as any).refreshFavorites();
+              // Refresh treasured page if it exists
+        if (typeof window !== 'undefined' && (window as any).refreshTreasured) {
+          (window as any).refreshTreasured();
         }
     } catch (error) {
       console.error('Error toggling favorite:', error);
@@ -586,7 +586,7 @@ export default function WavePage() {
                       {favoriteLoading === currentAffirmation.id ? (
                         <CircularProgress size={20} color="inherit" />
                       ) : (
-                        currentAffirmation.is_favorite ? <span style={{ fontSize: '1.2rem' }}>💎</span> : <span style={{ fontSize: '1.2rem' }}>💎</span>
+                        currentAffirmation.is_favorite ? <span style={{ fontSize: '1.2rem', color: '#e74c3c' }}>◆</span> : <span style={{ fontSize: '1.2rem', color: '#667eea' }}>◆</span>
                       )}
                     </IconButton>
                     
@@ -671,7 +671,7 @@ export default function WavePage() {
                         {favoriteLoading === affirmation.id ? (
                           <CircularProgress size={16} color="inherit" />
                         ) : (
-                                                     affirmation.is_favorite ? <span style={{ fontSize: '1rem' }}>💎</span> : <span style={{ fontSize: '1rem' }}>💎</span>
+                                                     affirmation.is_favorite ? <span style={{ fontSize: '1rem', color: '#e74c3c' }}>◆</span> : <span style={{ fontSize: '1rem', color: '#667eea' }}>◆</span>
                         )}
                       </IconButton>
                       <IconButton

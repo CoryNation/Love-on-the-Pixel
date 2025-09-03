@@ -17,7 +17,7 @@ import {
 import WavePage from '@/components/WavePage';
 import PersonsPage from '@/components/PersonsPage';
 import SettingsPage from '@/components/SettingsPage';
-import FavoritesPage from '@/components/FavoritesPage';
+import TreasuredPage from '@/components/TreasuredPage';
 
 export default function Dashboard() {
   const [currentTab, setCurrentTab] = useState(0);
@@ -29,7 +29,7 @@ export default function Dashboard() {
       case 1:
         return <PersonsPage />;
       case 2:
-        return <FavoritesPage />;
+        return <TreasuredPage />;
       case 3:
         return <SettingsPage />;
       default:
@@ -41,9 +41,9 @@ export default function Dashboard() {
   const handleTabChange = (event: any, newValue: number) => {
     setCurrentTab(newValue);
     
-    // If switching to favorites tab, refresh the favorites
-    if (newValue === 2 && typeof window !== 'undefined' && (window as any).refreshFavorites) {
-      (window as any).refreshFavorites();
+    // If switching to treasured tab, refresh the treasured items
+    if (newValue === 2 && typeof window !== 'undefined' && (window as any).refreshTreasured) {
+      (window as any).refreshTreasured();
     }
   };
 
@@ -94,7 +94,7 @@ export default function Dashboard() {
         >
           <BottomNavigationAction 
             label="Pixels" 
-            icon={<Water />} 
+            icon={<Favorite />} 
           />
           <BottomNavigationAction 
             label="Persons" 
@@ -102,7 +102,7 @@ export default function Dashboard() {
           />
           <BottomNavigationAction 
             label="Treasured" 
-            icon={<span style={{ fontSize: '1.2rem' }}>💎</span>} 
+            icon={<span style={{ fontSize: '1.2rem', color: '#667eea' }}>◆</span>} 
           />
           <BottomNavigationAction 
             label="Settings" 

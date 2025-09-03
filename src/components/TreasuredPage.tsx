@@ -20,7 +20,7 @@ import {
 import { bidirectionalConnectionsService, type Affirmation } from '@/lib/bidirectional-connections';
 import { AFFIRMATION_THEMES, getThemeColor, getThemeEmoji, getThemeById } from '@/lib/affirmationThemes';
 
-export default function FavoritesPage() {
+export default function TreasuredPage() {
   const [affirmations, setAffirmations] = useState<Affirmation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,25 +31,25 @@ export default function FavoritesPage() {
     // Make refreshFavorites available globally for other components with debouncing
     if (typeof window !== 'undefined') {
       let refreshTimeout: NodeJS.Timeout;
-      (window as any).refreshFavorites = () => {
+              (window as any).refreshTreasured = () => {
         // Debounce refresh calls to prevent excessive API requests
         clearTimeout(refreshTimeout);
         refreshTimeout = setTimeout(() => {
-          loadFavorites();
+          loadTreasured();
         }, 100);
       };
     }
   }, []);
 
-  const loadFavorites = async () => {
+  const loadTreasured = async () => {
     try {
       setLoading(true);
       // Force a fresh fetch by adding a timestamp to bypass any caching
       const receivedAffirmations = await bidirectionalConnectionsService.getReceivedAffirmations();
-      const favorites = receivedAffirmations.filter(aff => aff.is_favorite);
-      setAffirmations(favorites);
+      const treasured = receivedAffirmations.filter(aff => aff.is_favorite);
+      setAffirmations(treasured);
     } catch (err) {
-      setError('Failed to load favorites. Please try again.');
+      setError('Failed to load treasured items. Please try again.');
       console.error('Error loading favorites:', err);
     } finally {
       setLoading(false);
@@ -64,10 +64,10 @@ export default function FavoritesPage() {
       await bidirectionalConnectionsService.toggleFavorite(id, false);
       
       // Refresh the list to ensure it's up to date
-      await loadFavorites();
+      await loadTreasured();
     } catch (err) {
       console.error('Error updating favorite:', err);
-      loadFavorites();
+      loadTreasured();
     }
   };
 
@@ -101,7 +101,7 @@ export default function FavoritesPage() {
       >
         <CircularProgress sx={{ color: 'white' }} />
         <Typography sx={{ color: 'white', marginTop: 2 }}>
-          Loading favorites...
+          Loading treasured items...
         </Typography>
       </Box>
     );
@@ -124,7 +124,7 @@ export default function FavoritesPage() {
           {error}
         </Alert>
         <Button 
-          onClick={loadFavorites} 
+          onClick={loadTreasured} 
           variant="contained" 
           sx={{ marginTop: 2 }}
         >
@@ -149,7 +149,7 @@ export default function FavoritesPage() {
         }}
       >
         <Typography sx={{ color: 'white', textAlign: 'center' }}>
-          No favorites yet. Start favoriting love notes to see them here!
+          No treasured items yet. Start treasuring love notes to see them here!
         </Typography>
       </Box>
     );
@@ -169,7 +169,7 @@ export default function FavoritesPage() {
        {/* Removed page title - now only in button tray */}
        <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 2 }}>
          <Button
-           onClick={loadFavorites}
+           onClick={loadTreasured}
            variant="outlined"
            sx={{ 
              color: 'white', 
