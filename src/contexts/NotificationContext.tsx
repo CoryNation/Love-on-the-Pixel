@@ -35,9 +35,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    checkPendingInvitations();
+    
     // Only check once when user logs in or changes
     // No automatic polling - let users refresh when they want updates
-    checkPendingInvitations();
+    
   }, [user?.id]);
 
   return (

@@ -173,7 +173,7 @@ export default function WavePage() {
         }
       }
     }
-  }, [selectedTheme, activeTab, filteredAffirmations]);
+  }, [selectedTheme, activeTab]); // Remove filteredAffirmations from dependencies
 
   const handleNextAffirmation = useCallback(async () => {
     if (filteredAffirmations.length === 0) return;
