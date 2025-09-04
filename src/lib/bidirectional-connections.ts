@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { notificationService } from './notificationService';
 
 // Types for bidirectional connections
 export interface UserConnection {
@@ -355,6 +356,31 @@ export const bidirectionalConnectionsService = {
       throw error;
     }
 
+    // Send push notification to recipient
+    try {
+      await notificationService.sendNotificationToUser(
+        affirmation.recipient_id,
+        {
+          title: 'New Love Note! 💕',
+          body: `You received a new affirmation: "${affirmation.message.substring(0, 50)}${affirmation.message.length > 50 ? '...' : ''}"`,
+          icon: '/heart-icon.png',
+          tag: 'affirmation-received',
+          data: { 
+            affirmationId: data.id,
+            senderId: user.id,
+            category: affirmation.category
+          },
+          actions: [
+            { action: 'view', title: 'View' },
+            { action: 'dismiss', title: 'Dismiss' }
+          ]
+        }
+      );
+    } catch (notificationError) {
+      console.error('Failed to send notification:', notificationError);
+      // Don't throw - notification failure shouldn't break affirmation creation
+    }
+
     return data;
   },
 
@@ -444,6 +470,41 @@ export const bidirectionalConnectionsService = {
     if (error) {
       console.error('Error updating favorite status:', error);
       throw error;
+    }
+
+    // Send notification when affirmation is treasured
+    if (isFavorite) {
+      try {
+        // Get affirmation details to send notification to sender
+        const { data: affirmation } = await supabase
+          .from('affirmations_clean')
+          .select('sender_id, recipient_id, message')
+          .eq('id', id)
+          .single();
+
+        if (affirmation) {
+          await notificationService.sendNotificationToUser(
+            affirmation.sender_id,
+            {
+              title: 'Card Treasured! 💎',
+              body: `Someone treasured your affirmation: "${affirmation.message.substring(0, 50)}${affirmation.message.length > 50 ? '...' : ''}"`,
+              icon: '/diamond-icon.png',
+              tag: 'affirmation-treasured',
+              data: { 
+                affirmationId: id,
+                recipientId: affirmation.recipient_id
+              },
+              actions: [
+                { action: 'view', title: 'View' },
+                { action: 'dismiss', title: 'Dismiss' }
+              ]
+            }
+          );
+        }
+      } catch (notificationError) {
+        console.error('Failed to send treasured notification:', notificationError);
+        // Don't throw - notification failure shouldn't break favorite toggle
+      }
     }
   },
 

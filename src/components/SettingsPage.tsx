@@ -23,10 +23,12 @@ import {
   Logout,
   Edit,
   Delete,
-  PhotoCamera
+  PhotoCamera,
+  Notifications
 } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 import { userProfileService, type UserProfile } from '@/lib/userProfile';
+import NotificationSettingsPage from './NotificationSettingsPage';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
@@ -38,6 +40,7 @@ export default function SettingsPage() {
     photo_url: ''
   });
   const [editLoading, setEditLoading] = useState(false);
+  const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -219,6 +222,17 @@ export default function SettingsPage() {
             </Typography>
           </ListItem>
           
+          <ListItem button onClick={() => setNotificationDialogOpen(true)}>
+            <ListItemIcon>
+              <Notifications sx={{ color: '#667eea' }} />
+            </ListItemIcon>
+            <ListItemText 
+              primary="Notification Settings" 
+              secondary="Manage push notification preferences"
+              sx={{ '& .MuiListItemText-primary': { color: '#2c3e50' } }}
+            />
+          </ListItem>
+          
           <ListItem button onClick={handleDeleteAccount}>
             <ListItemIcon>
               <Delete sx={{ color: '#e74c3c' }} />
@@ -326,6 +340,29 @@ export default function SettingsPage() {
             disabled={editLoading || !editForm.full_name.trim()}
           >
             {editLoading ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Notification Settings Dialog */}
+      <Dialog 
+        open={notificationDialogOpen} 
+        onClose={() => setNotificationDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Notifications sx={{ color: '#667eea' }} />
+            <Typography variant="h6">Notification Settings</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <NotificationSettingsPage />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setNotificationDialogOpen(false)}>
+            Close
           </Button>
         </DialogActions>
       </Dialog>

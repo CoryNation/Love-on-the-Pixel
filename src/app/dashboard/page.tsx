@@ -21,6 +21,7 @@ import SettingsPage from '@/components/SettingsPage';
 import TreasuredPage from '@/components/TreasuredPage';
 import { NotificationProvider, useNotifications } from '@/contexts/NotificationContext';
 import NotificationBadge from '@/components/NotificationBadge';
+import NotificationInitializer from '@/components/NotificationInitializer';
 
 function DashboardContent() {
   const [currentTab, setCurrentTab] = useState(0);
@@ -53,6 +54,9 @@ function DashboardContent() {
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Initialize Notifications */}
+      <NotificationInitializer />
+      
       {/* Main Content */}
       <Box sx={{ flex: 1, overflow: 'hidden' }}>
         <Fade in={true} timeout={300}>

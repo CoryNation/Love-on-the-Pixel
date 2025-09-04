@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { notificationService } from './notificationService';
 
 export interface Invitation {
   id: string;
@@ -138,6 +139,13 @@ export const newInvitationService = {
   // Accept invitation and create bidirectional connection
   async acceptInvitation(invitationId: string): Promise<void> {
     try {
+      // Get invitation details before accepting
+      const { data: invitation } = await supabase
+        .from('invitations')
+        .select('inviter_id, inviter_email, invitee_email')
+        .eq('id', invitationId)
+        .single();
+
       const { error } = await supabase.rpc('accept_invitation_simple', {
         p_invitation_id: invitationId
       });
@@ -146,7 +154,32 @@ export const newInvitationService = {
         console.error('RPC error:', error);
         throw new Error(`Failed to accept invitation: ${error.message}`);
       }
-      
+
+      // Send notification to inviter when invitation is accepted
+      if (invitation) {
+        try {
+          await notificationService.sendNotificationToUser(
+            invitation.inviter_id,
+            {
+              title: 'Invitation Accepted! 🎉',
+              body: `${invitation.invitee_email} accepted your invitation to connect`,
+              icon: '/people-icon.png',
+              tag: 'invitation-accepted',
+              data: { 
+                invitationId: invitationId,
+                inviteeEmail: invitation.invitee_email
+              },
+              actions: [
+                { action: 'view', title: 'View' },
+                { action: 'dismiss', title: 'Dismiss' }
+              ]
+            }
+          );
+        } catch (notificationError) {
+          console.error('Failed to send invitation accepted notification:', notificationError);
+          // Don't throw - notification failure shouldn't break invitation acceptance
+        }
+      }
 
     } catch (error) {
       console.error('Error in acceptInvitation:', error);
