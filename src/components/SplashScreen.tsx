@@ -83,7 +83,7 @@ type Dot = {
 export default function SplashScreen({
   children,
   minDurationMs = 4000, // 4 seconds total (2.5s animation + 1.5s hold)
-  dotCount = 120, // More dots to fill the screen
+  dotCount = 300, // Many more dots to completely fill the screen like favicon
 }: SplashScreenProps) {
   // Safely get auth state, handling SSR case
   let authInitializing = false;
@@ -141,35 +141,35 @@ export default function SplashScreen({
     ];
 
     return Array.from({ length: dotCount }).map((_, i) => {
-      // Start from edges (wind gust effect)
+      // Start from edges (wind gust effect) - more varied starting points
       const edge = Math.floor(Math.random() * 4);
       let startX = 0, startY = 0;
       
       if (edge === 0) { // Top
-        startX = rand(-100, w + 100);
-        startY = -100;
+        startX = rand(-200, w + 200);
+        startY = rand(-200, -50);
       } else if (edge === 1) { // Right
-        startX = w + 100;
-        startY = rand(-100, h + 100);
+        startX = rand(w + 50, w + 200);
+        startY = rand(-200, h + 200);
       } else if (edge === 2) { // Bottom
-        startX = rand(-100, w + 100);
-        startY = h + 100;
+        startX = rand(-200, w + 200);
+        startY = rand(h + 50, h + 200);
       } else { // Left
-        startX = -100;
-        startY = rand(-100, h + 100);
+        startX = rand(-200, -50);
+        startY = rand(-200, h + 200);
       }
 
-      // Mid point for wind gust effect
-      const midX = startX + (center.x - startX) * 0.3 + rand(-50, 50);
-      const midY = startY + (center.y - startY) * 0.3 + rand(-50, 50);
+      // Mid point for wind gust effect - more dramatic curve
+      const midX = startX + (center.x - startX) * 0.4 + rand(-100, 100);
+      const midY = startY + (center.y - startY) * 0.4 + rand(-100, 100);
 
-      // End point - scattered across screen
-      const endX = rand(50, w - 50);
-      const endY = rand(50, h - 50);
+      // End point - more evenly distributed across entire screen
+      const endX = rand(20, w - 20);
+      const endY = rand(20, h - 20);
 
       const color = colors[i % colors.length];
-      const size = rand(4, 12);
-      const delayMs = i * 20; // Staggered appearance
+      const size = rand(3, 8); // Smaller dots for better coverage
+      const delayMs = i * 8; // Faster staggered appearance for more dots
 
       return {
         id: i,
@@ -241,22 +241,22 @@ export default function SplashScreen({
             position: 'absolute',
             width: d.size,
             height: d.size,
-            borderRadius: '2px', // Square pixels like favicon
+            borderRadius: '50%', // Actual dots (circles)
             backgroundColor: d.color,
             opacity: 0,
             transform: `translate(${d.startX}px, ${d.startY}px)`,
             animation: `wind-gust-${d.id} 2500ms cubic-bezier(0.25, 0.46, 0.45, 0.94) ${d.delayMs}ms forwards`,
-            // Each dot gets its own keyframes
+            // Each dot gets its own keyframes - extended to hold final state
             [`@keyframes wind-gust-${d.id}`]: {
               '0%': {
                 transform: `translate(${d.startX}px, ${d.startY}px) scale(0)`,
                 opacity: 0,
               } as any,
-              '20%': {
+              '15%': {
                 transform: `translate(${d.midX}px, ${d.midY}px) scale(1)`,
                 opacity: 0.8,
               } as any,
-              '80%': {
+              '60%': {
                 transform: `translate(${d.endX}px, ${d.endY}px) scale(1)`,
                 opacity: 1,
               } as any,
@@ -286,15 +286,15 @@ export default function SplashScreen({
         />
       )}
 
-      {/* HEART ICON */}
+      {/* HEART ICON - 40% larger */}
       <Box
         aria-label="Love on the Pixel heart logo"
         sx={{
           position: 'absolute',
           display: 'grid',
           placeItems: 'center',
-          width: 200,
-          height: 200,
+          width: 280, // 40% larger (200 * 1.4)
+          height: 280, // 40% larger (200 * 1.4)
           animation: reduced
             ? `${heartTitleAppear} 500ms ease-out 500ms both`
             : `${heartTitleAppear} 600ms ease-out 2200ms both`,
@@ -303,7 +303,7 @@ export default function SplashScreen({
       >
         <FavoriteIcon
           sx={{
-            fontSize: 140,
+            fontSize: 196, // 40% larger (140 * 1.4)
             color: HEART_PINK,
             filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))',
           }}
@@ -311,12 +311,12 @@ export default function SplashScreen({
         />
       </Box>
 
-      {/* CURVED TITLE */}
+      {/* CURVED TITLE - 40% larger and closer to heart */}
       <Box
         aria-hidden
         sx={{
           position: 'absolute',
-          top: { xs: '18%', sm: '15%' },
+          top: { xs: '25%', sm: '22%' }, // Moved closer to heart
           left: 0,
           right: 0,
           display: 'flex',
@@ -330,23 +330,23 @@ export default function SplashScreen({
       >
         <Box
           component="svg"
-          width={{ xs: 320, sm: 420 }}
-          height={{ xs: 120, sm: 140 }}
+          width={{ xs: 448, sm: 588 }} // 40% larger (320*1.4, 420*1.4)
+          height={{ xs: 168, sm: 196 }} // 40% larger (120*1.4, 140*1.4)
           viewBox="0 0 420 140"
           role="img"
           aria-label="Love on the Pixel"
           sx={{ overflow: 'visible' }}
         >
-          {/* Arc path to follow */}
+          {/* Arc path to follow - adjusted for closer positioning */}
           <path
             id="title-arc"
-            d="M20,110 C140,20 280,20 400,110"
+            d="M20,110 C140,30 280,30 400,110"
             fill="none"
             stroke="transparent"
           />
           <text
             fontFamily="Poppins, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial"
-            fontSize="32"
+            fontSize="45" // 40% larger (32 * 1.4)
             fontWeight={700}
             fill="#ffffff"
             textAnchor="middle"
