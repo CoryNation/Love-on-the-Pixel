@@ -53,7 +53,7 @@ export default function RootLayout({
           WebkitOverflowScrolling: 'touch'
         }}
       >
-        <SplashScreen minDurationMs={2300} dotCount={56}>
+        <SplashScreen minDurationMs={4000} dotCount={120}>
           <AuthProvider>
             <NotificationProvider>
               {children}

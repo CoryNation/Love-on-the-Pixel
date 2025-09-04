@@ -22,29 +22,36 @@ const GRADIENT_TOP = '#667eea';
 const GRADIENT_BOTTOM = '#764ba2';
 const HEART_PINK = '#ff6b9d';
 
-const enterFade = keyframes`
+// Background fade in
+const backgroundFade = keyframes`
   from { opacity: 0 }
   to   { opacity: 1 }
 `;
 
-// Center flash: quick in/out
-const flashPulse = keyframes`
-  0%   { transform: scale(0.2); opacity: 0 }
-  45%  { transform: scale(1.22); opacity: .9 }
-  100% { transform: scale(1.35); opacity: 0 }
+// Wind gust effect - dots flowing in from edges
+const windGust = keyframes`
+  0%   { transform: translate(var(--start-x), var(--start-y)) scale(0); opacity: 0 }
+  20%  { transform: translate(var(--mid-x), var(--mid-y)) scale(1); opacity: 0.8 }
+  100% { transform: translate(var(--end-x), var(--end-y)) scale(1); opacity: 1 }
 `;
 
-// Heart pop
-const heartPop = keyframes`
-  0%   { transform: scale(.85); opacity: 0 }
-  60%  { transform: scale(1.08); opacity: 1 }
-  100% { transform: scale(1);    opacity: 1 }
+// Swirling motion toward center
+const swirlToCenter = keyframes`
+  0%   { transform: translate(var(--end-x), var(--end-y)) scale(1); opacity: 1 }
+  100% { transform: translate(50vw, 50vh) scale(0.3); opacity: 0.3 }
 `;
 
-// Title rise
-const titleRise = keyframes`
-  from { transform: translateY(-8px); opacity: 0 }
-  to   { transform: translateY(0);    opacity: 1 }
+// Center glow/spark effect
+const centerGlow = keyframes`
+  0%   { transform: scale(0); opacity: 0 }
+  50%  { transform: scale(1.5); opacity: 0.8 }
+  100% { transform: scale(1); opacity: 1 }
+`;
+
+// Heart and title appear together
+const heartTitleAppear = keyframes`
+  0%   { transform: scale(0.8); opacity: 0 }
+  100% { transform: scale(1); opacity: 1 }
 `;
 
 /** Utility to detect reduced motion */
@@ -62,20 +69,21 @@ const usePrefersReducedMotion = () => {
 
 type Dot = {
   id: number;
-  // start at an edge, end near center spiral
   startX: number;
   startY: number;
+  midX: number;
+  midY: number;
   endX: number;
   endY: number;
   delayMs: number;
-  hue: number; // for RGB-ish (r, g, b)
+  color: string;
   size: number;
 };
 
 export default function SplashScreen({
   children,
-  minDurationMs = 2300,
-  dotCount = 56,
+  minDurationMs = 4000, // 4 seconds total (2.5s animation + 1.5s hold)
+  dotCount = 120, // More dots to fill the screen
 }: SplashScreenProps) {
   // Safely get auth state, handling SSR case
   let authInitializing = false;
@@ -101,7 +109,7 @@ export default function SplashScreen({
     notificationService?.initialize?.().catch(() => {});
   }, []);
 
-  // Compute center (fallback values; we’ll use CSS centering in layout)
+  // Compute viewport dimensions
   const [viewport, setViewport] = useState({ w: 1080, h: 1920 });
   useEffect(() => {
     const update = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
@@ -116,51 +124,63 @@ export default function SplashScreen({
     const { w, h } = viewport;
     const center = { x: w / 2, y: h / 2 };
 
-    const spiralPoint = (i: number) => {
-      const angle = i * 0.5;
-      const radius = 18 + i * 1.6;
-      return {
-        x: center.x + Math.cos(angle) * radius,
-        y: center.y + Math.sin(angle) * radius,
-      };
-    };
-
     const rand = (min: number, max: number) => Math.random() * (max - min) + min;
+    
+    // Colors similar to favicon - vibrant and varied
+    const colors = [
+      '#ff6b9d', // Pink
+      '#667eea', // Blue
+      '#764ba2', // Purple
+      '#f093fb', // Light pink
+      '#4facfe', // Light blue
+      '#43e97b', // Green
+      '#fa709a', // Coral
+      '#a8edea', // Mint
+      '#ffecd2', // Peach
+      '#fcb69f', // Orange
+    ];
 
     return Array.from({ length: dotCount }).map((_, i) => {
+      // Start from edges (wind gust effect)
       const edge = Math.floor(Math.random() * 4);
-      let startX = 0,
-        startY = 0;
-      if (edge === 0) {
-        startX = rand(-40, w + 40);
-        startY = -60;
+      let startX = 0, startY = 0;
+      
+      if (edge === 0) { // Top
+        startX = rand(-100, w + 100);
+        startY = -100;
+      } else if (edge === 1) { // Right
+        startX = w + 100;
+        startY = rand(-100, h + 100);
+      } else if (edge === 2) { // Bottom
+        startX = rand(-100, w + 100);
+        startY = h + 100;
+      } else { // Left
+        startX = -100;
+        startY = rand(-100, h + 100);
       }
-      if (edge === 1) {
-        startX = w + 60;
-        startY = rand(-40, h + 40);
-      }
-      if (edge === 2) {
-        startX = rand(-40, w + 40);
-        startY = h + 60;
-      }
-      if (edge === 3) {
-        startX = -60;
-        startY = rand(-40, h + 40);
-      }
-      const target = spiralPoint(i);
-      // RGB cycling
-      const hue = [0, 130, 210][i % 3]; // red-ish, green-ish, blue-ish
-      const size = rand(6, 11);
-      const delayMs = i * 35;
+
+      // Mid point for wind gust effect
+      const midX = startX + (center.x - startX) * 0.3 + rand(-50, 50);
+      const midY = startY + (center.y - startY) * 0.3 + rand(-50, 50);
+
+      // End point - scattered across screen
+      const endX = rand(50, w - 50);
+      const endY = rand(50, h - 50);
+
+      const color = colors[i % colors.length];
+      const size = rand(4, 12);
+      const delayMs = i * 20; // Staggered appearance
 
       return {
         id: i,
         startX,
         startY,
-        endX: target.x + rand(-10, 10),
-        endY: target.y + rand(-10, 10),
+        midX,
+        midY,
+        endX,
+        endY,
         delayMs,
-        hue,
+        color,
         size,
       };
     });
@@ -208,62 +228,65 @@ export default function SplashScreen({
         justifyContent: 'center',
         background: `linear-gradient(180deg, ${GRADIENT_TOP} 0%, ${GRADIENT_BOTTOM} 100%)`,
         color: '#fff',
-        animation: `${enterFade} 200ms ease-out`,
+        animation: `${backgroundFade} 500ms ease-out`,
+        overflow: 'hidden',
       }}
     >
-      {/* DOTS */}
-      {!reduced &&
-        client &&
-        dots.map((d) => (
-          <Box
-            key={d.id}
-            aria-hidden
-            sx={{
-              position: 'fixed',
-              left: 0,
-              top: 0,
-              width: d.size,
-              height: d.size,
-              borderRadius: '999px',
-              backgroundColor: `hsl(${d.hue} 85% 60%)`,
-              opacity: 0.85,
-              transform: `translate(${d.startX}px, ${d.startY}px)`,
-              animation: `dot-move-${d.id} 900ms cubic-bezier(.2,.8,.2,1) ${d.delayMs}ms forwards`,
-              // each dot gets its own keyframes injected via sx
-              [`@keyframes dot-move-${d.id}`]: {
-                from: {
-                  transform: `translate(${d.startX}px, ${d.startY}px)`,
-                  opacity: 0,
-                } as any,
-                to: {
-                  transform: `translate(${d.endX}px, ${d.endY}px)`,
-                  opacity: 1,
-                } as any,
-              },
-            }}
-          />
-        ))}
+      {/* PIXEL DOTS - Wind Gust Effect */}
+      {!reduced && client && dots.map((d) => (
+        <Box
+          key={d.id}
+          aria-hidden
+          sx={{
+            position: 'absolute',
+            width: d.size,
+            height: d.size,
+            borderRadius: '2px', // Square pixels like favicon
+            backgroundColor: d.color,
+            opacity: 0,
+            transform: `translate(${d.startX}px, ${d.startY}px)`,
+            animation: `wind-gust-${d.id} 2500ms cubic-bezier(0.25, 0.46, 0.45, 0.94) ${d.delayMs}ms forwards`,
+            // Each dot gets its own keyframes
+            [`@keyframes wind-gust-${d.id}`]: {
+              '0%': {
+                transform: `translate(${d.startX}px, ${d.startY}px) scale(0)`,
+                opacity: 0,
+              } as any,
+              '20%': {
+                transform: `translate(${d.midX}px, ${d.midY}px) scale(1)`,
+                opacity: 0.8,
+              } as any,
+              '80%': {
+                transform: `translate(${d.endX}px, ${d.endY}px) scale(1)`,
+                opacity: 1,
+              } as any,
+              '100%': {
+                transform: `translate(${d.endX}px, ${d.endY}px) scale(1)`,
+                opacity: 1,
+              } as any,
+            },
+          }}
+        />
+      ))}
 
-      {/* CENTER FLASH */}
+      {/* CENTER GLOW/SPARK */}
       {!reduced && (
         <Box
           aria-hidden
           sx={{
             position: 'absolute',
-            width: 220,
-            height: 220,
-            borderRadius: 999,
-            backgroundColor: '#fff',
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,107,157,0.6) 50%, transparent 100%)',
             opacity: 0,
-            animation: `${flashPulse} 260ms ease-out ${Math.max(
-              0,
-              900 + (dotCount - 1) * 35 - 200
-            )}ms both`,
+            animation: `${centerGlow} 600ms ease-out 2000ms both`,
+            zIndex: 10,
           }}
         />
       )}
 
-      {/* HEART */}
+      {/* HEART ICON */}
       <Box
         aria-label="Love on the Pixel heart logo"
         sx={{
@@ -273,21 +296,22 @@ export default function SplashScreen({
           width: 200,
           height: 200,
           animation: reduced
-            ? `${enterFade} 280ms ease-out 120ms both`
-            : `${heartPop} 420ms ease-out ${900 + (dotCount - 1) * 35}ms both`,
+            ? `${heartTitleAppear} 500ms ease-out 500ms both`
+            : `${heartTitleAppear} 600ms ease-out 2200ms both`,
+          zIndex: 20,
         }}
       >
         <FavoriteIcon
           sx={{
             fontSize: 140,
             color: HEART_PINK,
-            filter: 'drop-shadow(0 2px 6px rgba(0,0,0,.25))',
+            filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))',
           }}
           aria-hidden
         />
       </Box>
 
-      {/* CURVED TITLE (SVG textPath) */}
+      {/* CURVED TITLE */}
       <Box
         aria-hidden
         sx={{
@@ -298,11 +322,10 @@ export default function SplashScreen({
           display: 'flex',
           justifyContent: 'center',
           animation: reduced
-            ? `${enterFade} 280ms ease-out 160ms both`
-            : `${titleRise} 380ms ease-out ${
-                900 + (dotCount - 1) * 35 + 150
-              }ms both`,
+            ? `${heartTitleAppear} 500ms ease-out 700ms both`
+            : `${heartTitleAppear} 600ms ease-out 2400ms both`,
           px: 2,
+          zIndex: 20,
         }}
       >
         <Box
@@ -335,7 +358,7 @@ export default function SplashScreen({
         </Box>
       </Box>
 
-      {/* Tagline for accessibility (visually subtle) */}
+      {/* Tagline */}
       <Typography
         role="status"
         aria-live="polite"
@@ -349,6 +372,10 @@ export default function SplashScreen({
           fontSize: { xs: 12, sm: 14 },
           letterSpacing: 0.5,
           opacity: 0.85,
+          animation: reduced
+            ? `${heartTitleAppear} 500ms ease-out 900ms both`
+            : `${heartTitleAppear} 600ms ease-out 2600ms both`,
+          zIndex: 20,
         }}
       >
         Messages of Love &amp; Affirmation
@@ -356,4 +383,3 @@ export default function SplashScreen({
     </Box>
   );
 }
-
