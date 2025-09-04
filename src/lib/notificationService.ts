@@ -200,15 +200,13 @@ class NotificationService {
   }
 
   /**
-   * Initialize notification service
+   * Initialize notification service (without requesting permission)
    */
   async initialize() {
     try {
-      // Request permission and get token on app start
-      const token = await this.requestPermissionAndGetToken();
-      if (token) {
-        console.log('FCM token obtained successfully');
-      }
+      // Just initialize the service without requesting permission
+      // Permission will be requested when user enables notifications in settings
+      console.log('Notification service initialized');
     } catch (error) {
       console.error('Error initializing notification service:', error);
     }

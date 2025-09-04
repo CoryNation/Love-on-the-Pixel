@@ -119,6 +119,19 @@ export default function NotificationSettingsPage() {
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
         setError('Please enable notifications in your browser settings to receive push notifications');
+        return;
+      }
+      
+      // Get FCM token after permission is granted
+      try {
+        const { notificationService } = await import('@/lib/notificationService');
+        const token = await notificationService.requestPermissionAndGetToken();
+        if (token) {
+          console.log('FCM token obtained successfully');
+        }
+      } catch (error) {
+        console.error('Error getting FCM token:', error);
+        setError('Failed to set up push notifications');
       }
     }
   };

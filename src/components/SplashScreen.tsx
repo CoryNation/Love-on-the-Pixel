@@ -302,36 +302,41 @@ export default function SplashScreen({
     };
   }, [authInitializing]);
 
-  // Only show children when user clicks to continue (isVisible becomes false)
-  if (!isVisible) return <>{children}</>;
+  // Always render children behind splash screen for Lighthouse FCP
+  // Splash screen will overlay on top until user clicks to continue
 
   // Reduced motion: just fade logo/title in and out quickly
   const reduced = prefersReducedMotion;
 
   return (
-    <Box
-      role="img"
-      aria-label="Loading Love on the Pixel"
-      onClick={handleClickToContinue}
-      sx={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 2000,
-        background: `linear-gradient(180deg, ${GRADIENT_TOP} 0%, ${GRADIENT_BOTTOM} 100%)`,
-        color: '#fff',
-        animation: isTransitioning 
-          ? 'splash-fade-out 1000ms ease-out forwards'
-          : `${backgroundFade} 500ms ease-out`,
-        overflow: 'hidden',
-        cursor: 'pointer',
-        // Fade out splash screen while keeping heart visible
-        '@keyframes splash-fade-out': {
-          '0%': { opacity: 1 },
-          '30%': { opacity: 0.7 },
-          '100%': { opacity: 0 },
-        },
-      }}
-    >
+    <>
+      {/* Always render children for Lighthouse FCP */}
+      {children}
+      
+      {/* Splash screen overlay */}
+      <Box
+        role="img"
+        aria-label="Loading Love on the Pixel"
+        onClick={handleClickToContinue}
+        sx={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 2000,
+          background: `linear-gradient(180deg, ${GRADIENT_TOP} 0%, ${GRADIENT_BOTTOM} 100%)`,
+          color: '#fff',
+          animation: isTransitioning 
+            ? 'splash-fade-out 1000ms ease-out forwards'
+            : `${backgroundFade} 500ms ease-out`,
+          overflow: 'hidden',
+          cursor: 'pointer',
+          // Fade out splash screen while keeping heart visible
+          '@keyframes splash-fade-out': {
+            '0%': { opacity: 1 },
+            '30%': { opacity: 0.7 },
+            '100%': { opacity: 0 },
+          },
+        }}
+      >
       {/* LIGHT REFLECTION OVERLAY - Pixel colors shining on background */}
       {!reduced && client && (
         <Box
@@ -697,5 +702,6 @@ export default function SplashScreen({
         </Typography>
       </Box>
     </Box>
+    </>
   );
 }
