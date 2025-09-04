@@ -80,7 +80,7 @@ type Dot = {
 export default function SplashScreen({
   children,
   minDurationMs = 4000, // 4 seconds total (2.5s animation + 1.5s hold)
-  dotCount = 1200, // 1200 dots for complete screen coverage including bottom row
+  dotCount = 400, // Reduced from 1200 to 400 for better performance
 }: SplashScreenProps) {
   // Safely get auth state, handling SSR case
   let authInitializing = false;
@@ -118,8 +118,8 @@ export default function SplashScreen({
     if (!client) return;
     
     // Set animation complete after dots finish animating (based on last dot's delay + animation duration)
-    const lastDotDelay = (dotCount - 1) * 3; // Last dot's delay in ms
-    const animationDuration = 2500; // Animation duration in ms
+    const lastDotDelay = (dotCount - 1) * 2; // Last dot's delay in ms (reduced from 3)
+    const animationDuration = 2000; // Animation duration in ms (reduced from 2500)
     const totalTime = lastDotDelay + animationDuration;
     
     const timer = setTimeout(() => {
@@ -150,119 +150,55 @@ export default function SplashScreen({
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  // Precompute dots (client only to keep SSR stable)
+  // Precompute dots (client only to keep SSR stable) - Optimized for performance
   const dots: Dot[] = useMemo(() => {
     if (!client) return [];
     const { w, h } = viewport;
-    const center = { x: w / 2, y: h / 2 };
 
     const rand = (min: number, max: number) => Math.random() * (max - min) + min;
     
-    // RGB pixel colors harmonized with app theme
+    // Simplified color palette for better performance
     const colors = [
-      // Red variations (harmonized with heart pink)
-      '#ff6b9d', // Primary pink-red
-      '#ff4757', // Bright red
-      '#ff3838', // Pure red
-      '#ff6348', // Orange-red
-      '#ff7675', // Soft red
-      
-      // Green variations (complementary to purple theme)
-      '#00b894', // Teal green
-      '#00cec9', // Cyan green
-      '#55a3ff', // Blue-green
-      '#74b9ff', // Light blue-green
-      '#a29bfe', // Purple-green
-      
-      // Blue variations (matching gradient theme)
-      '#6c5ce7', // Primary blue (matches gradient)
-      '#5f27cd', // Deep blue
-      '#3742fa', // Royal blue
-      '#2f3542', // Dark blue
-      '#5352ed', // Electric blue
+      '#ff6b9d', '#ff4757', '#00b894', '#00cec9', '#6c5ce7', '#5f27cd'
     ];
 
-    // Grid calculation to ensure complete screen coverage
+    // Simplified grid calculation
     const gridCols = Math.ceil(Math.sqrt(dotCount));
     const gridRows = Math.ceil(dotCount / gridCols);
-    
-    // Ensure we have enough rows to fill the entire height
-    const actualRows = Math.max(gridRows, Math.ceil(h / (w / gridCols)));
-    
-    // Calculate spacing to fill the entire screen from edge to edge
     const spacingX = w / gridCols;
-    const spacingY = h / actualRows;
+    const spacingY = h / gridRows;
 
-    // Create a shuffled array of positions for semi-random distribution
-    const positions = Array.from({ length: dotCount }, (_, i) => {
+    return Array.from({ length: dotCount }, (_, i) => {
       const col = i % gridCols;
       const row = Math.floor(i / gridCols);
-      return {
-        x: (col * spacingX) + (spacingX / 2),
-        y: (row * spacingY) + (spacingY / 2),
-      };
-    });
-    
-    // Add extra dots to fill bottom row if needed
-    const extraDotsNeeded = Math.max(0, (actualRows * gridCols) - dotCount);
-    for (let i = 0; i < extraDotsNeeded; i++) {
-      const col = (dotCount + i) % gridCols;
-      const row = Math.floor((dotCount + i) / gridCols);
-      positions.push({
-        x: (col * spacingX) + (spacingX / 2),
-        y: (row * spacingY) + (spacingY / 2),
-      });
-    }
-    
-    // Shuffle positions for semi-random distribution
-    for (let i = positions.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [positions[i], positions[j]] = [positions[j], positions[i]];
-    }
+      const endX = (col * spacingX) + (spacingX / 2);
+      const endY = (row * spacingY) + (spacingY / 2);
 
-    return Array.from({ length: positions.length }).map((_, i) => {
-      // Use shuffled positions for semi-random landing spots
-      const endX = positions[i].x;
-      const endY = positions[i].y;
-
-      // Start from all edges and corners for better coverage
-      const edge = Math.floor(Math.random() * 8); // 8 starting positions
+      // Simplified starting positions - only 4 edges for better performance
+      const edge = i % 4;
       let startX = 0, startY = 0;
       
       if (edge === 0) { // Top
-        startX = rand(-300, w + 300);
-        startY = rand(-300, -100);
-      } else if (edge === 1) { // Top Right
-        startX = rand(w + 100, w + 300);
-        startY = rand(-300, -100);
-      } else if (edge === 2) { // Right
-        startX = rand(w + 100, w + 300);
-        startY = rand(-300, h + 300);
-      } else if (edge === 3) { // Bottom Right
-        startX = rand(w + 100, w + 300);
-        startY = rand(h + 100, h + 300);
-      } else if (edge === 4) { // Bottom
-        startX = rand(-300, w + 300);
-        startY = rand(h + 100, h + 300);
-      } else if (edge === 5) { // Bottom Left
-        startX = rand(-300, -100);
-        startY = rand(h + 100, h + 300);
-      } else if (edge === 6) { // Left
-        startX = rand(-300, -100);
-        startY = rand(-300, h + 300);
-      } else { // Top Left
-        startX = rand(-300, -100);
-        startY = rand(-300, -100);
+        startX = rand(0, w);
+        startY = -100;
+      } else if (edge === 1) { // Right
+        startX = w + 100;
+        startY = rand(0, h);
+      } else if (edge === 2) { // Bottom
+        startX = rand(0, w);
+        startY = h + 100;
+      } else { // Left
+        startX = -100;
+        startY = rand(0, h);
       }
 
-      // Mid point for wind gust effect - more dramatic curve
-      const midX = startX + (endX - startX) * 0.3 + rand(-150, 150);
-      const midY = startY + (endY - startY) * 0.3 + rand(-150, 150);
+      // Simplified mid point calculation
+      const midX = startX + (endX - startX) * 0.5;
+      const midY = startY + (endY - startY) * 0.5;
 
-      // More randomized colors and sizes
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      const size = rand(4, 7); // Size range 4-7px (no tiny dots)
-      const delayMs = i * 1.5; // Fast appearance, ~2.5 seconds total
+      const color = colors[i % colors.length]; // Cycle through colors for consistency
+      const size = 5; // Fixed size for better performance
+      const delayMs = i * 2; // Slightly slower for smoother animation
 
       return {
         id: i,
@@ -337,20 +273,17 @@ export default function SplashScreen({
           },
         }}
       >
-      {/* LIGHT REFLECTION OVERLAY - Pixel colors shining on background */}
+      {/* Simplified background glow effect */}
       {!reduced && client && (
         <Box
           sx={{
             position: 'absolute',
             inset: 0,
             zIndex: 5,
-            background: 'transparent',
-            backgroundImage: dots.map((d) => 
-              `radial-gradient(circle at ${d.endX}px ${d.endY}px, ${d.color}20 0px, ${d.color}10 20px, transparent 40px)`
-            ).join(', '),
+            background: 'radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 70%)',
             opacity: 0,
-            animation: 'light-reflection-fade 3000ms ease-out 2000ms forwards',
-            '@keyframes light-reflection-fade': {
+            animation: 'background-glow 2000ms ease-out 1000ms forwards',
+            '@keyframes background-glow': {
               '0%': { opacity: 0 },
               '100%': { opacity: 1 },
             },
@@ -358,45 +291,45 @@ export default function SplashScreen({
         />
       )}
 
-      {/* DOT MATRIX - Independent container for full screen coverage */}
+      {/* OPTIMIZED DOT MATRIX - Using CSS Grid for better performance */}
       {!reduced && client && (
         <Box
           sx={{
             position: 'absolute',
             inset: 0,
             zIndex: 10,
+            display: 'grid',
+            gridTemplateColumns: `repeat(${Math.ceil(Math.sqrt(dotCount))}, 1fr)`,
+            gridTemplateRows: `repeat(${Math.ceil(dotCount / Math.ceil(Math.sqrt(dotCount)))}, 1fr)`,
+            gap: 0,
           }}
         >
-          {dots.map((d) => (
+          {dots.map((d, index) => (
             <Box
               key={d.id}
               aria-hidden
               sx={{
-                position: 'absolute',
                 width: d.size,
                 height: d.size,
                 borderRadius: '50%',
                 backgroundColor: d.color,
                 opacity: 0,
-                transform: `translate(${d.startX}px, ${d.startY}px)`,
-                animation: `wind-gust-${d.id} 2500ms cubic-bezier(0.25, 0.46, 0.45, 0.94) ${d.delayMs}ms forwards`,
-                [`@keyframes wind-gust-${d.id}`]: {
+                transform: 'scale(0)',
+                animation: `dot-appear 2000ms cubic-bezier(0.25, 0.46, 0.45, 0.94) ${d.delayMs}ms forwards`,
+                willChange: 'transform, opacity', // Optimize for animations
+                '@keyframes dot-appear': {
                   '0%': {
-                    transform: `translate(${d.startX}px, ${d.startY}px) scale(0)`,
+                    transform: 'scale(0)',
                     opacity: 0,
-                  } as any,
-                  '15%': {
-                    transform: `translate(${d.midX}px, ${d.midY}px) scale(1)`,
+                  },
+                  '50%': {
+                    transform: 'scale(1.2)',
                     opacity: 0.8,
-                  } as any,
-                  '60%': {
-                    transform: `translate(${d.endX}px, ${d.endY}px) scale(1)`,
-                    opacity: 1,
-                  } as any,
+                  },
                   '100%': {
-                    transform: `translate(${d.endX}px, ${d.endY}px) scale(1)`,
+                    transform: 'scale(1)',
                     opacity: 1,
-                  } as any,
+                  },
                 },
               }}
             />
