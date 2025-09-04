@@ -23,6 +23,11 @@ class NotificationService {
    */
   async requestPermissionAndGetToken(): Promise<string | null> {
     try {
+      // Check if we're in a browser environment
+      if (typeof window === 'undefined') {
+        return null;
+      }
+
       if (!messaging) {
         console.warn('Firebase messaging not available');
         return null;
@@ -121,7 +126,7 @@ class NotificationService {
       return { success: true, data };
     } catch (error) {
       console.error('Error sending notification:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 

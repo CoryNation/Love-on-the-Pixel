@@ -18,7 +18,7 @@ import {
   Button,
   CircularProgress
 } from '@mui/material';
-import { Notifications, NotificationsOff, Favorite, FavoriteBorder, Mail, MailOutline } from '@mui/icons-material';
+import { Notifications, NotificationsOff, Favorite, FavoriteBorder } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 
@@ -194,10 +194,7 @@ export default function NotificationSettingsPage() {
                 />
               }
               label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Mail color="primary" />
-                  <Typography>When invitation is received</Typography>
-                </Box>
+                <Typography>When invitation is received</Typography>
               }
             />
 
@@ -210,10 +207,7 @@ export default function NotificationSettingsPage() {
                 />
               }
               label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <MailOutline color="primary" />
-                  <Typography>When affirmation card is received</Typography>
-                </Box>
+                <Typography>When affirmation card is received</Typography>
               }
             />
 
@@ -226,10 +220,7 @@ export default function NotificationSettingsPage() {
                 />
               }
               label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Favorite color="primary" />
-                  <Typography>When an affirmation card is Treasured</Typography>
-                </Box>
+                <Typography>When an affirmation card is Treasured</Typography>
               }
             />
           </FormGroup>

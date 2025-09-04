@@ -1,14 +1,14 @@
 import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
-// Your Firebase config - replace with your actual values
+// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+  apiKey: "AIzaSyARQGB5-GfHe0tBQeqQjj2jxuCVos3xd24",
+  authDomain: "love-on-the-pixel.firebaseapp.com",
+  projectId: "love-on-the-pixel",
+  storageBucket: "love-on-the-pixel.firebasestorage.app",
+  messagingSenderId: "804048668508",
+  appId: "1:804048668508:web:fa1e691f822e33ac742399"
 };
 
 // Initialize Firebase
@@ -17,7 +17,8 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firebase Cloud Messaging
 let messaging: any = null;
 
-if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+// Only initialize messaging on client side and when service worker is available
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'Notification' in window) {
   try {
     messaging = getMessaging(app);
   } catch (error) {

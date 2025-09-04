@@ -158,9 +158,9 @@ export default function PersonsPage() {
         const isConnected = connections.some(c => c.connected_user_email === selectedPerson.email);
         
         if (isConnected) {
-          alert('Affirmation sent! It will appear in their Wellspring immediately.');
+          alert('Affirmation sent! It will appear in their Pixels immediately.');
         } else {
-          alert('Affirmation sent! It will appear in their Wellspring when they join.');
+          alert('Affirmation sent! It will appear in their Pixels when they join.');
         }
         
         setMessage('');
@@ -404,9 +404,9 @@ export default function PersonsPage() {
                     primary={person.name}
                     secondary={
                       <Box>
-                        <Typography variant="body2" color="text.secondary">
+                        <Box component="span" sx={{ display: 'block', color: 'text.secondary', fontSize: '0.875rem' }}>
                           {person.email}
-                        </Typography>
+                        </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
                           {getStatusChip(person.email || '')}
                         </Box>
@@ -522,12 +522,12 @@ export default function PersonsPage() {
                       primary={invitation.inviter_name || invitation.inviter_email}
                       secondary={
                         <Box>
-                          <Typography variant="body2" color="text.secondary">
+                          <Box component="span" sx={{ display: 'block', color: 'text.secondary', fontSize: '0.875rem' }}>
                             {invitation.inviter_email}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
+                          </Box>
+                          <Box component="span" sx={{ display: 'block', color: 'text.secondary', fontSize: '0.75rem' }}>
                             Sent {formatDate(invitation.created_at)}
-                          </Typography>
+                          </Box>
                         </Box>
                       }
                     />
@@ -578,14 +578,14 @@ export default function PersonsPage() {
                       primary={invitation.invitee_email}
                       secondary={
                         <Box>
-                          <Typography variant="body2" color="text.secondary">
+                          <Box component="span" sx={{ display: 'block', color: 'text.secondary', fontSize: '0.875rem' }}>
                             {invitation.invitee_email}
-                          </Typography>
+                          </Box>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
                             {getStatusChip(invitation.invitee_email)}
-                            <Typography variant="caption" color="text.secondary">
+                            <Box component="span" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
                               Sent {formatDate(invitation.created_at)}
-                            </Typography>
+                            </Box>
                           </Box>
                         </Box>
                       }
