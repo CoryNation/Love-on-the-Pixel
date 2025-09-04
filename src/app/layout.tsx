@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import SplashScreen from "@/components/SplashScreen";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -10,13 +11,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Love Notes - Messages of Love & Affirmation",
-  description: "A personal collection of love notes, affirmations, and words of encouragement",
+  title: "Love on the Pixel",
+  description: "Messages of Love & Affirmation",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Love Notes"
+    title: "Love on the Pixel"
   }
 };
 
@@ -41,7 +42,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Love Notes" />
+        <meta name="apple-mobile-web-app-title" content="Love on the Pixel" />
       </head>
       <body
         className={`${inter.variable} antialiased`}
@@ -52,11 +53,13 @@ export default function RootLayout({
           WebkitOverflowScrolling: 'touch'
         }}
       >
-        <AuthProvider>
-          <NotificationProvider>
-            {children}
-          </NotificationProvider>
-        </AuthProvider>
+        <SplashScreen minDurationMs={2300} dotCount={56}>
+          <AuthProvider>
+            <NotificationProvider>
+              {children}
+            </NotificationProvider>
+          </AuthProvider>
+        </SplashScreen>
       </body>
     </html>
   );
