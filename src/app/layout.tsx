@@ -73,7 +73,6 @@ export default function RootLayout({
         <style dangerouslySetInnerHTML={{
           __html: `
             body { margin: 0; padding: 0; font-family: var(--font-inter), Arial, Helvetica, sans-serif; }
-            * { box-sizing: border-box; }
             html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
           `
         }} />

@@ -313,7 +313,8 @@ export default function SplashScreen({
       {/* Always render children for Lighthouse FCP */}
       {children}
       
-      {/* Splash screen overlay */}
+      {/* Splash screen overlay - only render when visible */}
+      {isVisible && (
       <Box
         role="img"
         aria-label="Loading Love on the Pixel"
@@ -702,6 +703,7 @@ export default function SplashScreen({
         </Typography>
       </Box>
     </Box>
+      )}
     </>
   );
 }
