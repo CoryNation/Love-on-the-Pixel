@@ -8,8 +8,6 @@ import SplashScreen from "@/components/SplashScreen";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
-  display: 'swap', // Optimize font loading
-  preload: true,
 });
 
 export const metadata: Metadata = {
@@ -47,14 +45,6 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Love on the Pixel" />
-        {/* Performance optimizations */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-        <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
-        {/* Preload critical resources */}
-        <link rel="preload" href="/android-chrome-192x192.png" as="image" type="image/png" />
-        <link rel="preload" href="/manifest.webmanifest" as="manifest" />
       </head>
       <body
         className={`${inter.variable} antialiased`}
@@ -65,7 +55,7 @@ export default function RootLayout({
           WebkitOverflowScrolling: 'touch'
         }}
       >
-        <SplashScreen minDurationMs={4000} dotCount={400}>
+        <SplashScreen minDurationMs={4000} dotCount={1200}>
           <AuthProvider>
             <NotificationProvider>
               {children}
