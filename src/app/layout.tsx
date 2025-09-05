@@ -58,12 +58,25 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Love on the Pixel" />
         
-        {/* Performance optimizations */}
+        {/* Critical resource prioritization */}
         <link rel="preload" href="/favicon.ico" as="image" />
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
         <link rel="dns-prefetch" href="//fonts.gstatic.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        
+        {/* Preload critical JavaScript chunks */}
+        <link rel="modulepreload" href="/_next/static/chunks/react.js" />
+        <link rel="modulepreload" href="/_next/static/chunks/mui.js" />
+        
+        {/* Critical CSS inlining for above-the-fold content */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            body { margin: 0; padding: 0; font-family: var(--font-inter), Arial, Helvetica, sans-serif; }
+            * { box-sizing: border-box; }
+            html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+          `
+        }} />
         
         {/* Service Worker */}
         <script

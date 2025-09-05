@@ -1,5 +1,5 @@
 // Service Worker for Love on the Pixel
-const CACHE_NAME = 'love-on-the-pixel-v1';
+const CACHE_NAME = 'love-on-the-pixel-v2';
 const STATIC_CACHE_URLS = [
   '/',
   '/favicon.ico',
@@ -8,12 +8,26 @@ const STATIC_CACHE_URLS = [
   '/_next/static/js/',
 ];
 
+// Critical resources to cache immediately
+const CRITICAL_RESOURCES = [
+  '/_next/static/chunks/react.js',
+  '/_next/static/chunks/mui.js',
+  '/_next/static/chunks/vendors.js',
+];
+
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        return cache.addAll(STATIC_CACHE_URLS);
+        // Cache critical resources first
+        return Promise.all([
+          cache.addAll(STATIC_CACHE_URLS),
+          cache.addAll(CRITICAL_RESOURCES).catch(() => {
+            // Ignore errors for critical resources that might not exist yet
+            console.log('Some critical resources not available for caching');
+          })
+        ]);
       })
       .then(() => {
         return self.skipWaiting();

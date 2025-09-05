@@ -1,18 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { 
-  Box, 
-  BottomNavigation, 
-  BottomNavigationAction,
-  Paper,
-  Fade
-} from '@mui/material';
-import { 
-  People, 
-  Settings,
-  Favorite
-} from '@mui/icons-material';
+// Optimized MUI imports for better tree shaking
+import Box from '@mui/material/Box';
+import BottomNavigation from '@mui/material/BottomNavigation';
+import BottomNavigationAction from '@mui/material/BottomNavigationAction';
+import Paper from '@mui/material/Paper';
+import Fade from '@mui/material/Fade';
+import People from '@mui/icons-material/People';
+import Settings from '@mui/icons-material/Settings';
+import Favorite from '@mui/icons-material/Favorite';
 import DiamondIcon from '@mui/icons-material/Diamond';
 import dynamic from 'next/dynamic';
 

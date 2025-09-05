@@ -1,35 +1,32 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { 
-  Box, 
-  Card, 
-  CardContent, 
-  Typography, 
-  IconButton, 
-  Chip,
-  CircularProgress,
-  Alert,
-  Button,
-  List,
-  Avatar,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Fab
-} from '@mui/material';
-import { 
-  Favorite, 
-  FavoriteBorder, 
-  Share, 
-  Edit,
-  Delete,
-  Person,
-  NavigateBefore,
-  NavigateNext
-} from '@mui/icons-material';
+// Optimized MUI imports for better tree shaking
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
+import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import List from '@mui/material/List';
+import Avatar from '@mui/material/Avatar';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import TextField from '@mui/material/TextField';
+import Fab from '@mui/material/Fab';
+import Favorite from '@mui/icons-material/Favorite';
+import FavoriteBorder from '@mui/icons-material/FavoriteBorder';
+import Share from '@mui/icons-material/Share';
+import Edit from '@mui/icons-material/Edit';
+import Delete from '@mui/icons-material/Delete';
+import Person from '@mui/icons-material/Person';
+import NavigateBefore from '@mui/icons-material/NavigateBefore';
+import NavigateNext from '@mui/icons-material/NavigateNext';
 import DiamondIcon from '@mui/icons-material/Diamond';
 import { bidirectionalConnectionsService, type Affirmation } from '@/lib/bidirectional-connections';
 import { userProfileService, type UserProfile } from '@/lib/userProfile';

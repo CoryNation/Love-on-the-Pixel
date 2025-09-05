@@ -1,42 +1,39 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-  Box, 
-  List, 
-  ListItem, 
-  ListItemText, 
-  ListItemAvatar, 
-  Avatar, 
-  IconButton, 
-  Button, 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogActions, 
-  TextField, 
-  Typography, 
-  Card,
-  ListItemSecondaryAction,
-  Chip,
-  Tabs,
-  Tab,
-  Menu,
-  MenuItem,
-  Alert,
-  useTheme,
-  useMediaQuery
-} from '@mui/material';
-import { 
-  Person, 
-  PersonAdd,
-  Delete,
-  Email,
-  Check,
-  Close,
-  Share,
-  MoreVert
-} from '@mui/icons-material';
+// Optimized MUI imports for better tree shaking
+import Box from '@mui/material/Box';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import ListItemAvatar from '@mui/material/ListItemAvatar';
+import Avatar from '@mui/material/Avatar';
+import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import Card from '@mui/material/Card';
+import ListItemSecondaryAction from '@mui/material/ListItemSecondaryAction';
+import Chip from '@mui/material/Chip';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import Alert from '@mui/material/Alert';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import Person from '@mui/icons-material/Person';
+import PersonAdd from '@mui/icons-material/PersonAdd';
+import Delete from '@mui/icons-material/Delete';
+import Email from '@mui/icons-material/Email';
+import Check from '@mui/icons-material/Check';
+import Close from '@mui/icons-material/Close';
+import Share from '@mui/icons-material/Share';
+import MoreVert from '@mui/icons-material/MoreVert';
 import { personsService, type Person as PersonType } from '@/lib/personsService';
 import { newInvitationService, type Invitation, type Connection } from '@/lib/newInvitationService';
 import { useAuth } from '@/contexts/AuthContext';
