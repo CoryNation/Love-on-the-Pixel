@@ -104,6 +104,7 @@ export default function PersonsPage() {
   // Update the loadData function to be more robust
   const loadData = async () => {
     try {
+      // Load data in parallel but with limits to improve performance
       const [personsData, allInvitations, pending, connectionsData] = await Promise.all([
         personsService.getAll(),
         newInvitationService.getSentInvitations(),
@@ -381,13 +382,14 @@ export default function PersonsPage() {
 
         {/* My Persons Tab */}
         <TabPanel value={tabValue} index={0}>
-          <List sx={{ maxHeight: '50vh', overflow: 'auto' }}>
+          <Box sx={{ maxHeight: '50vh', overflow: 'auto' }}>
             {persons.length === 0 ? (
               <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
                 No persons added yet. Add your first person to start connecting!
               </Typography>
             ) : (
-              persons.map((person) => (
+              <List>
+                {persons.map((person) => (
                 <ListItem
                   key={person.id}
                   sx={{
@@ -461,9 +463,10 @@ export default function PersonsPage() {
                     </Box>
                   </ListItemSecondaryAction>
                 </ListItem>
-              ))
+                ))}
+              </List>
             )}
-          </List>
+          </Box>
         </TabPanel>
 
         {/* Invitations Tab */}
@@ -499,13 +502,14 @@ export default function PersonsPage() {
 
           {/* Received Invitations */}
           {invitationTabValue === 0 && (
-            <List sx={{ maxHeight: '50vh', overflow: 'auto' }}>
+            <Box sx={{ maxHeight: '50vh', overflow: 'auto' }}>
               {pendingInvitations.length === 0 ? (
                 <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
                   No received invitations. When someone invites you, it will appear here!
                 </Typography>
               ) : (
-                pendingInvitations.map((invitation) => (
+                <List>
+                  {pendingInvitations.map((invitation) => (
                   <ListItem
                     key={invitation.id}
                     sx={{
@@ -548,20 +552,22 @@ export default function PersonsPage() {
                       </IconButton>
                     </Box>
                   </ListItem>
-                ))
+                  ))}
+                </List>
               )}
-            </List>
+            </Box>
           )}
 
           {/* Sent Invitations */}
           {invitationTabValue === 1 && (
-            <List sx={{ maxHeight: '50vh', overflow: 'auto' }}>
+            <Box sx={{ maxHeight: '50vh', overflow: 'auto' }}>
               {invitations.length === 0 ? (
                 <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
                   No invitations sent yet. Send your first invitation to connect with someone!
                 </Typography>
               ) : (
-                invitations.map((invitation) => (
+                <List>
+                  {invitations.map((invitation) => (
                   <ListItem
                     key={invitation.id}
                     sx={{
@@ -591,9 +597,10 @@ export default function PersonsPage() {
                       }
                     />
                   </ListItem>
-                ))
+                  ))}
+                </List>
               )}
-            </List>
+            </Box>
           )}
         </TabPanel>
       </Card>

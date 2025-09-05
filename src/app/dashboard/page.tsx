@@ -9,16 +9,33 @@ import {
   Fade
 } from '@mui/material';
 import { 
-  Water, 
   People, 
   Settings,
   Favorite
 } from '@mui/icons-material';
 import DiamondIcon from '@mui/icons-material/Diamond';
-import WavePage from '@/components/WavePage';
-import PersonsPage from '@/components/PersonsPage';
-import SettingsPage from '@/components/SettingsPage';
-import TreasuredPage from '@/components/TreasuredPage';
+import dynamic from 'next/dynamic';
+
+// Lazy load heavy components to improve initial bundle size
+const WavePage = dynamic(() => import('@/components/WavePage'), {
+  loading: () => <div>Loading...</div>,
+  ssr: false
+});
+
+const PersonsPage = dynamic(() => import('@/components/PersonsPage'), {
+  loading: () => <div>Loading...</div>,
+  ssr: false
+});
+
+const SettingsPage = dynamic(() => import('@/components/SettingsPage'), {
+  loading: () => <div>Loading...</div>,
+  ssr: false
+});
+
+const TreasuredPage = dynamic(() => import('@/components/TreasuredPage'), {
+  loading: () => <div>Loading...</div>,
+  ssr: false
+});
 import { NotificationProvider, useNotifications } from '@/contexts/NotificationContext';
 import NotificationBadge from '@/components/NotificationBadge';
 import NotificationInitializer from '@/components/NotificationInitializer';

@@ -35,6 +35,7 @@ import { bidirectionalConnectionsService, type Affirmation } from '@/lib/bidirec
 import { userProfileService, type UserProfile } from '@/lib/userProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { AFFIRMATION_THEMES, getThemeColor, getThemeEmoji, getThemeById } from '@/lib/affirmationThemes';
+import { performanceMonitor } from '@/lib/performance';
 
 export default function WavePage() {
   const { user } = useAuth();
@@ -90,9 +91,10 @@ export default function WavePage() {
   const loadInitialAffirmation = useCallback(async () => {
     try {
       setLoading(true);
+      performanceMonitor.markStart('loadInitialAffirmation');
       
       // Load received affirmations for the main view (limit to prevent timeout)
-      const receivedAffirmations = await bidirectionalConnectionsService.getReceivedAffirmations(100);
+      const receivedAffirmations = await bidirectionalConnectionsService.getReceivedAffirmations(50); // Reduced from 100 to 50
       setReceivedAffirmations(receivedAffirmations);
       
       if (receivedAffirmations.length > 0) {
@@ -121,7 +123,7 @@ export default function WavePage() {
       
       // Only load sent affirmations if we're on the sent tab or need them
       if (user?.id && activeTab === 'sent') {
-        const sent = await bidirectionalConnectionsService.getSentAffirmations(50);
+        const sent = await bidirectionalConnectionsService.getSentAffirmations(30); // Reduced from 50 to 30
         setSentAffirmations(sent);
       }
     } catch (err) {
@@ -129,6 +131,7 @@ export default function WavePage() {
       console.error('Error loading affirmations:', err);
     } finally {
       setLoading(false);
+      performanceMonitor.markEnd('loadInitialAffirmation');
     }
   }, [user?.id, activeTab]);
 
@@ -137,7 +140,7 @@ export default function WavePage() {
       try {
         setSentLoading(true);
         // Add limit to prevent timeout issues
-        const sent = await bidirectionalConnectionsService.getSentAffirmations(50); // Limit to 50 most recent
+        const sent = await bidirectionalConnectionsService.getSentAffirmations(30); // Reduced from 50 to 30
         setSentAffirmations(sent);
       } catch (err) {
         console.error('Error loading sent affirmations:', err);

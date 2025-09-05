@@ -12,7 +12,35 @@ const nextConfig = {
   },
   images: {
     unoptimized: true
-  }
+  },
+  // Performance optimizations
+  experimental: {
+    optimizePackageImports: ['@mui/material', '@mui/icons-material'],
+  },
+  // Enable compression
+  compress: true,
+  // Optimize bundle
+  webpack: (config, { dev, isServer }) => {
+    if (!dev && !isServer) {
+      // Optimize bundle splitting
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+          },
+          mui: {
+            test: /[\\/]node_modules[\\/]@mui[\\/]/,
+            name: 'mui',
+            chunks: 'all',
+          },
+        },
+      };
+    }
+    return config;
+  },
 };
 
 module.exports = nextConfig;
