@@ -36,7 +36,12 @@ const windGust = keyframes`
 `;
 
 // Swirling motion toward center
-// Removed swirlToCenter animation that was causing flash
+const swirlToCenter = keyframes`
+  0%   { transform: translate(var(--start-x), var(--start-y)) scale(0); opacity: 0 }
+  30%  { transform: translate(var(--mid-x), var(--mid-y)) scale(1.2); opacity: 0.8 }
+  70%  { transform: translate(var(--swirl-x), var(--swirl-y)) scale(0.8); opacity: 0.9 }
+  100% { transform: translate(var(--end-x), var(--end-y)) scale(1); opacity: 1 }
+`;
 
 // Center glow/spark effect
 const centerGlow = keyframes`
@@ -70,17 +75,20 @@ type Dot = {
   startY: number;
   midX: number;
   midY: number;
+  swirlX: number;
+  swirlY: number;
   endX: number;
   endY: number;
   delayMs: number;
   color: string;
   size: number;
+  animationType: 'wind' | 'swirl';
 };
 
 export default function SplashScreen({
   children,
   minDurationMs = 4000, // 4 seconds total (2.5s animation + 1.5s hold)
-  dotCount = 400, // Reduced from 1200 to 400 for better performance
+  dotCount = 600, // Increased from 400 to 600 for better visual impact while maintaining performance
 }: SplashScreenProps) {
   // Safely get auth state, handling SSR case
   let authInitializing = false;
@@ -118,8 +126,8 @@ export default function SplashScreen({
     if (!client) return;
     
     // Set animation complete after dots finish animating (based on last dot's delay + animation duration)
-    const lastDotDelay = (dotCount - 1) * 2; // Last dot's delay in ms (reduced from 3)
-    const animationDuration = 2000; // Animation duration in ms (reduced from 2500)
+    const lastDotDelay = (dotCount - 1) * 1.5; // Last dot's delay in ms
+    const animationDuration = 2500; // Animation duration in ms (restored for complex animations)
     const totalTime = lastDotDelay + animationDuration;
     
     const timer = setTimeout(() => {
@@ -150,19 +158,20 @@ export default function SplashScreen({
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  // Precompute dots (client only to keep SSR stable) - Optimized for performance
+  // Precompute dots (client only to keep SSR stable) - Restored complex movements
   const dots: Dot[] = useMemo(() => {
     if (!client) return [];
     const { w, h } = viewport;
 
     const rand = (min: number, max: number) => Math.random() * (max - min) + min;
     
-    // Simplified color palette for better performance
+    // Expanded color palette for more visual variety
     const colors = [
-      '#ff6b9d', '#ff4757', '#00b894', '#00cec9', '#6c5ce7', '#5f27cd'
+      '#ff6b9d', '#ff4757', '#00b894', '#00cec9', '#6c5ce7', '#5f27cd',
+      '#ffa502', '#ff6348', '#2ed573', '#1e90ff', '#ff3838', '#ff9ff3'
     ];
 
-    // Simplified grid calculation
+    // More complex grid calculation for better distribution
     const gridCols = Math.ceil(Math.sqrt(dotCount));
     const gridRows = Math.ceil(dotCount / gridCols);
     const spacingX = w / gridCols;
@@ -171,34 +180,55 @@ export default function SplashScreen({
     return Array.from({ length: dotCount }, (_, i) => {
       const col = i % gridCols;
       const row = Math.floor(i / gridCols);
-      const endX = (col * spacingX) + (spacingX / 2);
-      const endY = (row * spacingY) + (spacingY / 2);
+      const endX = (col * spacingX) + (spacingX / 2) + rand(-spacingX * 0.3, spacingX * 0.3);
+      const endY = (row * spacingY) + (spacingY / 2) + rand(-spacingY * 0.3, spacingY * 0.3);
 
-      // Simplified starting positions - only 4 edges for better performance
-      const edge = i % 4;
+      // More varied starting positions with 8 different edges/corners
+      const edge = i % 8;
       let startX = 0, startY = 0;
       
       if (edge === 0) { // Top
         startX = rand(0, w);
-        startY = -100;
-      } else if (edge === 1) { // Right
-        startX = w + 100;
+        startY = -rand(50, 150);
+      } else if (edge === 1) { // Top-right
+        startX = w + rand(50, 150);
+        startY = -rand(50, 150);
+      } else if (edge === 2) { // Right
+        startX = w + rand(50, 150);
         startY = rand(0, h);
-      } else if (edge === 2) { // Bottom
+      } else if (edge === 3) { // Bottom-right
+        startX = w + rand(50, 150);
+        startY = h + rand(50, 150);
+      } else if (edge === 4) { // Bottom
         startX = rand(0, w);
-        startY = h + 100;
-      } else { // Left
-        startX = -100;
+        startY = h + rand(50, 150);
+      } else if (edge === 5) { // Bottom-left
+        startX = -rand(50, 150);
+        startY = h + rand(50, 150);
+      } else if (edge === 6) { // Left
+        startX = -rand(50, 150);
         startY = rand(0, h);
+      } else { // Top-left
+        startX = -rand(50, 150);
+        startY = -rand(50, 150);
       }
 
-      // Simplified mid point calculation
-      const midX = startX + (endX - startX) * 0.5;
-      const midY = startY + (endY - startY) * 0.5;
+      // More complex mid point calculation with some randomness
+      const midX = startX + (endX - startX) * (0.3 + rand(0, 0.4));
+      const midY = startY + (endY - startY) * (0.3 + rand(0, 0.4));
 
-      const color = colors[i % colors.length]; // Cycle through colors for consistency
-      const size = 5; // Fixed size for better performance
-      const delayMs = i * 2; // Slightly slower for smoother animation
+      // Swirl point calculation for swirling animation
+      const centerX = w / 2;
+      const centerY = h / 2;
+      const angle = Math.atan2(endY - centerY, endX - centerX) + (Math.PI / 4) * (i % 2 === 0 ? 1 : -1);
+      const swirlRadius = Math.sqrt((endX - centerX) ** 2 + (endY - centerY) ** 2) * 0.7;
+      const swirlX = centerX + Math.cos(angle) * swirlRadius;
+      const swirlY = centerY + Math.sin(angle) * swirlRadius;
+
+      const color = colors[i % colors.length];
+      const size = 4 + rand(0, 3); // Variable size for more visual interest
+      const delayMs = i * 1.5; // Faster animation for more dynamic feel
+      const animationType = i % 3 === 0 ? 'swirl' : 'wind'; // Mix of animation types
 
       return {
         id: i,
@@ -206,11 +236,14 @@ export default function SplashScreen({
         startY,
         midX,
         midY,
+        swirlX,
+        swirlY,
         endX,
         endY,
         delayMs,
         color,
         size,
+        animationType,
       };
     });
   }, [client, viewport, dotCount]);
@@ -291,7 +324,7 @@ export default function SplashScreen({
         />
       )}
 
-      {/* OPTIMIZED DOT MATRIX - Using CSS Grid for better performance */}
+      {/* RESTORED DOT MATRIX - Using CSS Grid with complex animations */}
       {!reduced && client && (
         <Box
           sx={{
@@ -315,19 +348,47 @@ export default function SplashScreen({
                 backgroundColor: d.color,
                 opacity: 0,
                 transform: 'scale(0)',
-                animation: `dot-appear 2000ms cubic-bezier(0.25, 0.46, 0.45, 0.94) ${d.delayMs}ms forwards`,
+                animation: d.animationType === 'swirl' 
+                  ? `swirl-dot-appear 2500ms cubic-bezier(0.25, 0.46, 0.45, 0.94) ${d.delayMs}ms forwards`
+                  : `wind-dot-appear 2500ms cubic-bezier(0.25, 0.46, 0.45, 0.94) ${d.delayMs}ms forwards`,
                 willChange: 'transform, opacity', // Optimize for animations
-                '@keyframes dot-appear': {
+                '--start-x': `${d.startX}px`,
+                '--start-y': `${d.startY}px`,
+                '--mid-x': `${d.midX}px`,
+                '--mid-y': `${d.midY}px`,
+                '--swirl-x': `${d.swirlX}px`,
+                '--swirl-y': `${d.swirlY}px`,
+                '--end-x': `${d.endX}px`,
+                '--end-y': `${d.endY}px`,
+                '@keyframes wind-dot-appear': {
                   '0%': {
-                    transform: 'scale(0)',
+                    transform: 'translate(var(--start-x), var(--start-y)) scale(0)',
                     opacity: 0,
                   },
-                  '50%': {
-                    transform: 'scale(1.2)',
+                  '20%': {
+                    transform: 'translate(var(--mid-x), var(--mid-y)) scale(1)',
                     opacity: 0.8,
                   },
                   '100%': {
-                    transform: 'scale(1)',
+                    transform: 'translate(var(--end-x), var(--end-y)) scale(1)',
+                    opacity: 1,
+                  },
+                },
+                '@keyframes swirl-dot-appear': {
+                  '0%': {
+                    transform: 'translate(var(--start-x), var(--start-y)) scale(0)',
+                    opacity: 0,
+                  },
+                  '30%': {
+                    transform: 'translate(var(--mid-x), var(--mid-y)) scale(1.2)',
+                    opacity: 0.8,
+                  },
+                  '70%': {
+                    transform: 'translate(var(--swirl-x), var(--swirl-y)) scale(0.8)',
+                    opacity: 0.9,
+                  },
+                  '100%': {
+                    transform: 'translate(var(--end-x), var(--end-y)) scale(1)',
                     opacity: 1,
                   },
                 },
