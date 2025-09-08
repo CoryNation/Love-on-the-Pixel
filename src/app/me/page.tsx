@@ -28,8 +28,8 @@ import {
   Delete,
   PhotoCamera,
   Notifications,
-  FavoriteIcon,
-  VolunteerActivismIcon
+  Favorite as FavoriteIcon,
+  VolunteerActivism as VolunteerActivismIcon
 } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 import { userProfileService, type UserProfile } from '@/lib/userProfile';
@@ -52,6 +52,22 @@ export default function MeUsPage() {
 
   useEffect(() => {
     loadProfile();
+    
+    // Handle success/cancel messages from Stripe checkout
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const canceled = urlParams.get('canceled');
+    const product = urlParams.get('product');
+    
+    if (success === 'true') {
+      alert(`Thank you for supporting our ${product || 'love story'}! 💕 Your support means the world to us.`);
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (canceled === 'true') {
+      alert('Payment was canceled. No worries - you can try again anytime!');
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, [user?.id]);
 
   const loadProfile = async () => {
