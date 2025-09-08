@@ -11,48 +11,48 @@ export interface StripeProduct {
 export const STRIPE_PRODUCTS: StripeProduct[] = [
   {
     id: 'diamond',
-    name: 'Diamond ($100)',
+    name: 'Diamond ($69)',
     emoji: '💎',
     description: 'Fund a special moment that sparkles',
     oneTimePriceId: 'price_1S41ifFlJjtVeFmbIDfguZJ2',
     recurringPriceId: 'price_1S41iQFlJjtVeFmbcQ7f4a72',
-    suggestedAmount: 100
+    suggestedAmount: 69
   },
   {
     id: 'dinner',
-    name: 'Dinner ($50)',
+    name: 'Dinner ($35)',
     emoji: '🍽️',
     description: 'Treat us to a romantic dinner',
     oneTimePriceId: 'price_1S41iDFlJjtVeFmbLJJUU3Se',
     recurringPriceId: 'price_1S41hyFlJjtVeFmbbdTpIYIE',
-    suggestedAmount: 50
+    suggestedAmount: 35
   },
   {
     id: 'wine',
-    name: 'Wine ($30)',
+    name: 'Wine ($18)',
     emoji: '🍷',
     description: 'Fund a wine tasting experience',
     oneTimePriceId: 'price_1S41hlFlJjtVeFmbGD06Vk7g',
     recurringPriceId: 'price_1S41hXFlJjtVeFmb6bYpc5fl',
-    suggestedAmount: 30
+    suggestedAmount: 18
   },
   {
     id: 'coffee',
-    name: 'Coffee ($15)',
+    name: 'Coffee ($8)',
     emoji: '☕',
     description: 'Buy us a cozy coffee date',
     oneTimePriceId: 'price_1S41hLFlJjtVeFmbmUytPJM0',
     recurringPriceId: 'price_1S41h7FlJjtVeFmbOUaCG6Xo',
-    suggestedAmount: 15
+    suggestedAmount: 8
   },
   {
     id: 'heart',
-    name: 'Heart ($25)',
+    name: 'Heart ($3)',
     emoji: '❤️',
     description: 'Support our love story',
     oneTimePriceId: 'price_1S41gtFlJjtVeFmbSV9SyEVN',
     recurringPriceId: 'price_1S41gfFlJjtVeFmbq4ZVrCYW',
-    suggestedAmount: 25
+    suggestedAmount: 3
   },
   {
     id: 'custom-gift',
