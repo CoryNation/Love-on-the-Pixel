@@ -1,40 +1,40 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { 
-  Box, 
-  List, 
-  ListItem, 
-  ListItemText, 
-  ListItemIcon, 
-  Typography, 
-  Button,
-  Avatar,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Card,
-  CardContent,
-  Stack,
-  Divider
-} from '@mui/material';
-import { 
-  Person, 
-  Logout,
-  Edit,
-  PhotoCamera,
-  Notifications,
-  Favorite as FavoriteIcon,
-  VolunteerActivism as VolunteerActivismIcon,
-  PrivacyTip
-} from '@mui/icons-material';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Avatar from '@mui/material/Avatar';
+import IconButton from '@mui/material/IconButton';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import TextField from '@mui/material/TextField';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Stack from '@mui/material/Stack';
+import Person from '@mui/icons-material/Person';
+import Logout from '@mui/icons-material/Logout';
+import Edit from '@mui/icons-material/Edit';
+import PhotoCamera from '@mui/icons-material/PhotoCamera';
+import Notifications from '@mui/icons-material/Notifications';
+import Favorite from '@mui/icons-material/Favorite';
+import VolunteerActivism from '@mui/icons-material/VolunteerActivism';
+import PrivacyTip from '@mui/icons-material/PrivacyTip';
 import { useAuth } from '@/contexts/AuthContext';
 import { userProfileService, type UserProfile } from '@/lib/userProfile';
-import NotificationSettingsPage from '@/components/NotificationSettingsPage';
-import CheckoutDialog from '@/components/buy-us-a-date/CheckoutDialog';
+import dynamic from 'next/dynamic';
+
+const NotificationSettingsPage = dynamic(() => import('@/components/NotificationSettingsPage'), {
+  loading: () => <div>Loading...</div>,
+  ssr: false
+});
+
+const CheckoutDialog = dynamic(() => import('@/components/buy-us-a-date/CheckoutDialog'), {
+  loading: () => <div>Loading...</div>,
+  ssr: false
+});
 
 export default function MeUsPage() {
   const { user, signOut } = useAuth();
@@ -218,17 +218,17 @@ export default function MeUsPage() {
       }}>
         <CardContent sx={{ padding: '8px 16px 8px' }}>
           <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
-            <VolunteerActivismIcon sx={{ color: '#667eea' }} />
+            <VolunteerActivism sx={{ color: '#667eea' }} />
             <Typography variant="h6" sx={{ fontSize: '16px', fontWeight: 500 }}>
               Show Your Appreciation
             </Typography>
           </Stack>
           <Typography sx={{ mb: 2, color: 'text.secondary', fontSize: '14px' }}>
-            Love on the Pixel began as a simple way for us to share small moments of love. When you "Buy Us a Date," you help turn those pixels into real memories — coffee, dinner, little adventures. Thank you for being part of our story.
+            Love on the Pixel began as a small gift between my wife and me — a way to send each other love, encouragement, and little reminders of our bond. What started as a simple gesture grew into this app, and now we'd love for you to be part of our story. Every dollar you send goes directly toward a date or shared experience that brings us closer together. Your support doesn't just keep the app alive — it creates real moments of love in our marriage.
           </Typography>
           <Button
             variant="contained"
-            startIcon={<FavoriteIcon />}
+            startIcon={<Favorite />}
             onClick={() => setCheckoutOpen(true)}
             aria-label="Open Buy Us a Date"
             sx={{

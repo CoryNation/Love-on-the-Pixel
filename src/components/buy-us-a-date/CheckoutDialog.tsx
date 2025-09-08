@@ -1,20 +1,18 @@
 'use client';
 import * as React from 'react';
-import { 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  Stack, 
-  Button, 
-  Typography, 
-  ToggleButton, 
-  ToggleButtonGroup,
-  Grid,
-  Card,
-  CardContent,
-  Box,
-  Chip
-} from '@mui/material';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import Grid from '@mui/material/Grid';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
 import { STRIPE_PRODUCTS, getPriceId, type StripeProduct } from '@/lib/stripeProducts';
 
 type Props = { open: boolean; onClose: () => void; };

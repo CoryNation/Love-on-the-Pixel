@@ -1,24 +1,24 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Switch,
-  FormControlLabel,
-  FormGroup,
-  FormControl,
-  FormLabel,
-  RadioGroup,
-  Radio,
-  Divider,
-  Alert,
-  Button,
-  CircularProgress
-} from '@mui/material';
-import { Notifications, NotificationsOff, Favorite, FavoriteBorder } from '@mui/icons-material';
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import Switch from '@mui/material/Switch';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import FormGroup from '@mui/material/FormGroup';
+import FormControl from '@mui/material/FormControl';
+import FormLabel from '@mui/material/FormLabel';
+import RadioGroup from '@mui/material/RadioGroup';
+import Radio from '@mui/material/Radio';
+import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
+import Notifications from '@mui/icons-material/Notifications';
+import NotificationsOff from '@mui/icons-material/NotificationsOff';
+import Favorite from '@mui/icons-material/Favorite';
+import FavoriteBorder from '@mui/icons-material/FavoriteBorder';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 
@@ -27,6 +27,7 @@ interface NotificationPreferences {
   invitation_received: boolean;
   affirmation_received: boolean;
   affirmation_treasured: boolean;
+  love_reminder: boolean;
   frequency: 'every_time' | 'once_daily';
 }
 
@@ -37,6 +38,7 @@ export default function NotificationSettingsPage() {
     invitation_received: true,
     affirmation_received: true,
     affirmation_treasured: false,
+    love_reminder: false,
     frequency: 'every_time'
   });
   const [loading, setLoading] = useState(false);
@@ -69,6 +71,7 @@ export default function NotificationSettingsPage() {
           invitation_received: data.invitation_received ?? true,
           affirmation_received: data.affirmation_received ?? true,
           affirmation_treasured: data.affirmation_treasured ?? false,
+          love_reminder: data.love_reminder ?? false,
           frequency: data.frequency ?? 'every_time'
         });
       }
@@ -94,6 +97,7 @@ export default function NotificationSettingsPage() {
           invitation_received: preferences.invitation_received,
           affirmation_received: preferences.affirmation_received,
           affirmation_treasured: preferences.affirmation_treasured,
+          love_reminder: preferences.love_reminder,
           frequency: preferences.frequency,
           updated_at: new Date().toISOString()
         });
@@ -234,6 +238,22 @@ export default function NotificationSettingsPage() {
               }
               label={
                 <Typography>When an affirmation card is Treasured</Typography>
+              }
+            />
+
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={preferences.love_reminder}
+                  onChange={(e) => handlePreferenceChange('love_reminder', e.target.checked)}
+                  disabled={!preferences.notifications_enabled}
+                />
+              }
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <FavoriteBorder sx={{ color: '#e91e63' }} />
+                  <Typography>Remind me when it's been 2+ days since I showed my love</Typography>
+                </Box>
               }
             />
           </FormGroup>

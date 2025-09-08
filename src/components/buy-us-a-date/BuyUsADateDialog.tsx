@@ -1,8 +1,11 @@
 'use client';
 import * as React from 'react';
-import {
-  Box, Button, Dialog, DialogContent, DialogTitle, Tab, Tabs, Typography
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import Typography from '@mui/material/Typography';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import CheckoutDialog from './CheckoutDialog';
 

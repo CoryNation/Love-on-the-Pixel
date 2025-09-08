@@ -1,111 +1,96 @@
-// Performance monitoring utilities
-export class PerformanceMonitor {
-  private static instance: PerformanceMonitor;
-  private metrics: Map<string, number> = new Map();
-
-  static getInstance(): PerformanceMonitor {
-    if (!PerformanceMonitor.instance) {
-      PerformanceMonitor.instance = new PerformanceMonitor();
-    }
-    return PerformanceMonitor.instance;
-  }
-
-  // Mark the start of a performance measurement
-  markStart(name: string): void {
-    if (typeof window !== 'undefined' && window.performance) {
-      this.metrics.set(name, window.performance.now());
-    }
-  }
-
-  // Mark the end of a performance measurement and log the duration
-  markEnd(name: string): number {
-    if (typeof window !== 'undefined' && window.performance) {
-      const startTime = this.metrics.get(name);
-      if (startTime !== undefined) {
-        const duration = window.performance.now() - startTime;
-        console.log(`Performance: ${name} took ${duration.toFixed(2)}ms`);
-        this.metrics.delete(name);
-        return duration;
-      }
-    }
-    return 0;
-  }
-
-  // Measure the performance of a function
-  async measureFunction<T>(name: string, fn: () => Promise<T>): Promise<T> {
-    this.markStart(name);
-    try {
-      const result = await fn();
-      this.markEnd(name);
-      return result;
-    } catch (error) {
-      this.markEnd(name);
-      throw error;
-    }
-  }
-
-  // Get Core Web Vitals metrics
-  getWebVitals(): void {
-    if (typeof window !== 'undefined' && 'web-vitals' in window) {
-      // This would require the web-vitals package
-      console.log('Web Vitals monitoring available');
-    }
-  }
-
-  // Log bundle size information
-  logBundleInfo(): void {
-    if (typeof window !== 'undefined' && window.performance) {
-      const navigation = window.performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-      if (navigation) {
-        console.log('Performance Metrics:', {
-          'DOM Content Loaded': `${(navigation.domContentLoadedEventEnd - navigation.domContentLoadedEventStart).toFixed(2)}ms`,
-          'Load Complete': `${(navigation.loadEventEnd - navigation.loadEventStart).toFixed(2)}ms`,
-          'First Byte': `${(navigation.responseStart - navigation.requestStart).toFixed(2)}ms`,
-          'DOM Interactive': `${(navigation.domInteractive - navigation.navigationStart).toFixed(2)}ms`,
-        });
-      }
-    }
-  }
-}
-
-// Export singleton instance
-export const performanceMonitor = PerformanceMonitor.getInstance();
-
 // Performance optimization utilities
-export const optimizeImages = (src: string, width?: number, height?: number): string => {
-  // Add image optimization parameters
-  const params = new URLSearchParams();
-  if (width) params.set('w', width.toString());
-  if (height) params.set('h', height.toString());
-  params.set('q', '80'); // Quality
-  params.set('f', 'webp'); // Format
+
+/**
+ * Preload critical resources to improve LCP
+ */
+export const preloadCriticalResources = () => {
+  if (typeof window === 'undefined') return;
+
+  // Preload critical CSS
+  const criticalCSS = document.createElement('link');
+  criticalCSS.rel = 'preload';
+  criticalCSS.as = 'style';
+  criticalCSS.href = '/css/critical.css';
+  document.head.appendChild(criticalCSS);
+
+  // Preload critical fonts
+  const fontPreload = document.createElement('link');
+  fontPreload.rel = 'preload';
+  fontPreload.as = 'font';
+  fontPreload.type = 'font/woff2';
+  fontPreload.href = '/fonts/roboto.woff2';
+  fontPreload.crossOrigin = 'anonymous';
+  document.head.appendChild(fontPreload);
+};
+
+/**
+ * Defer non-critical JavaScript execution
+ */
+export const deferNonCriticalJS = (callback: () => void) => {
+  if (typeof window === 'undefined') return;
+
+  // Use requestIdleCallback if available, otherwise setTimeout
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(callback, { timeout: 2000 });
+  } else {
+    setTimeout(callback, 0);
+  }
+};
+
+/**
+ * Optimize image loading
+ */
+export const optimizeImageLoading = (img: HTMLImageElement) => {
+  if (typeof window === 'undefined') return;
+
+  // Add loading="lazy" for images below the fold
+  img.loading = 'lazy';
   
-  return `${src}?${params.toString()}`;
+  // Add decoding="async" for better performance
+  img.decoding = 'async';
 };
 
-// Debounce function for performance
-export const debounce = <T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
+/**
+ * Reduce layout thrashing by batching DOM updates
+ */
+export const batchDOMUpdates = (updates: (() => void)[]) => {
+  if (typeof window === 'undefined') return;
+
+  // Use requestAnimationFrame to batch updates
+  requestAnimationFrame(() => {
+    updates.forEach(update => update());
+  });
 };
 
-// Throttle function for performance
-export const throttle = <T extends (...args: any[]) => any>(
-  func: T,
-  limit: number
-): ((...args: Parameters<T>) => void) => {
-  let inThrottle: boolean;
-  return (...args: Parameters<T>) => {
-    if (!inThrottle) {
-      func(...args);
-      inThrottle = true;
-      setTimeout(() => (inThrottle = false), limit);
+/**
+ * Monitor Core Web Vitals
+ */
+export const monitorWebVitals = () => {
+  if (typeof window === 'undefined') return;
+
+  // Monitor LCP
+  new PerformanceObserver((entryList) => {
+    const entries = entryList.getEntries();
+    const lastEntry = entries[entries.length - 1];
+    console.log('LCP:', lastEntry.startTime);
+  }).observe({ entryTypes: ['largest-contentful-paint'] });
+
+  // Monitor FID
+  new PerformanceObserver((entryList) => {
+    const entries = entryList.getEntries();
+    entries.forEach((entry) => {
+      console.log('FID:', entry.processingStart - entry.startTime);
+    });
+  }).observe({ entryTypes: ['first-input'] });
+
+  // Monitor CLS
+  new PerformanceObserver((entryList) => {
+    let clsValue = 0;
+    for (const entry of entryList.getEntries()) {
+      if (!entry.hadRecentInput) {
+        clsValue += (entry as any).value;
+      }
     }
-  };
+    console.log('CLS:', clsValue);
+  }).observe({ entryTypes: ['layout-shift'] });
 };
