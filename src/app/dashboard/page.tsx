@@ -135,10 +135,10 @@ function DashboardContent() {
             label="Treasured" 
             icon={<DiamondIcon />} 
           />
-          <BottomNavigationAction 
-            label="Me & Us" 
-            icon={<Settings />} 
-          />
+        <BottomNavigationAction
+          label="Account"
+          icon={<Settings />}
+        />
         </BottomNavigation>
       </Paper>
     </Box>

@@ -25,20 +25,20 @@ export default function DateCard({ title = 'Date Recap', recap, supporterName, o
             </Stack>
           )}
           <Typography align="center">{recap}</Typography>
-          <Button
-            variant="contained"
-            startIcon={<FavoriteIcon />}
-            onClick={onBuy}
-            aria-label="Buy us a date from recap card"
-            sx={{ 
-              background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)',
-              '&:hover': {
-                background: 'linear-gradient(45deg, #5a6fd8 30%, #6a4190 90%)',
-              }
-            }}
-          >
-            Buy Us a Date
-          </Button>
+      <Button
+        variant="contained"
+        startIcon={<FavoriteIcon />}
+        onClick={onBuy}
+        aria-label="Buy us a date from recap card"
+        sx={{
+          backgroundColor: '#e91e63',
+          '&:hover': {
+            backgroundColor: '#c2185b',
+          }
+        }}
+      >
+        Buy Us a Date
+      </Button>
         </Stack>
       </CardContent>
     </Card>

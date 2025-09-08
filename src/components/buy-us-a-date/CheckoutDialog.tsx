@@ -174,6 +174,12 @@ export default function CheckoutDialog({ open, onClose }: Props) {
             size="large"
             fullWidth
             aria-label="Go to secure Stripe checkout"
+            sx={{
+              backgroundColor: '#e91e63',
+              '&:hover': {
+                backgroundColor: '#c2185b',
+              }
+            }}
           >
             {loading ? 'Processing...' : `Continue to Secure Checkout`}
           </Button>

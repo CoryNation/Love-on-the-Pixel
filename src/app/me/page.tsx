@@ -48,6 +48,7 @@ export default function MeUsPage() {
   const [editLoading, setEditLoading] = useState(false);
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
   const [buyUsADateOpen, setBuyUsADateOpen] = useState(false);
+  const [privacyDialogOpen, setPrivacyDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -167,7 +168,7 @@ export default function MeUsPage() {
       {/* Header */}
       <Box sx={{ marginBottom: 3, textAlign: 'center' }}>
         <Typography variant="h5" sx={{ color: 'white', mb: 2 }}>
-          Me & Us
+          Account
         </Typography>
         
         {/* Profile Section */}
@@ -209,31 +210,46 @@ export default function MeUsPage() {
         </Box>
       </Box>
 
-      {/* Settings List */}
+      {/* Show Your Appreciation Section */}
+      <Card variant="outlined" sx={{ 
+        background: 'rgba(255, 255, 255, 0.95)', 
+        borderRadius: 2,
+        marginBottom: 2
+      }}>
+        <CardContent>
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
+            <VolunteerActivismIcon sx={{ color: '#667eea' }} />
+            <Typography variant="h6" sx={{ fontSize: '1.15rem', fontWeight: 500 }}>
+              Show Your Appreciation
+            </Typography>
+          </Stack>
+          <Typography sx={{ mb: 2, color: 'text.secondary' }}>
+            Love on the Pixel began as a simple way for us to share small moments of love. When you "Buy Us a Date," you help turn those pixels into real memories — coffee, dinner, little adventures. Thank you for being part of our story.
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<FavoriteIcon />}
+            onClick={() => setBuyUsADateOpen(true)}
+            aria-label="Open Buy Us a Date"
+            sx={{
+              backgroundColor: '#e91e63',
+              '&:hover': {
+                backgroundColor: '#c2185b',
+              }
+            }}
+          >
+            Buy Us a Date
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Account Settings */}
       <Box sx={{ flex: 1, marginBottom: 2 }}>
         <List sx={{ 
           background: 'rgba(255, 255, 255, 0.95)', 
           borderRadius: 2,
           overflow: 'hidden'
         }}>
-          {/* Account Settings Section Header */}
-          <ListItem sx={{ 
-            backgroundColor: '#f8f9fa',
-            borderBottom: '1px solid #e9ecef'
-          }}>
-            <Typography 
-              variant="h6" 
-              sx={{ 
-                color: '#000000',
-                fontWeight: 600,
-                width: '100%',
-                textAlign: 'center'
-              }}
-            >
-              Account Settings
-            </Typography>
-          </ListItem>
-          
           <ListItem button onClick={() => setNotificationDialogOpen(true)}>
             <ListItemIcon>
               <Notifications sx={{ color: '#667eea' }} />
@@ -247,31 +263,6 @@ export default function MeUsPage() {
         </List>
       </Box>
 
-      {/* Support Us Section */}
-      <Card variant="outlined" sx={{ 
-        background: 'rgba(255, 255, 255, 0.95)', 
-        borderRadius: 2,
-        marginBottom: 2
-      }}>
-        <CardContent>
-          <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
-            <VolunteerActivismIcon color="primary" />
-            <Typography variant="h6">Buy Us a Date</Typography>
-          </Stack>
-          <Typography sx={{ mb: 2, color: 'text.secondary' }}>
-            Be part of our love story. Help fund real moments that bring us closer.
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<FavoriteIcon />}
-            onClick={() => setBuyUsADateOpen(true)}
-            aria-label="Open Buy Us a Date"
-          >
-            Buy Us a Date
-          </Button>
-        </CardContent>
-      </Card>
-
       {/* Privacy Policy Link */}
       <Box sx={{ 
         background: 'rgba(255, 255, 255, 0.95)', 
@@ -279,25 +270,29 @@ export default function MeUsPage() {
         padding: 2,
         marginBottom: 2
       }}>
-        <ListItem 
-          button 
-          onClick={() => window.open('/privacy', '_blank')}
-          sx={{ 
-            borderRadius: 1,
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
+          <PrivacyTip sx={{ color: '#667eea' }} />
+          <Typography variant="h6" sx={{ fontSize: '1.15rem', fontWeight: 500 }}>
+            Privacy Policy
+          </Typography>
+        </Stack>
+        <Typography sx={{ mb: 2, color: 'text.secondary' }}>
+          Read our privacy policy and data practices
+        </Typography>
+        <Button
+          variant="outlined"
+          onClick={() => setPrivacyDialogOpen(true)}
+          sx={{
+            borderColor: '#667eea',
+            color: '#667eea',
             '&:hover': {
+              borderColor: '#5a6fd8',
               backgroundColor: 'rgba(102, 126, 234, 0.1)'
             }
           }}
         >
-          <ListItemIcon>
-            <PrivacyTip sx={{ color: '#667eea' }} />
-          </ListItemIcon>
-          <ListItemText 
-            primary="Privacy Policy" 
-            secondary="Read our privacy policy and data practices"
-            sx={{ '& .MuiListItemText-primary': { color: '#2c3e50' } }}
-          />
-        </ListItem>
+          View Privacy Policy
+        </Button>
       </Box>
 
       {/* Sign Out Section */}
@@ -307,17 +302,6 @@ export default function MeUsPage() {
         padding: 2,
         marginBottom: 8 // Add bottom margin to account for bottom navigation
       }}>
-        <Typography 
-          variant="h6" 
-          sx={{ 
-            color: '#2c3e50',
-            fontWeight: 600,
-            marginBottom: 2,
-            textAlign: 'center'
-          }}
-        >
-          Sign Out
-        </Typography>
         <Button
           variant="outlined"
           startIcon={<Logout />}
@@ -423,6 +407,141 @@ export default function MeUsPage() {
 
       {/* Buy Us a Date Dialog */}
       <BuyUsADateDialog open={buyUsADateOpen} onClose={() => setBuyUsADateOpen(false)} />
+
+      {/* Privacy Policy Dialog */}
+      <Dialog 
+        open={privacyDialogOpen} 
+        onClose={() => setPrivacyDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        aria-labelledby="privacy-dialog-title"
+      >
+        <DialogTitle id="privacy-dialog-title">
+          Privacy Policy for Love on the Pixel
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              <strong>Last updated:</strong> {new Date().toLocaleDateString()}
+            </Typography>
+            
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h6" component="h2" gutterBottom sx={{ color: '#667eea', mt: 3 }}>
+                Information We Collect
+              </Typography>
+              <Typography variant="body1" paragraph>
+                Love on the Pixel collects the following information to provide our service:
+              </Typography>
+              <Box component="ul" sx={{ pl: 3 }}>
+                <Typography component="li" variant="body1" paragraph>
+                  <strong>Account Information:</strong> Email address for account creation and authentication
+                </Typography>
+                <Typography component="li" variant="body1" paragraph>
+                  <strong>Profile Information:</strong> Your name and profile photo (optional)
+                </Typography>
+                <Typography component="li" variant="body1" paragraph>
+                  <strong>Content:</strong> Affirmation messages you create and send to others
+                </Typography>
+                <Typography component="li" variant="body1" paragraph>
+                  <strong>Connections:</strong> Information about your connections with other users
+                </Typography>
+              </Box>
+            </Box>
+
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h6" component="h2" gutterBottom sx={{ color: '#667eea' }}>
+                How We Use Your Information
+              </Typography>
+              <Typography variant="body1" paragraph>
+                We use your information exclusively to:
+              </Typography>
+              <Box component="ul" sx={{ pl: 3 }}>
+                <Typography component="li" variant="body1" paragraph>
+                  Provide the core functionality of sending and receiving affirmations
+                </Typography>
+                <Typography component="li" variant="body1" paragraph>
+                  Manage your account and user connections
+                </Typography>
+                <Typography component="li" variant="body1" paragraph>
+                  Improve our service and user experience
+                </Typography>
+                <Typography component="li" variant="body1" paragraph>
+                  Ensure the security and integrity of our platform
+                </Typography>
+              </Box>
+            </Box>
+
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h6" component="h2" gutterBottom sx={{ color: '#667eea' }}>
+                Data Storage and Security
+              </Typography>
+              <Typography variant="body1" paragraph>
+                Your data is stored securely using Supabase, a trusted cloud database service that implements industry-standard security measures including:
+              </Typography>
+              <Box component="ul" sx={{ pl: 3 }}>
+                <Typography component="li" variant="body1" paragraph>
+                  Encryption at rest and in transit
+                </Typography>
+                <Typography component="li" variant="body1" paragraph>
+                  Regular security audits and updates
+                </Typography>
+                <Typography component="li" variant="body1" paragraph>
+                  Compliance with data protection regulations
+                </Typography>
+              </Box>
+            </Box>
+
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h6" component="h2" gutterBottom sx={{ color: '#667eea' }}>
+                Data Sharing
+              </Typography>
+              <Typography variant="body1" paragraph>
+                We do not sell, trade, or otherwise transfer your personal information to third parties. Your affirmations are only shared with the specific users you choose to send them to.
+              </Typography>
+            </Box>
+
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h6" component="h2" gutterBottom sx={{ color: '#667eea' }}>
+                Your Rights
+              </Typography>
+              <Typography variant="body1" paragraph>
+                You have the right to:
+              </Typography>
+              <Box component="ul" sx={{ pl: 3 }}>
+                <Typography component="li" variant="body1" paragraph>
+                  Access, update, or delete your account information
+                </Typography>
+                <Typography component="li" variant="body1" paragraph>
+                  Delete your account and all associated data
+                </Typography>
+                <Typography component="li" variant="body1" paragraph>
+                  Request a copy of your personal data
+                </Typography>
+                <Typography component="li" variant="body1" paragraph>
+                  Opt out of certain data collection (where applicable)
+                </Typography>
+              </Box>
+            </Box>
+
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h6" component="h2" gutterBottom sx={{ color: '#667eea' }}>
+                Contact Us
+              </Typography>
+              <Typography variant="body1" paragraph>
+                If you have any questions about this privacy policy or our data practices, please contact us at:
+              </Typography>
+              <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                Email: Info@BuildTBD.com
+              </Typography>
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPrivacyDialogOpen(false)}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

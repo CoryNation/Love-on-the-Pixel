@@ -17,20 +17,20 @@ export default function StoryCard({ snippet, onBuy }: Props) {
             Our Story
           </Typography>
           <Typography align="center">{snippet}</Typography>
-          <Button
-            variant="contained"
-            startIcon={<VolunteerActivismIcon />}
-            onClick={onBuy}
-            aria-label="Buy us a date from story card"
-            sx={{ 
-              background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)',
-              '&:hover': {
-                background: 'linear-gradient(45deg, #5a6fd8 30%, #6a4190 90%)',
-              }
-            }}
-          >
-            Buy Us a Date
-          </Button>
+      <Button
+        variant="contained"
+        startIcon={<VolunteerActivismIcon />}
+        onClick={onBuy}
+        aria-label="Buy us a date from story card"
+        sx={{
+          backgroundColor: '#e91e63',
+          '&:hover': {
+            backgroundColor: '#c2185b',
+          }
+        }}
+      >
+        Buy Us a Date
+      </Button>
         </Stack>
       </CardContent>
     </Card>

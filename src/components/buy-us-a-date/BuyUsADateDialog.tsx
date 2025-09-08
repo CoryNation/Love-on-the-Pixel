@@ -18,39 +18,13 @@ export default function BuyUsADateDialog({ open, onClose }: Props) {
     <>
       <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" aria-labelledby="buy-us-a-date-title">
         <DialogTitle id="buy-us-a-date-title" sx={{ pb: 0 }}>
-          Buy Us a Date
+          Show Your Appreciation
         </DialogTitle>
-        <Tabs
-          value={tab}
-          onChange={(_, v) => setTab(v)}
-          aria-label="Buy us a date tabs"
-          sx={{ px: 2 }}
-        >
-          <Tab label="Story" id="tab-story" aria-controls="panel-story" />
-          <Tab label="Appreciation" id="tab-appreciation" aria-controls="panel-appreciation" />
-        </Tabs>
 
         <DialogContent dividers sx={{ position: 'relative', pb: 10 }}>
-          {/* Story */}
-          {tab === 0 && (
-            <Box id="panel-story" role="tabpanel" aria-labelledby="tab-story">
-              <Typography sx={{ mb: 2 }}>
-                Love on the Pixel began as a simple way for us to share small moments of love. When you "Buy Us a Date," you help turn those pixels into real memories — coffee, dinner, little adventures. Thank you for being part of our story.
-              </Typography>
-            </Box>
-          )}
-
-          {/* Appreciation (replace with your dynamic list later) */}
-          {tab === 1 && (
-            <Box id="panel-appreciation" role="tabpanel" aria-labelledby="tab-appreciation">
-              <Typography sx={{ mb: 1, fontWeight: 600 }}>What your support made possible</Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                • Cozy coffee date — time to laugh and breathe together. <br/>
-                • A simple dinner where we dreamed about the next decade. <br/>
-                • A sunset walk that turned into a tradition.
-              </Typography>
-            </Box>
-          )}
+          <Typography sx={{ mb: 2 }}>
+            Choose how you'd like to support our love story and help fund real moments that bring us closer together.
+          </Typography>
 
           {/* Sticky CTA */}
           <Box
@@ -70,6 +44,12 @@ export default function BuyUsADateDialog({ open, onClose }: Props) {
               startIcon={<FavoriteIcon />}
               onClick={handleBuy}
               aria-label="Proceed to payment to buy us a date"
+              sx={{
+                backgroundColor: '#e91e63',
+                '&:hover': {
+                  backgroundColor: '#c2185b',
+                }
+              }}
             >
               Buy Us a Date
             </Button>
