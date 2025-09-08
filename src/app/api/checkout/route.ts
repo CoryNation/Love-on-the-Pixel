@@ -39,7 +39,8 @@ export async function POST(req: NextRequest) {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${baseUrl}/me?success=true&product=${encodeURIComponent(productName || 'Support')}`,
       cancel_url: `${baseUrl}/me?canceled=true`,
-      automatic_tax: { enabled: true },
+      // Disable automatic tax calculation to avoid origin address requirement
+      // automatic_tax: { enabled: true },
       metadata: {
         product_name: productName || 'Support',
         product_emoji: productEmoji || '❤️',

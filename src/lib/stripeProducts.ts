@@ -11,7 +11,7 @@ export interface StripeProduct {
 export const STRIPE_PRODUCTS: StripeProduct[] = [
   {
     id: 'diamond',
-    name: 'Diamond',
+    name: 'Diamond ($100)',
     emoji: '💎',
     description: 'Fund a special moment that sparkles',
     oneTimePriceId: 'price_1S41ifFlJjtVeFmbIDfguZJ2',
@@ -20,7 +20,7 @@ export const STRIPE_PRODUCTS: StripeProduct[] = [
   },
   {
     id: 'dinner',
-    name: 'Dinner',
+    name: 'Dinner ($50)',
     emoji: '🍽️',
     description: 'Treat us to a romantic dinner',
     oneTimePriceId: 'price_1S41iDFlJjtVeFmbLJJUU3Se',
@@ -29,7 +29,7 @@ export const STRIPE_PRODUCTS: StripeProduct[] = [
   },
   {
     id: 'wine',
-    name: 'Wine',
+    name: 'Wine ($30)',
     emoji: '🍷',
     description: 'Fund a wine tasting experience',
     oneTimePriceId: 'price_1S41hlFlJjtVeFmbGD06Vk7g',
@@ -38,7 +38,7 @@ export const STRIPE_PRODUCTS: StripeProduct[] = [
   },
   {
     id: 'coffee',
-    name: 'Coffee',
+    name: 'Coffee ($15)',
     emoji: '☕',
     description: 'Buy us a cozy coffee date',
     oneTimePriceId: 'price_1S41hLFlJjtVeFmbmUytPJM0',
@@ -47,7 +47,7 @@ export const STRIPE_PRODUCTS: StripeProduct[] = [
   },
   {
     id: 'heart',
-    name: 'Heart',
+    name: 'Heart ($25)',
     emoji: '❤️',
     description: 'Support our love story',
     oneTimePriceId: 'price_1S41gtFlJjtVeFmbSV9SyEVN',
