@@ -32,6 +32,12 @@ export default function CheckoutDialog({ open, onClose }: Props) {
 
     setLoading(true);
     try {
+      console.log('Creating checkout session with:', { 
+        priceId, 
+        productName: selectedProduct.name, 
+        productEmoji: selectedProduct.emoji 
+      });
+      
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -41,11 +47,16 @@ export default function CheckoutDialog({ open, onClose }: Props) {
           productEmoji: selectedProduct.emoji
         }),
       });
+      
+      console.log('Checkout response status:', res.status);
       const data = await res.json();
+      console.log('Checkout response data:', data);
+      
       if (data?.url) {
         window.location.href = data.url;
       } else {
-        alert('Unable to process payment. Please try again.');
+        console.error('No URL in response:', data);
+        alert(`Unable to process payment: ${data.error || 'Unknown error'}. Please try again.`);
       }
     } catch (error) {
       console.error('Checkout error:', error);

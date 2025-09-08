@@ -4,7 +4,7 @@ export interface StripeProduct {
   emoji: string;
   description: string;
   oneTimePriceId: string;
-  recurringPriceId: string;
+  recurringPriceId?: string; // Optional for products that don't support recurring
   suggestedAmount?: number; // For display purposes
 }
 
@@ -60,7 +60,7 @@ export const STRIPE_PRODUCTS: StripeProduct[] = [
     emoji: '🎁',
     description: 'Send us a custom surprise',
     oneTimePriceId: 'price_1S4tE1FlJjtVeFmbfP80hPwa',
-    recurringPriceId: '', // No recurring option for custom gift
+    recurringPriceId: undefined, // No recurring option for custom gift
     suggestedAmount: 0
   }
 ];
@@ -69,12 +69,12 @@ export function getProductById(id: string): StripeProduct | undefined {
   return STRIPE_PRODUCTS.find(product => product.id === id);
 }
 
-export function getPriceId(productId: string, isRecurring: boolean): string | null {
+export function getPriceId(productId: string, isRecurring: boolean): string | undefined {
   const product = getProductById(productId);
-  if (!product) return null;
+  if (!product) return undefined;
   
   if (isRecurring) {
-    return product.recurringPriceId || null;
+    return product.recurringPriceId || undefined;
   } else {
     return product.oneTimePriceId;
   }
