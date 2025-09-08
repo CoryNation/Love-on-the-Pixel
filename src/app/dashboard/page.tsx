@@ -24,7 +24,7 @@ const PersonsPage = dynamic(() => import('@/components/PersonsPage'), {
   ssr: false
 });
 
-const SettingsPage = dynamic(() => import('@/components/SettingsPage'), {
+const MeUsPage = dynamic(() => import('@/app/me/page'), {
   loading: () => <div>Loading...</div>,
   ssr: false
 });
@@ -50,7 +50,7 @@ function DashboardContent() {
       case 2:
         return <TreasuredPage />;
       case 3:
-        return <SettingsPage />;
+        return <MeUsPage />;
       default:
         return <WavePage />;
     }
@@ -136,7 +136,7 @@ function DashboardContent() {
             icon={<DiamondIcon />} 
           />
           <BottomNavigationAction 
-            label="Settings" 
+            label="Me & Us" 
             icon={<Settings />} 
           />
         </BottomNavigation>

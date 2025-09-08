@@ -33,6 +33,10 @@ import { userProfileService, type UserProfile } from '@/lib/userProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { AFFIRMATION_THEMES, getThemeColor, getThemeEmoji, getThemeById } from '@/lib/affirmationThemes';
 import { performanceMonitor } from '@/lib/performance';
+import { interleaveCards, sampleStories, sampleDateRecaps, type InterleavedItem } from '@/lib/feedInterleaver';
+import StoryCard from '@/components/cards/StoryCard';
+import DateCard from '@/components/cards/DateCard';
+import BuyUsADateDialog from '@/components/buy-us-a-date/BuyUsADateDialog';
 
 export default function WavePage() {
   const { user } = useAuth();
@@ -55,6 +59,7 @@ export default function WavePage() {
   const [editLoading, setEditLoading] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState<string | null>(null);
   const [sentLoading, setSentLoading] = useState(false);
+  const [buyUsADateOpen, setBuyUsADateOpen] = useState(false);
 
   // Swipe functionality refs
   const cardRef = useRef<HTMLDivElement>(null);
@@ -701,61 +706,94 @@ export default function WavePage() {
             </Box>
           ) : (
             <List>
-              {filteredAffirmations.map((affirmation) => (
-                <Card key={affirmation.id} sx={{ margin: 1, boxShadow: 'none', border: '1px solid #eee' }}>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <Box sx={{ flex: 1 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 1 }}>
-                          <Typography variant="h6" sx={{ marginRight: 1 }}>
-                            {getThemeEmoji(affirmation.category)}
-                          </Typography>
-                          <Typography variant="subtitle1" color="text.secondary">
-                            To {affirmation.recipient_name || 'Someone special'}
-                          </Typography>
-                        </Box>
-                        <Typography variant="body1" sx={{ marginBottom: 1, fontStyle: 'italic' }}>
-                          "{affirmation.message}"
-                        </Typography>
-                        <Chip 
-                          label={getThemeById(affirmation.category)?.name || affirmation.category}
-                          size="small"
-                          color="primary"
-                          variant="outlined"
+              {(() => {
+                // Create interleaved content for sent affirmations
+                const extras = [
+                  ...sampleStories.map(story => ({ kind: 'story' as const, data: story })),
+                  ...sampleDateRecaps.map(date => ({ kind: 'date' as const, data: date }))
+                ];
+                const interleaved = interleaveCards(filteredAffirmations, extras, 10);
+                
+                return interleaved.map((item, idx) => {
+                  if (item.kind === 'affirmation') {
+                    return (
+                      <Card key={item.data.id} sx={{ margin: 1, boxShadow: 'none', border: '1px solid #eee' }}>
+                        <CardContent>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <Box sx={{ flex: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 1 }}>
+                                <Typography variant="h6" sx={{ marginRight: 1 }}>
+                                  {getThemeEmoji(item.data.category)}
+                                </Typography>
+                                <Typography variant="subtitle1" color="text.secondary">
+                                  To {item.data.recipient_name || 'Someone special'}
+                                </Typography>
+                              </Box>
+                              <Typography variant="body1" sx={{ marginBottom: 1, fontStyle: 'italic' }}>
+                                "{item.data.message}"
+                              </Typography>
+                              <Chip 
+                                label={getThemeById(item.data.category)?.name || item.data.category}
+                                size="small"
+                                color="primary"
+                                variant="outlined"
+                              />
+                            </Box>
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleToggleFavorite(item.data as Affirmation)}
+                                disabled={favoriteLoading === item.data.id}
+                                sx={{ color: item.data.is_favorite ? '#e74c3c' : '#667eea' }}
+                              >
+                                {favoriteLoading === item.data.id ? (
+                                  <CircularProgress size={16} color="inherit" />
+                                ) : (
+                                  item.data.is_favorite ? <DiamondIcon sx={{ fontSize: '1rem', color: '#e74c3c' }} /> : <DiamondIcon sx={{ fontSize: '1rem', color: '#667eea' }} />
+                                )}
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleEditAffirmation(item.data as Affirmation)}
+                                sx={{ color: '#667eea' }}
+                              >
+                                <Edit />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleDeleteAffirmation(item.data as Affirmation)}
+                                sx={{ color: '#ff6b6b' }}
+                              >
+                                <Delete />
+                              </IconButton>
+                            </Box>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    );
+                  } else if (item.kind === 'story') {
+                    return (
+                      <Box key={`s-${item.data.id}`} sx={{ margin: 1 }}>
+                        <StoryCard 
+                          snippet={item.data.snippet} 
+                          onBuy={() => setBuyUsADateOpen(true)} 
                         />
                       </Box>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleToggleFavorite(affirmation)}
-                          disabled={favoriteLoading === affirmation.id}
-                          sx={{ color: affirmation.is_favorite ? '#e74c3c' : '#667eea' }}
-                        >
-                          {favoriteLoading === affirmation.id ? (
-                            <CircularProgress size={16} color="inherit" />
-                          ) : (
-                            affirmation.is_favorite ? <DiamondIcon sx={{ fontSize: '1rem', color: '#e74c3c' }} /> : <DiamondIcon sx={{ fontSize: '1rem', color: '#667eea' }} />
-                          )}
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleEditAffirmation(affirmation)}
-                          sx={{ color: '#667eea' }}
-                        >
-                          <Edit />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDeleteAffirmation(affirmation)}
-                          sx={{ color: '#ff6b6b' }}
-                        >
-                          <Delete />
-                        </IconButton>
+                    );
+                  } else {
+                    return (
+                      <Box key={`d-${item.data.id}`} sx={{ margin: 1 }}>
+                        <DateCard 
+                          title={item.data.title}
+                          recap={item.data.recap} 
+                          supporterName={item.data.supporterName}
+                          onBuy={() => setBuyUsADateOpen(true)} 
+                        />
                       </Box>
-                    </Box>
-                  </CardContent>
-                </Card>
-              ))}
+                    );
+                  }
+                });
+              })()}
             </List>
           )}
         </Card>
@@ -811,6 +849,9 @@ export default function WavePage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Buy Us a Date Dialog */}
+      <BuyUsADateDialog open={buyUsADateOpen} onClose={() => setBuyUsADateOpen(false)} />
     </Box>
   );
 }
