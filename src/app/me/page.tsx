@@ -175,8 +175,8 @@ export default function MeUsPage() {
         <Box sx={{ 
           background: 'rgba(255, 255, 255, 0.95)', 
           borderRadius: 2, 
-          padding: 2, 
-          marginBottom: 2,
+          padding: '8px 16px', 
+          marginBottom: '8px',
           position: 'relative'
         }}>
           <IconButton
@@ -195,13 +195,13 @@ export default function MeUsPage() {
             sx={{ 
               width: 80, 
               height: 80, 
-              margin: '0 auto 16px',
+              margin: '0 auto 8px',
               border: '3px solid rgba(255,255,255,0.3)'
             }}
           >
             {profile?.full_name?.charAt(0) || <Person />}
           </Avatar>
-          <Typography variant="h6" sx={{ color: '#2c3e50', marginBottom: 1 }}>
+          <Typography variant="h6" sx={{ color: '#2c3e50', marginBottom: '4px' }}>
             {profile?.full_name || 'User'}
           </Typography>
           <Typography variant="body2" sx={{ color: '#7f8c8d' }}>
@@ -214,16 +214,16 @@ export default function MeUsPage() {
       <Card variant="outlined" sx={{ 
         background: 'rgba(255, 255, 255, 0.95)', 
         borderRadius: 2,
-        marginBottom: 2
+        marginBottom: '8px'
       }}>
-        <CardContent>
+        <CardContent sx={{ padding: '8px 16px' }}>
           <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
             <VolunteerActivismIcon sx={{ color: '#667eea' }} />
-            <Typography variant="h6" sx={{ fontSize: '1.15rem', fontWeight: 500 }}>
+            <Typography variant="h6" sx={{ fontSize: '16px', fontWeight: 500 }}>
               Show Your Appreciation
             </Typography>
           </Stack>
-          <Typography sx={{ mb: 2, color: 'text.secondary' }}>
+          <Typography sx={{ mb: 2, color: 'text.secondary', fontSize: '14px' }}>
             Love on the Pixel began as a simple way for us to share small moments of love. When you "Buy Us a Date," you help turn those pixels into real memories — coffee, dinner, little adventures. Thank you for being part of our story.
           </Typography>
           <Button
@@ -244,39 +244,52 @@ export default function MeUsPage() {
       </Card>
 
       {/* Account Settings */}
-      <Box sx={{ flex: 1, marginBottom: 2 }}>
-        <List sx={{ 
+      <Box sx={{ flex: 1, marginBottom: '8px' }}>
+        <Box sx={{ 
           background: 'rgba(255, 255, 255, 0.95)', 
           borderRadius: 2,
-          overflow: 'hidden'
+          padding: '8px 16px'
         }}>
-          <ListItem button onClick={() => setNotificationDialogOpen(true)}>
-            <ListItemIcon>
-              <Notifications sx={{ color: '#667eea' }} />
-            </ListItemIcon>
-            <ListItemText 
-              primary="Notification Settings" 
-              secondary="Manage push notification preferences"
-              sx={{ '& .MuiListItemText-primary': { color: '#2c3e50' } }}
-            />
-          </ListItem>
-        </List>
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
+            <Notifications sx={{ color: '#667eea' }} />
+            <Typography variant="h6" sx={{ fontSize: '16px', fontWeight: 500 }}>
+              Notification Settings
+            </Typography>
+          </Stack>
+          <Typography sx={{ mb: 2, color: 'text.secondary', fontSize: '14px' }}>
+            Manage push notification preferences
+          </Typography>
+          <Button
+            variant="outlined"
+            onClick={() => setNotificationDialogOpen(true)}
+            sx={{
+              borderColor: '#667eea',
+              color: '#667eea',
+              '&:hover': {
+                borderColor: '#5a6fd8',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)'
+              }
+            }}
+          >
+            Open Settings
+          </Button>
+        </Box>
       </Box>
 
       {/* Privacy Policy Link */}
       <Box sx={{ 
         background: 'rgba(255, 255, 255, 0.95)', 
         borderRadius: 2,
-        padding: 2,
-        marginBottom: 2
+        padding: '8px 16px',
+        marginBottom: '8px'
       }}>
         <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
           <PrivacyTip sx={{ color: '#667eea' }} />
-          <Typography variant="h6" sx={{ fontSize: '1.15rem', fontWeight: 500 }}>
+          <Typography variant="h6" sx={{ fontSize: '16px', fontWeight: 500 }}>
             Privacy Policy
           </Typography>
         </Stack>
-        <Typography sx={{ mb: 2, color: 'text.secondary' }}>
+        <Typography sx={{ mb: 2, color: 'text.secondary', fontSize: '14px' }}>
           Read our privacy policy and data practices
         </Typography>
         <Button
@@ -299,19 +312,16 @@ export default function MeUsPage() {
       <Box sx={{ 
         background: 'rgba(255, 255, 255, 0.95)', 
         borderRadius: 2,
-        padding: 2,
+        padding: '8px 16px',
         marginBottom: 8 // Add bottom margin to account for bottom navigation
       }}>
         <Button
-          variant="outlined"
           startIcon={<Logout />}
           onClick={handleSignOut}
           fullWidth
           sx={{
             color: '#e74c3c',
-            borderColor: '#e74c3c',
             '&:hover': {
-              borderColor: '#c0392b',
               backgroundColor: 'rgba(231, 76, 60, 0.1)'
             }
           }}
