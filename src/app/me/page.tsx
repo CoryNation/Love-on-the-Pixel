@@ -25,11 +25,11 @@ import {
   Person, 
   Logout,
   Edit,
-  Delete,
   PhotoCamera,
   Notifications,
   Favorite as FavoriteIcon,
-  VolunteerActivism as VolunteerActivismIcon
+  VolunteerActivism as VolunteerActivismIcon,
+  PrivacyTip
 } from '@mui/icons-material';
 import { useAuth } from '@/contexts/AuthContext';
 import { userProfileService, type UserProfile } from '@/lib/userProfile';
@@ -133,17 +133,6 @@ export default function MeUsPage() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-      try {
-        // Add account deletion logic here
-        alert('Account deletion feature coming soon.');
-      } catch (error) {
-        console.error('Error deleting account:', error);
-        alert('Failed to delete account. Please try again.');
-      }
-    }
-  };
 
   if (loading) {
     return (
@@ -255,17 +244,6 @@ export default function MeUsPage() {
               sx={{ '& .MuiListItemText-primary': { color: '#2c3e50' } }}
             />
           </ListItem>
-          
-          <ListItem button onClick={handleDeleteAccount}>
-            <ListItemIcon>
-              <Delete sx={{ color: '#e74c3c' }} />
-            </ListItemIcon>
-            <ListItemText 
-              primary="Delete Account" 
-              secondary="Permanently delete your account and data"
-              sx={{ '& .MuiListItemText-primary': { color: '#e74c3c' } }}
-            />
-          </ListItem>
         </List>
       </Box>
 
@@ -293,6 +271,34 @@ export default function MeUsPage() {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Privacy Policy Link */}
+      <Box sx={{ 
+        background: 'rgba(255, 255, 255, 0.95)', 
+        borderRadius: 2,
+        padding: 2,
+        marginBottom: 2
+      }}>
+        <ListItem 
+          button 
+          onClick={() => window.open('/privacy', '_blank')}
+          sx={{ 
+            borderRadius: 1,
+            '&:hover': {
+              backgroundColor: 'rgba(102, 126, 234, 0.1)'
+            }
+          }}
+        >
+          <ListItemIcon>
+            <PrivacyTip sx={{ color: '#667eea' }} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Privacy Policy" 
+            secondary="Read our privacy policy and data practices"
+            sx={{ '& .MuiListItemText-primary': { color: '#2c3e50' } }}
+          />
+        </ListItem>
+      </Box>
 
       {/* Sign Out Section */}
       <Box sx={{ 
