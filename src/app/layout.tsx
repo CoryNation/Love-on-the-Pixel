@@ -58,16 +58,13 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Love on the Pixel" />
         
-        {/* Critical resource prioritization */}
-        <link rel="preload" href="/favicon.ico" as="image" />
+        {/* Critical resource prioritization - favicon preload removed to avoid warnings */}
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
         <link rel="dns-prefetch" href="//fonts.gstatic.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         
-        {/* Preload critical JavaScript chunks */}
-        <link rel="modulepreload" href="/_next/static/chunks/react.js" />
-        <link rel="modulepreload" href="/_next/static/chunks/mui.js" />
+        {/* Preload critical JavaScript chunks - removed as they don't exist */}
         
         {/* Critical CSS inlining for above-the-fold content */}
         <style dangerouslySetInnerHTML={{

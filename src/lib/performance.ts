@@ -94,3 +94,21 @@ export const monitorWebVitals = () => {
     console.log('CLS:', clsValue);
   }).observe({ entryTypes: ['layout-shift'] });
 };
+
+/**
+ * Performance monitoring utilities
+ */
+export const performanceMonitor = {
+  markStart: (name: string) => {
+    if (typeof window !== 'undefined' && window.performance && window.performance.mark) {
+      window.performance.mark(`${name}-start`);
+    }
+  },
+  
+  markEnd: (name: string) => {
+    if (typeof window !== 'undefined' && window.performance && window.performance.mark) {
+      window.performance.mark(`${name}-end`);
+      window.performance.measure(name, `${name}-start`, `${name}-end`);
+    }
+  }
+};

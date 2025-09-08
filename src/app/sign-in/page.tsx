@@ -152,6 +152,7 @@ function SignInForm() {
               onChange={(e) => setEmail(e.target.value)}
               sx={{ marginBottom: 2 }}
               required
+              autoComplete="username"
             />
 
             <TextField
@@ -162,7 +163,7 @@ function SignInForm() {
               onChange={(e) => setPassword(e.target.value)}
               sx={{ marginBottom: 3 }}
               required
-              inputProps={{ autocomplete: 'current-password' }}
+              autoComplete="current-password"
             />
 
             <Button
