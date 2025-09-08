@@ -34,7 +34,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { userProfileService, type UserProfile } from '@/lib/userProfile';
 import NotificationSettingsPage from '@/components/NotificationSettingsPage';
-import BuyUsADateDialog from '@/components/buy-us-a-date/BuyUsADateDialog';
+import CheckoutDialog from '@/components/buy-us-a-date/CheckoutDialog';
 
 export default function MeUsPage() {
   const { user, signOut } = useAuth();
@@ -47,7 +47,7 @@ export default function MeUsPage() {
   });
   const [editLoading, setEditLoading] = useState(false);
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
-  const [buyUsADateOpen, setBuyUsADateOpen] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [privacyDialogOpen, setPrivacyDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -166,7 +166,7 @@ export default function MeUsPage() {
       }}
     >
       {/* Header */}
-      <Box sx={{ marginBottom: 3, textAlign: 'center' }}>
+      <Box sx={{ textAlign: 'center' }}>
         <Typography variant="h5" sx={{ color: 'white', mb: 2 }}>
           Account
         </Typography>
@@ -216,7 +216,7 @@ export default function MeUsPage() {
         borderRadius: 2,
         marginBottom: '8px'
       }}>
-        <CardContent sx={{ padding: '8px 16px' }}>
+        <CardContent sx={{ padding: '8px 16px 8px' }}>
           <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
             <VolunteerActivismIcon sx={{ color: '#667eea' }} />
             <Typography variant="h6" sx={{ fontSize: '16px', fontWeight: 500 }}>
@@ -229,7 +229,7 @@ export default function MeUsPage() {
           <Button
             variant="contained"
             startIcon={<FavoriteIcon />}
-            onClick={() => setBuyUsADateOpen(true)}
+            onClick={() => setCheckoutOpen(true)}
             aria-label="Open Buy Us a Date"
             sx={{
               backgroundColor: '#e91e63',
@@ -245,67 +245,53 @@ export default function MeUsPage() {
 
       {/* Account Settings */}
       <Box sx={{ flex: 1, marginBottom: '8px' }}>
-        <Box sx={{ 
-          background: 'rgba(255, 255, 255, 0.95)', 
-          borderRadius: 2,
-          padding: '8px 16px'
-        }}>
+        <Box 
+          onClick={() => setNotificationDialogOpen(true)}
+          sx={{ 
+            background: 'rgba(255, 255, 255, 0.95)', 
+            borderRadius: 2,
+            padding: '8px 16px',
+            cursor: 'pointer',
+            '&:hover': {
+              backgroundColor: 'rgba(102, 126, 234, 0.05)'
+            }
+          }}
+        >
           <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
             <Notifications sx={{ color: '#667eea' }} />
             <Typography variant="h6" sx={{ fontSize: '16px', fontWeight: 500 }}>
               Notification Settings
             </Typography>
           </Stack>
-          <Typography sx={{ mb: 2, color: 'text.secondary', fontSize: '14px' }}>
+          <Typography sx={{ color: 'text.secondary', fontSize: '14px' }}>
             Manage push notification preferences
           </Typography>
-          <Button
-            variant="outlined"
-            onClick={() => setNotificationDialogOpen(true)}
-            sx={{
-              borderColor: '#667eea',
-              color: '#667eea',
-              '&:hover': {
-                borderColor: '#5a6fd8',
-                backgroundColor: 'rgba(102, 126, 234, 0.1)'
-              }
-            }}
-          >
-            Open Settings
-          </Button>
         </Box>
       </Box>
 
       {/* Privacy Policy Link */}
-      <Box sx={{ 
-        background: 'rgba(255, 255, 255, 0.95)', 
-        borderRadius: 2,
-        padding: '8px 16px',
-        marginBottom: '8px'
-      }}>
+      <Box 
+        onClick={() => setPrivacyDialogOpen(true)}
+        sx={{ 
+          background: 'rgba(255, 255, 255, 0.95)', 
+          borderRadius: 2,
+          padding: '8px 16px',
+          marginBottom: '8px',
+          cursor: 'pointer',
+          '&:hover': {
+            backgroundColor: 'rgba(102, 126, 234, 0.05)'
+          }
+        }}
+      >
         <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
           <PrivacyTip sx={{ color: '#667eea' }} />
           <Typography variant="h6" sx={{ fontSize: '16px', fontWeight: 500 }}>
             Privacy Policy
           </Typography>
         </Stack>
-        <Typography sx={{ mb: 2, color: 'text.secondary', fontSize: '14px' }}>
+        <Typography sx={{ color: 'text.secondary', fontSize: '14px' }}>
           Read our privacy policy and data practices
         </Typography>
-        <Button
-          variant="outlined"
-          onClick={() => setPrivacyDialogOpen(true)}
-          sx={{
-            borderColor: '#667eea',
-            color: '#667eea',
-            '&:hover': {
-              borderColor: '#5a6fd8',
-              backgroundColor: 'rgba(102, 126, 234, 0.1)'
-            }
-          }}
-        >
-          View Privacy Policy
-        </Button>
       </Box>
 
       {/* Sign Out Section */}
@@ -415,8 +401,8 @@ export default function MeUsPage() {
         </DialogActions>
       </Dialog>
 
-      {/* Buy Us a Date Dialog */}
-      <BuyUsADateDialog open={buyUsADateOpen} onClose={() => setBuyUsADateOpen(false)} />
+      {/* Checkout Dialog */}
+      <CheckoutDialog open={checkoutOpen} onClose={() => setCheckoutOpen(false)} />
 
       {/* Privacy Policy Dialog */}
       <Dialog 
