@@ -74,7 +74,7 @@ export default function RootLayout({
           `
         }} />
         
-        {/* Service Worker */}
+        {/* Service Worker - Optimized */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -90,18 +90,21 @@ export default function RootLayout({
                 });
               }
               
-              // Performance monitoring
+              // Performance monitoring - optimized
               window.addEventListener('load', function() {
                 if (window.performance) {
-                  const navigation = window.performance.getEntriesByType('navigation')[0];
-                  if (navigation) {
-                    console.log('Performance Metrics:', {
-                      'DOM Content Loaded': (navigation.domContentLoadedEventEnd - navigation.domContentLoadedEventStart).toFixed(2) + 'ms',
-                      'Load Complete': (navigation.loadEventEnd - navigation.loadEventStart).toFixed(2) + 'ms',
-                      'First Byte': (navigation.responseStart - navigation.requestStart).toFixed(2) + 'ms',
-                      'DOM Interactive': (navigation.domInteractive - navigation.navigationStart).toFixed(2) + 'ms',
-                    });
-                  }
+                  // Debounce performance logging to prevent excessive console output
+                  setTimeout(() => {
+                    const navigation = window.performance.getEntriesByType('navigation')[0];
+                    if (navigation) {
+                      console.log('Performance Metrics:', {
+                        'DOM Content Loaded': (navigation.domContentLoadedEventEnd - navigation.domContentLoadedEventStart).toFixed(2) + 'ms',
+                        'Load Complete': (navigation.loadEventEnd - navigation.loadEventStart).toFixed(2) + 'ms',
+                        'First Byte': (navigation.responseStart - navigation.requestStart).toFixed(2) + 'ms',
+                        'DOM Interactive': (navigation.domInteractive - navigation.navigationStart).toFixed(2) + 'ms',
+                      });
+                    }
+                  }, 1000);
                 }
               });
             `,

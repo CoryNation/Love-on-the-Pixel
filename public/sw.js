@@ -1,36 +1,25 @@
-// Service Worker for Love on the Pixel
-const CACHE_NAME = 'love-on-the-pixel-v2';
+// Service Worker for Love on the Pixel - Optimized
+const CACHE_NAME = 'love-on-the-pixel-v3';
 const STATIC_CACHE_URLS = [
   '/',
   '/favicon.ico',
   '/manifest.webmanifest',
-  '/_next/static/css/',
-  '/_next/static/js/',
+  '/site.webmanifest'
 ];
 
-// Critical resources to cache immediately
-const CRITICAL_RESOURCES = [
-  '/_next/static/chunks/react.js',
-  '/_next/static/chunks/mui.js',
-  '/_next/static/chunks/vendors.js',
-];
-
-// Install event - cache static assets
+// Install event - cache only essential assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        // Cache critical resources first
-        return Promise.all([
-          cache.addAll(STATIC_CACHE_URLS),
-          cache.addAll(CRITICAL_RESOURCES).catch(() => {
-            // Ignore errors for critical resources that might not exist yet
-            console.log('Some critical resources not available for caching');
-          })
-        ]);
+        // Only cache assets that definitely exist
+        return cache.addAll(STATIC_CACHE_URLS);
       })
       .then(() => {
         return self.skipWaiting();
+      })
+      .catch((error) => {
+        console.warn('SW install failed:', error);
       })
   );
 });
@@ -64,6 +53,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Skip API requests to avoid caching issues
+  if (event.request.url.includes('/api/') || event.request.url.includes('supabase')) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -78,11 +72,18 @@ self.addEventListener('fetch', (event) => {
             // Clone the response
             const responseToCache = fetchResponse.clone();
 
-            // Cache the response
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
+            // Cache the response for static assets only
+            if (event.request.url.includes('/_next/static/') || 
+                event.request.url.includes('.css') || 
+                event.request.url.includes('.js') ||
+                event.request.url.includes('.png') ||
+                event.request.url.includes('.jpg') ||
+                event.request.url.includes('.svg')) {
+              caches.open(CACHE_NAME)
+                .then((cache) => {
+                  cache.put(event.request, responseToCache);
+                });
+            }
 
             return fetchResponse;
           });

@@ -66,16 +66,25 @@ export default function WavePage() {
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
 
-  // Swipe handlers
-  const handleTouchStart = (e: React.TouchEvent) => {
+  // Debounced resize handler
+  const resizeTimeout = useRef<NodeJS.Timeout>();
+  const handleResize = useCallback(() => {
+    clearTimeout(resizeTimeout.current);
+    resizeTimeout.current = setTimeout(() => {
+      // Debounced resize logic here if needed
+    }, 100);
+  }, []);
+
+  // Swipe handlers - optimized
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
-  };
+  }, []);
 
-  const handleTouchMove = (e: React.TouchEvent) => {
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
     touchEndX.current = e.touches[0].clientX;
-  };
+  }, []);
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = useCallback(() => {
     const swipeThreshold = 50;
     const diff = touchStartX.current - touchEndX.current;
     
@@ -88,15 +97,15 @@ export default function WavePage() {
         handlePreviousAffirmation();
       }
     }
-  };
+  }, []);
 
   const loadInitialAffirmation = useCallback(async () => {
     try {
       setLoading(true);
       performanceMonitor.markStart('loadInitialAffirmation');
       
-      // Load received affirmations for the main view (limit to prevent timeout)
-      const receivedAffirmations = await bidirectionalConnectionsService.getReceivedAffirmations(50); // Reduced from 100 to 50
+      // Load received affirmations with reduced limit for better performance
+      const receivedAffirmations = await bidirectionalConnectionsService.getReceivedAffirmations(25); // Reduced from 50 to 25
       setReceivedAffirmations(receivedAffirmations);
       
       if (receivedAffirmations.length > 0) {
@@ -125,7 +134,7 @@ export default function WavePage() {
       
       // Only load sent affirmations if we're on the sent tab or need them
       if (user?.id && activeTab === 'sent') {
-        const sent = await bidirectionalConnectionsService.getSentAffirmations(30); // Reduced from 50 to 30
+        const sent = await bidirectionalConnectionsService.getSentAffirmations(20); // Reduced from 30 to 20
         setSentAffirmations(sent);
       }
     } catch (err) {
@@ -142,7 +151,7 @@ export default function WavePage() {
       try {
         setSentLoading(true);
         // Add limit to prevent timeout issues
-        const sent = await bidirectionalConnectionsService.getSentAffirmations(30); // Reduced from 50 to 30
+        const sent = await bidirectionalConnectionsService.getSentAffirmations(20); // Reduced from 30 to 20
         setSentAffirmations(sent);
       } catch (err) {
         console.error('Error loading sent affirmations:', err);
@@ -160,7 +169,7 @@ export default function WavePage() {
     }
   }, [user?.id, loadInitialAffirmation]);
 
-  // Make refreshAffirmations available globally for other components
+  // Make refreshAffirmations available globally for other components - with debouncing
   useEffect(() => {
     if (typeof window !== 'undefined') {
       let refreshTimeout: NodeJS.Timeout;
@@ -176,7 +185,7 @@ export default function WavePage() {
             loadInitialAffirmation();
             loadSentAffirmations();
           }
-        }, 100);
+        }, 200); // Increased debounce time
       };
     }
   }, [loadInitialAffirmation, loadSentAffirmations, activeTab]);
@@ -264,9 +273,8 @@ export default function WavePage() {
     }
   }, [filteredAffirmations, currentAffirmation]);
 
-  const handleToggleFavorite = async (affirmation: Affirmation) => {
+  const handleToggleFavorite = useCallback(async (affirmation: Affirmation) => {
     try {
-
       setFavoriteLoading(affirmation.id);
       await bidirectionalConnectionsService.toggleFavorite(affirmation.id, !affirmation.is_favorite);
       
@@ -291,27 +299,27 @@ export default function WavePage() {
         setCurrentAffirmation({ ...affirmation, is_favorite: !affirmation.is_favorite });
       }
       
-              // Refresh treasured page if it exists
-        if (typeof window !== 'undefined' && (window as any).refreshTreasured) {
-          (window as any).refreshTreasured();
-        }
+      // Refresh treasured page if it exists
+      if (typeof window !== 'undefined' && (window as any).refreshTreasured) {
+        (window as any).refreshTreasured();
+      }
     } catch (error) {
       console.error('Error toggling favorite:', error);
     } finally {
       setFavoriteLoading(null);
     }
-  };
+  }, [receivedAffirmations, sentAffirmations, currentAffirmation]);
 
-  const handleEditAffirmation = (affirmation: Affirmation) => {
+  const handleEditAffirmation = useCallback((affirmation: Affirmation) => {
     setEditingAffirmation(affirmation);
     setEditForm({
       message: affirmation.message,
       category: affirmation.category
     });
     setEditDialogOpen(true);
-  };
+  }, []);
 
-  const handleSaveEdit = async () => {
+  const handleSaveEdit = useCallback(async () => {
     if (!editingAffirmation) return;
     
     try {
@@ -329,9 +337,9 @@ export default function WavePage() {
     } finally {
       setEditLoading(false);
     }
-  };
+  }, [editingAffirmation, loadInitialAffirmation]);
 
-  const handleDeleteAffirmation = async (affirmation: Affirmation) => {
+  const handleDeleteAffirmation = useCallback(async (affirmation: Affirmation) => {
     if (!confirm('Are you sure you want to delete this affirmation?')) return;
     
     try {
@@ -346,7 +354,16 @@ export default function WavePage() {
     } catch (error) {
       console.error('Error deleting affirmation:', error);
     }
-  };
+  }, [receivedAffirmations, currentAffirmation]);
+
+  // Add resize listener cleanup
+  useEffect(() => {
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(resizeTimeout.current);
+    };
+  }, [handleResize]);
 
   if (loading) {
     return (
@@ -404,40 +421,40 @@ export default function WavePage() {
           {/* Removed page title and catchphrase - now only in button tray */}
         </Box>
         
-                 {/* Tab Buttons */}
-         <Box sx={{ display: 'flex', gap: 1 }}>
-           <Button
-             variant={activeTab === 'received' ? 'contained' : 'outlined'}
-             onClick={() => setActiveTab('received')}
-             sx={{
-               color: activeTab === 'received' ? 'white' : 'white',
-               borderColor: 'white',
-               '&:hover': {
-                 borderColor: 'white',
-                 backgroundColor: activeTab === 'received' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'
-               }
-             }}
-           >
-             Received
-           </Button>
-           <Button
-             variant={activeTab === 'sent' ? 'contained' : 'outlined'}
-             onClick={() => {
-               setActiveTab('sent');
-               loadSentAffirmations();
-             }}
-             sx={{
-               color: activeTab === 'sent' ? 'white' : 'white',
-               borderColor: 'white',
-               '&:hover': {
-                 borderColor: 'white',
-                 backgroundColor: activeTab === 'sent' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'
-               }
-             }}
-           >
-             Sent
-           </Button>
-         </Box>
+        {/* Tab Buttons */}
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant={activeTab === 'received' ? 'contained' : 'outlined'}
+            onClick={() => setActiveTab('received')}
+            sx={{
+              color: activeTab === 'received' ? 'white' : 'white',
+              borderColor: 'white',
+              '&:hover': {
+                borderColor: 'white',
+                backgroundColor: activeTab === 'received' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'
+              }
+            }}
+          >
+            Received
+          </Button>
+          <Button
+            variant={activeTab === 'sent' ? 'contained' : 'outlined'}
+            onClick={() => {
+              setActiveTab('sent');
+              loadSentAffirmations();
+            }}
+            sx={{
+              color: activeTab === 'sent' ? 'white' : 'white',
+              borderColor: 'white',
+              '&:hover': {
+                borderColor: 'white',
+                backgroundColor: activeTab === 'sent' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'
+              }
+            }}
+          >
+            Sent
+          </Button>
+        </Box>
       </Box>
 
       {/* Theme Filter */}
